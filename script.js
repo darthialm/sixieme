@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.6';
+const SITE_VERSION = '2026-10-14.7';
 
 /* =========================================================
    Outils
@@ -3174,6 +3174,12 @@ function renderProf() {
   const wUrl = siteURL().replace(/index\.html$/, '').replace(/\/?$/, '/') + 'bilan.html';
   document.getElementById('widget-url').textContent = wUrl;
   document.getElementById('widget-copy').addEventListener('click', (e) => copy(wUrl, e.currentTarget));
+  // Bouton « Voir le bilan » : lien de la page Grist qui contient le widget
+  const bl = document.getElementById('bilan-link'), bRow = document.getElementById('bilan-open-row'), bBtn = document.getElementById('bilan-open');
+  const showBL = () => { const u = bl.value.trim(); const ok = /^https:\/\/\S+$/.test(u); bRow.hidden = !ok; if (ok) bBtn.href = u; };
+  try { bl.value = localStorage.getItem('revisions6e-bilan-link') || ''; } catch (e) { /* rien */ }
+  bl.addEventListener('input', () => { try { localStorage.setItem('revisions6e-bilan-link', bl.value.trim()); } catch (e) { /* rien */ } showBL(); });
+  showBL();
   update();
 }
 

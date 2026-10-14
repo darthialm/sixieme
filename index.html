@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
-  <meta name="site-version" content="2026-10-14.6">
-  <link rel="stylesheet" href="style.css?v=2026-10-14.6">
+  <meta name="site-version" content="2026-10-14.7">
+  <link rel="stylesheet" href="style.css?v=2026-10-14.7">
 </head>
 <body>
 
@@ -59,6 +59,7 @@
     </div>
     <div id="prof-content" hidden>
       <p class="lead">Choisis une ou plusieurs notions, puis copie le lien du devoir pour tes élèves (ENT, Pronote…), ou lance-les au vidéoprojecteur. <button type="button" class="linkbtn" id="prof-relock">Verrouiller cet espace</button></p>
+      <p id="bilan-open-row" hidden><a class="btn primary" id="bilan-open" target="_blank" rel="noopener">📊 Voir le bilan des devoirs (Grist)</a></p>
       <div class="prof-out card">
         <h2>1. Donner un devoir</h2>
         <div class="prof-opts">
@@ -114,6 +115,8 @@
             <li>Règle l'accès du widget sur <b>Lecture de la table</b> (Grist te le demande : clique sur « Accepter »).</li>
           </ol>
           <p class="small muted">Le bilan s'affiche alors dans Grist : une ligne par élève, choix du meilleur, premier ou dernier essai, élèves qui n'ont pas fait le devoir, codes suspects.</p>
+          <p class="small"><b>Bouton d'accès rapide :</b> dans Grist, ouvre la page où se trouve le bilan, copie l'adresse en haut du navigateur et colle-la ici. Un bouton « 📊 Voir le bilan » apparaîtra en haut de cet espace.</p>
+          <input type="text" id="bilan-link" class="wide-inp" placeholder="https://grist.numerique.gouv.fr/o/docs/…/p/2" aria-label="Lien de la page du bilan dans Grist">
         </div>
         <div class="grist-auto">
           <p class="small"><b>Chargement automatique depuis Grist</b> (avec une clé API ; refusé par le Grist de l'État) :</p>
@@ -753,6 +756,6 @@
   <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a> · <span id="site-version" class="muted"></span></p>
 </footer>
 
-<script src="script.js?v=2026-10-14.6"></script>
+<script src="script.js?v=2026-10-14.7"></script>
 </body>
 </html>
