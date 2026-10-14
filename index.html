@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
-  <meta name="site-version" content="2026-10-14.7">
-  <link rel="stylesheet" href="style.css?v=2026-10-14.7">
+  <meta name="site-version" content="2026-10-14.11">
+  <link rel="stylesheet" href="style.css?v=2026-10-14.11">
 </head>
 <body>
 
@@ -65,8 +65,9 @@
         <div class="prof-opts">
           <span><label for="prof-n"><b>Nombre de questions :</b></label>
           <select id="prof-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></span>
-          <span><label for="prof-classe"><b>Classe</b> (facultatif) :</label>
-          <input type="text" id="prof-classe" class="short-inp" maxlength="20" placeholder="6B"></span>
+          <span><label for="prof-classe"><b>Classe :</b></label>
+          <select id="prof-classe" class="cl-select"></select>
+          <button type="button" class="mini" id="prof-classes-edit">✏️ Mes classes</button></span>
           <label class="prof-chk"><input type="checkbox" id="prof-form-use" disabled> Envoyer les résultats dans mon formulaire (voir 2.)</label>
           <label class="prof-chk"><input type="checkbox" id="prof-once"> Seul le premier essai compte (les suivants servent d'entraînement et ne sont pas envoyés)</label>
         </div>
@@ -76,7 +77,12 @@
           <a class="btn" id="prof-open" hidden>Essayer</a>
           <a class="btn" id="prof-projo" hidden>📽 Vidéoprojecteur</a>
         </div>
-        <p class="small muted">L'élève écrit son prénom avant de commencer. À la fin, il obtient une carte de résultat (prénom, score, aide utilisée, date, numéro d'essai, code). Si ton formulaire Google est relié, le résultat t'est <b>envoyé automatiquement</b> ; sinon, l'élève te montre une capture d'écran ou te recopie son code.</p>
+        <div id="prof-classes-box" class="classes-box" hidden>
+          <label for="prof-classes-list"><b>Mes classes</b> (une par ligne) :</label>
+          <textarea id="prof-classes-list" rows="5" placeholder="6A&#10;6B&#10;6C"></textarea>
+          <p><button type="button" class="btn primary" id="prof-classes-save">Enregistrer</button> <span class="small muted">La liste reste enregistrée sur cet ordinateur.</span></p>
+        </div>
+        <p class="small muted"><b>Classe :</b> choisis la classe dans le menu avant de copier le lien ; elle est fixée dans le lien, les élèves n'ont rien à choisir. Fais un lien par classe. L'élève écrit seulement son prénom avant de commencer. À la fin, il obtient une carte de résultat (prénom, score, aide utilisée, date, numéro d'essai, code). Si ton formulaire Google est relié, le résultat t'est <b>envoyé automatiquement</b> ; sinon, l'élève te montre une capture d'écran ou te recopie son code.</p>
       </div>
       <div id="prof-list"></div>
       <div class="card">
@@ -756,6 +762,6 @@
   <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a> · <span id="site-version" class="muted"></span></p>
 </footer>
 
-<script src="script.js?v=2026-10-14.7"></script>
+<script src="script.js?v=2026-10-14.11"></script>
 </body>
 </html>

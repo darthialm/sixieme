@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.7';
+const SITE_VERSION = '2026-10-14.11';
 
 /* =========================================================
    Outils
@@ -2952,10 +2952,13 @@ function routeDevoir(spec) {
   let classe = '', form = null;
   const once = more.includes('u');
   more.forEach((seg) => {
-    if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 20); } catch (e) { classe = ''; } }
+    if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 80); } catch (e) { classe = ''; } }
     if (seg.startsWith('f=')) { const f = segToForm(seg.slice(2)); if (f) form = { kind: 'google', ...f }; }
     if (seg.startsWith('g=')) { const g = segToGrist(seg.slice(2)); if (g) form = { kind: g.t ? 'grist' : 'manual', ...g }; }
   });
+  // plusieurs classes séparées par des virgules : l'élève choisit la sienne
+  const classes = [...new Set(classe.split(',').map((x) => x.trim()).filter(Boolean))];
+  classe = classes.length === 1 ? classes[0] : '';
   const page = document.querySelector('.page[data-p="devoir"]');
   const head = page.querySelector('.devoir-head'), ex = page.querySelector('.devoir-ex'), start = page.querySelector('.devoir-start');
   if (!keys.length) {
@@ -2973,13 +2976,20 @@ function routeDevoir(spec) {
     <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
   ex.hidden = true; ex.innerHTML = '';
   start.hidden = false;
-  start.innerHTML = `<label for="dv-name"><b>Écris ton prénom pour commencer :</b></label>
+  start.innerHTML = `<label for="dv-name"><b>Écris ton prénom${classes.length > 1 ? ' et choisis ta classe' : ''} pour commencer :</b></label>
     <div class="prof-row"><input type="text" id="dv-name" autocomplete="given-name" maxlength="30" value="${esc(stats._name || '')}" aria-label="Ton prénom">
+    ${classes.length > 1 ? `<select id="dv-classe" aria-label="Ta classe"><option value="">Ta classe…</option>${classes.map((c) => `<option${c === stats._classe ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}
     <button type="button" class="btn primary" id="dv-go">Commencer le devoir →</button></div>
+    <p><button type="button" class="linkbtn" id="dv-paper">📝 Je préfère faire ce devoir sur papier</button></p>
     <p class="small muted">${form ? 'Ton prénom et ton résultat seront transmis à ton professeur, et à personne d\'autre.' : 'Ton prénom reste sur cet appareil : il s\'affiche seulement sur ta carte de résultat.'}</p>`;
   const go = () => {
     const name = start.querySelector('#dv-name').value.trim();
     if (!normName(name)) { start.querySelector('#dv-name').classList.add('wrong'); start.querySelector('#dv-name').focus(); return; }
+    if (classes.length > 1) {
+      const sel = start.querySelector('#dv-classe');
+      if (!sel.value) { sel.classList.add('wrong'); sel.focus(); return; }
+      classe = sel.value; stats._classe = classe;
+    }
     stats._name = name; persist();
     const rec = stats['devoir:' + canon] || (stats['devoir:' + canon] = { tries: 0 });
     rec.tries = (rec.tries || 0) + 1; persist();
@@ -3041,8 +3051,73 @@ function routeDevoir(spec) {
     ex.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   start.querySelector('#dv-go').addEventListener('click', go);
+  // ---------- Version papier : feuille à imprimer + ligne « sur papier, à vérifier » pour le professeur ----------
+  start.querySelector('#dv-paper').addEventListener('click', () => {
+    const name = start.querySelector('#dv-name').value.trim();
+    if (!normName(name)) { start.querySelector('#dv-name').classList.add('wrong'); start.querySelector('#dv-name').focus(); return; }
+    if (classes.length > 1) {
+      const sel = start.querySelector('#dv-classe');
+      if (!sel.value) { sel.classList.add('wrong'); sel.focus(); return; }
+      classe = sel.value; stats._classe = classe;
+    }
+    stats._name = name; persist();
+    let bag = [];
+    const qs = [];
+    for (let i = 0; i < n; i++) { if (!bag.length) bag = shuffle([...keys]); const k = bag.shift(); qs.push({ k, o: wrapGen(k, false) }); }
+    const paperize = (html) => {
+      const d = document.createElement('div'); d.innerHTML = html;
+      d.querySelectorAll('input.ans').forEach((i) => { const sp = document.createElement('span'); sp.className = 'blank'; sp.textContent = ' '; i.replaceWith(sp); });
+      d.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((i) => { const sp = document.createElement('span'); sp.className = 'box'; sp.textContent = '☐'; i.replaceWith(sp); });
+
+      d.querySelectorAll('button').forEach((b) => { const sp = document.createElement('span'); sp.className = b.className + ' as-text'; sp.textContent = b.textContent; b.replaceWith(sp); });
+      d.querySelectorAll('.ord-out, .ord-reset').forEach((e) => e.remove());
+      return d.innerHTML
+        .replace(/Clique sur les nombres dans l'ordre\./g, '')
+        .replace(/ : clique-les dans l'ordre\./g, '. Écris-les dans l\'ordre : <span class="blank long"></span>')
+        .replace(/Clique sur les <b>zéros inutiles<\/b> pour les barrer\./g, 'Barre les <b>zéros inutiles</b>.')
+        .replace(/Clique entre les chiffres pour placer les espaces, afin que le nombre soit facile à lire\./g, 'Recopie ce nombre en plaçant les espaces, pour qu\'il soit facile à lire : <span class="blank long"></span>')
+        .replace(/ : clique sur la bonne graduation\./g, ' sur la demi-droite graduée.')
+        .replace(/Clique sur l'opération/g, 'Entoure l\'opération');
+    };
+    const d = new Date();
+    start.hidden = true; ex.hidden = false; ex.classList.remove('done');
+    ex.innerHTML = `<div class="no-print paper-bar">
+        <p class="paper-st" id="paper-st"></p>
+        <p><button type="button" class="btn primary" id="paper-print">🖨️ Imprimer la feuille</button> <button type="button" class="btn" id="paper-back">Finalement, je le fais en ligne</button></p>
+        <p class="small muted">Pas d'imprimante ? Recopie les questions sur ta feuille. Quand une question dit « clique », entoure ou écris ta réponse sur la feuille.</p>
+      </div>
+      <div class="paper-sheet">
+        <div class="paper-head"><b>${esc(name)}</b>${classe ? ` — ${esc(classe)}` : ''}<span>Devoir : ${esc(title)} · ${n} questions · ${d.toLocaleDateString('fr-FR')}</span></div>
+        ${qs.map((x, i) => `<section class="pq" data-i="${i}"><h3>Question ${i + 1}${keys.length > 1 ? ` <span class="small muted">— ${GENS[x.k].label}</span>` : ''}</h3>${x.o.q.includes('class="board"') ? '<div class="pq-body"></div>' : paperize(x.o.q)}</section>`).join('')}
+      </div>`;
+    // Constructions : on dessine la figure de départ (en vraie grandeur), sans les instruments
+    ex.querySelectorAll('.pq').forEach((sec) => {
+      const x = qs[Number(sec.dataset.i)], body = sec.querySelector('.pq-body'); if (!body) return;
+      body.innerHTML = x.o.q;
+      try { x.o.mount(body); } catch (e) { /* rien */ }
+      const svg = body.querySelector('.geo-svg');
+      const fig = svg ? svg.cloneNode(true) : null;
+      if (fig) { fig.querySelector('.g-prev')?.remove(); fig.classList.add('paper-geo'); fig.removeAttribute('style'); }
+      body.querySelector('.board').innerHTML = '';
+      if (fig) body.querySelector('.board').appendChild(fig);
+      body.querySelector('.board').insertAdjacentHTML('beforeend', '<p class="small muted">Figure en vraie grandeur (carreaux de 1 cm) : fais la construction dessus, ou reproduis-la sur ta feuille.</p>');
+      body.innerHTML = paperize(body.innerHTML);
+    });
+    const st = ex.querySelector('#paper-st');
+    if (form && form.kind !== 'manual') {
+      const values = [name, `PAPIER-${n}`, classe, keys.length === 1 ? title : `${title} : ${keys.map((k) => GENS[k].label).join(', ')}`, 'sur papier', `déclaré ${nowStr(d)} · à vérifier sur la feuille`];
+      st.className = 'paper-st'; st.textContent = '📨 J\'informe ton professeur que tu fais ce devoir sur papier…';
+      (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
+        .then(() => { st.className = 'paper-st ok-t'; st.textContent = '✔ Ton professeur sait que tu fais ce devoir sur papier. N\'oublie pas de lui rendre ta feuille !'; })
+        .catch(() => { st.className = 'paper-st warn-t'; st.textContent = '⚠ Je n\'ai pas pu prévenir ton professeur (pas de connexion ?). Dis-lui toi-même que tu as fait ce devoir sur papier.'; });
+    } else st.textContent = '📝 Fais ce devoir sur ta feuille et rends-la à ton professeur.';
+    ex.querySelector('#paper-print').addEventListener('click', () => window.print());
+    ex.querySelector('#paper-back').addEventListener('click', () => { ex.innerHTML = ''; go(); });
+    ex.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
   start.querySelector('#dv-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
   start.querySelector('#dv-name').addEventListener('input', (e) => e.target.classList.remove('wrong'));
+  start.querySelector('#dv-classe')?.addEventListener('change', (e) => e.target.classList.remove('wrong'));
   return { ch: chs[0] };
 }
 
@@ -3141,7 +3216,7 @@ function renderProf() {
   });
   window.profExtra = () => {
     let x = '';
-    const c = clInp.value.trim().replace(/\//g, '-');
+    const c = (clInp.value || '').trim().replace(/\//g, '-').replace(/,/g, ' ');
     if (c) x += '/c=' + encodeURIComponent(c);
     if (document.getElementById('prof-once').checked) x += '/u';
     const d = destSeg();
@@ -3151,7 +3226,23 @@ function renderProf() {
   try { fInp.value = localStorage.getItem(FKEY) || ''; } catch (e) { /* rien */ }
   fUse.checked = !!destSeg();
   fInp.addEventListener('input', () => { try { localStorage.setItem(FKEY, fInp.value.trim()); } catch (e) { /* rien */ } fUse.checked = !!destSeg(); showForm(); update(); });
-  clInp.addEventListener('input', update);
+  // Liste des classes du professeur (menu déroulant)
+  const CKEY = 'revisions6e-classes', CLAST = 'revisions6e-classe-choisie';
+  const clBox = document.getElementById('prof-classes-box'), clList = document.getElementById('prof-classes-list');
+  const getClasses = () => { try { return (localStorage.getItem(CKEY) || '').split('\n').map((x) => x.trim()).filter(Boolean); } catch (e) { return []; } };
+  const fillClasses = () => {
+    const cl = getClasses(); let last = ''; try { last = localStorage.getItem(CLAST) || ''; } catch (e) { /* rien */ }
+    clInp.innerHTML = `<option value="">${cl.length ? '— sans classe —' : '— ajoute tes classes avec ✏️ —'}</option>` + cl.map((c) => `<option${c === last ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  };
+  fillClasses();
+  if (!getClasses().length) clBox.hidden = false;
+  document.getElementById('prof-classes-edit').addEventListener('click', () => { clList.value = getClasses().join('\n'); clBox.hidden = !clBox.hidden; if (!clBox.hidden) clList.focus(); });
+  document.getElementById('prof-classes-save').addEventListener('click', () => {
+    const cl = [...new Set(clList.value.split('\n').map((x) => x.trim()).filter(Boolean))];
+    try { localStorage.setItem(CKEY, cl.join('\n')); } catch (e) { /* rien */ }
+    clBox.hidden = true; fillClasses(); update();
+  });
+  clInp.addEventListener('change', () => { try { localStorage.setItem(CLAST, clInp.value); } catch (e) { /* rien */ } update(); });
   document.getElementById('prof-once').addEventListener('change', update);
   fUse.addEventListener('change', update);
   showForm();
@@ -3185,12 +3276,16 @@ function renderProf() {
 
 /* ---------- Bilan : une ligne par élève, à partir des lignes copiées ---------- */
 const CODE_CELL = /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/;
+/** devoir déclaré « fait sur papier » : la colonne Code contient PAPIER-<nombre de questions> */
+const PAPER_CELL = /^PAPIER-(\d+)$/;
 /** Lit des lignes copiées (Grist : Prénom, Code, Classe, Devoir, Score, Détail ; Google Sheets : horodatage en plus ; ou « Prénom CODE ») */
 function parseResultRows(text) {
   const rows = [];
   for (const line of String(text).split(/\r?\n/)) {
     if (!line.trim()) continue;
     const cells = line.split('\t').map((x) => x.trim());
+    const pi = cells.findIndex((x) => PAPER_CELL.test(x));
+    if (pi > 0) { rows.push({ name: cells[pi - 1] || '', classe: cells[pi + 1] || '', devoir: cells[pi + 2] || '', paper: Number(cells[pi].match(PAPER_CELL)[1]), valid: false, nameOk: false }); continue; }
     const ci = cells.findIndex((x) => CODE_CELL.test(x));
     let codeStr, name, classe = '', devoir = '';
     if (ci >= 0) { codeStr = cells[ci]; name = cells[ci - 1] || ''; classe = cells[ci + 1] || ''; devoir = cells[ci + 2] || ''; }
@@ -3205,26 +3300,28 @@ function parseResultRows(text) {
   }
   return rows;
 }
-/** Regroupe par devoir puis par élève */
+/** Regroupe par devoir puis par élève (les devoirs « sur papier » sont gardés à part, à vérifier) */
 function buildBilan(rows) {
-  const ok = rows.filter((x) => x.valid && x.nameOk);
+  const ok = rows.filter((x) => (x.valid && x.nameOk) || x.paper);
   const devoirs = {};
   for (const x of ok) {
-    const dk = `${x.devoir || 'Devoir'} — ${x.r.n} questions`;
-    const D = devoirs[dk] || (devoirs[dk] = { label: dk, n: x.r.n, students: {}, last: 0 });
-    D.last = Math.max(D.last, x.r.time);
+    const n = x.paper || x.r.n;
+    const dk = `${x.devoir || 'Devoir'} — ${n} questions`;
+    const D = devoirs[dk] || (devoirs[dk] = { label: dk, n, students: {}, last: 0 });
+    if (!x.paper) D.last = Math.max(D.last, x.r.time);
     const sk = `${normName(x.classe)}|${normName(x.name)}`;
-    const S = D.students[sk] || (D.students[sk] = { name: x.name, classe: x.classe, tries: [] });
-    S.tries.push(x.r);
+    const S = D.students[sk] || (D.students[sk] = { name: x.name, classe: x.classe, tries: [], paper: false });
+    if (x.paper) S.paper = true; else S.tries.push(x.r);
   }
   for (const D of Object.values(devoirs)) {
     for (const S of Object.values(D.students)) {
+      if (!S.tries.length) continue;
       S.tries.sort((p, q) => p.time - q.time);
       S.first = S.tries[0]; S.lastT = S.tries[S.tries.length - 1];
       S.best = S.tries.reduce((m, t) => (t.good > m.good || (t.good === m.good && t.helped < m.helped) ? t : m), S.tries[0]);
     }
   }
-  return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.valid || !x.nameOk) };
+  return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.paper && (!x.valid || !x.nameOk)) };
 }
 const ROSTER_KEY = (c) => 'revisions6e-liste-' + normName(c || 'sans');
 function setupBilan() {
@@ -3247,13 +3344,15 @@ function setupBilan() {
     </div>`;
     if (D) {
       const studs = Object.values(D.students).filter((S) => !fClasse || S.classe === fClasse).sort((p, q) => p.name.localeCompare(q.name, 'fr'));
-      const sc = studs.map((S) => pick2(S));
+      const online = studs.filter((S) => S.tries.length), paperOnly = studs.filter((S) => !S.tries.length);
+      const sc = online.map((S) => pick2(S));
       const avg = sc.length ? sc.reduce((m, t) => m + t.good, 0) / sc.length : 0;
-      const low = studs.filter((S) => pick2(S).good / D.n < 0.5);
-      html += `<p class="bilan-sum"><b>${studs.length}</b> élève${studs.length > 1 ? 's ont' : ' a'} fait ce devoir${fClasse ? ` en ${esc(fClasse)}` : ''} · moyenne <b>${fmt(Math.round(avg * 10) / 10)} / ${D.n}</b>${low.length ? ` · <span class="ko-t">${low.length} sous la moitié</span>` : ''}</p>`;
+      const low = online.filter((S) => pick2(S).good / D.n < 0.5);
+      html += `<p class="bilan-sum"><b>${online.length}</b> élève${online.length > 1 ? 's ont' : ' a'} fait ce devoir en ligne${fClasse ? ` en ${esc(fClasse)}` : ''}${online.length ? ` · moyenne <b>${fmt(Math.round(avg * 10) / 10)} / ${D.n}</b>` : ''}${low.length ? ` · <span class="ko-t">${low.length} sous la moitié</span>` : ''}${paperOnly.length ? ` · <span class="warn-t">📝 ${paperOnly.length} sur papier, à vérifier</span>` : ''}</p>`;
       html += `<div class="table-wrap"><table class="voc res-tab bilan"><thead><tr><th>Élève</th><th>Classe</th><th>Score retenu</th><th>Aide</th><th>Essais</th><th>Meilleur</th><th>Dernier envoi</th></tr></thead><tbody>${studs.map((S) => {
         const t = pick2(S);
-        return `<tr><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td><span class="sc ${scoreCls(t.good, D.n)}">${t.good} / ${D.n}</span></td><td>${t.helped ? `${t.helped} avec aide` : 'sans aide'}</td><td>${S.tries.length}</td><td>${S.best.good} / ${D.n}</td><td>${nowStr(new Date(S.lastT.time)).replace(/^le /, '')}</td></tr>`;
+        if (!S.tries.length) return `<tr class="paper-row"><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td colspan="5"><span class="sc sc-paper">📝 Sur papier — à vérifier</span></td></tr>`;
+        return `<tr><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td><span class="sc ${scoreCls(t.good, D.n)}">${t.good} / ${D.n}</span>${S.paper ? ' <span class="small muted">+ papier</span>' : ''}</td><td>${t.helped ? `${t.helped} avec aide` : 'sans aide'}</td><td>${S.tries.length}</td><td>${S.best.good} / ${D.n}</td><td>${nowStr(new Date(S.lastT.time)).replace(/^le /, '')}</td></tr>`;
       }).join('')}</tbody></table></div>`;
       // Liste de classe : qui n'a pas fait le devoir ?
       if (fClasse) {
@@ -3274,7 +3373,7 @@ function setupBilan() {
     out.querySelector('#bf-roster')?.addEventListener('change', (e) => { try { localStorage.setItem(ROSTER_KEY(fClasse), e.target.value); } catch (_) { /* rien */ } render(); });
     out.querySelector('#bf-copy')?.addEventListener('click', async (e) => {
       const studs = Object.values(D.students).filter((S) => !fClasse || S.classe === fClasse).sort((p, q) => p.name.localeCompare(q.name, 'fr'));
-      const tsv = ['Élève\tClasse\tScore\tSur\tAide\tEssais', ...studs.map((S) => { const t = pick2(S); return `${S.name}\t${S.classe}\t${t.good}\t${D.n}\t${t.helped}\t${S.tries.length}`; })].join('\n');
+      const tsv = ['Élève\tClasse\tScore\tSur\tAide\tEssais', ...studs.map((S) => { const t = pick2(S); return t ? `${S.name}\t${S.classe}\t${t.good}\t${D.n}\t${t.helped}\t${S.tries.length}` : `${S.name}\t${S.classe}\tpapier (à vérifier)\t${D.n}\t\t0`; })].join('\n');
       try { await navigator.clipboard.writeText(tsv); e.target.textContent = '✔ Copié'; } catch (_) { e.target.textContent = 'Copie impossible'; }
     });
   }

@@ -21,7 +21,7 @@
   th { background: var(--accent-soft); position: sticky; top: 0; }
   th.sortable { cursor: pointer; } th.sortable:hover { text-decoration: underline; }
   .sc { display: inline-block; font-weight: 700; padding: 1px 9px; border-radius: 99px; }
-  .sc-ok { background: var(--ok-soft); color: var(--ok); } .sc-mid { background: var(--warn-soft); color: var(--warn); } .sc-ko { background: var(--ko-soft); color: var(--ko); }
+  .sc-ok { background: var(--ok-soft); color: var(--ok); } .sc-paper { background: var(--warn-soft); color: var(--warn); } .paper-row td { background: var(--warn-soft); } .sc-mid { background: var(--warn-soft); color: var(--warn); } .sc-ko { background: var(--ko-soft); color: var(--ko); }
   .box { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 12px 0; }
   .ko-t { color: var(--ko); font-weight: 700; } .ok-t { color: var(--ok); font-weight: 700; } .warn-t { color: var(--warn); font-weight: 700; }
   button { font: inherit; font-weight: 700; padding: 6px 14px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; }
@@ -62,45 +62,54 @@ function readCode(str) {
   return { good, n, helped, attempt, time: EPOCH + mins * 60000, spec, name };
 }
 
+/** Regroupe par devoir puis par élève (les devoirs « sur papier » sont gardés à part, à vérifier) */
 function buildBilan(rows) {
-  const ok = rows.filter((x) => x.valid && x.nameOk);
+  const ok = rows.filter((x) => (x.valid && x.nameOk) || x.paper);
   const devoirs = {};
   for (const x of ok) {
-    const dk = `${x.devoir || 'Devoir'} — ${x.r.n} questions`;
-    const D = devoirs[dk] || (devoirs[dk] = { label: dk, n: x.r.n, students: {}, last: 0 });
-    D.last = Math.max(D.last, x.r.time);
+    const n = x.paper || x.r.n;
+    const dk = `${x.devoir || 'Devoir'} — ${n} questions`;
+    const D = devoirs[dk] || (devoirs[dk] = { label: dk, n, students: {}, last: 0 });
+    if (!x.paper) D.last = Math.max(D.last, x.r.time);
     const sk = `${normName(x.classe)}|${normName(x.name)}`;
-    const S = D.students[sk] || (D.students[sk] = { name: x.name, classe: x.classe, tries: [] });
-    S.tries.push(x.r);
+    const S = D.students[sk] || (D.students[sk] = { name: x.name, classe: x.classe, tries: [], paper: false });
+    if (x.paper) S.paper = true; else S.tries.push(x.r);
   }
   for (const D of Object.values(devoirs)) {
     for (const S of Object.values(D.students)) {
+      if (!S.tries.length) continue;
       S.tries.sort((p, q) => p.time - q.time);
       S.first = S.tries[0]; S.lastT = S.tries[S.tries.length - 1];
       S.best = S.tries.reduce((m, t) => (t.good > m.good || (t.good === m.good && t.helped < m.helped) ? t : m), S.tries[0]);
     }
   }
-  return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.valid || !x.nameOk) };
+  return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.paper && (!x.valid || !x.nameOk)) };
 }
 
 
-/* ---------- Lecture des lignes de la table ---------- */
-const WANT = { name: 'Prénom', code: 'Code', classe: 'Classe', devoir: 'Devoir' };
-function field(rec, mapped, key) {
-  if (mapped && mapped[key] !== undefined && mapped[key] !== null) return mapped[key];
-  const k = Object.keys(rec).find((c) => normName(c) === normName(WANT[key]));
-  return k ? rec[k] : '';
-}
-function toRows(records, mappings) {
+/* ---------- Lecture des lignes de la table ----------
+   On reconnaît les colonnes par leur nom (Prénom, Code, Classe, Devoir) si elles sont nommées ainsi ;
+   sinon (colonnes A, B, C…), on trouve la colonne qui contient un code et on prend :
+   la colonne juste avant = prénom, juste après = classe, puis devoir (l'ordre du formulaire). */
+const CODE_RE = /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/;
+const PAPER_RE = /^PAPIER-(\d+)$/;
+const str = (v) => (v === null || v === undefined ? '' : String(v)).trim();
+function toRows(records) {
   return records.map((rec) => {
-    const mapped = mappings && window.grist ? grist.mapColumnNames(rec) : null;
-    const name = String(field(rec, mapped, 'name') ?? '').trim();
-    const code = String(field(rec, mapped, 'code') ?? '').trim();
-    if (!/^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/.test(code)) return null;
+    const keys = Object.keys(rec).filter((k) => k !== 'id' && !k.startsWith('gristHelper') && !k.startsWith('manualSort'));
+    const named = (w) => keys.find((k) => normName(k) === w);
+    let ck = named('code');
+    if (!ck || !(CODE_RE.test(str(rec[ck])) || PAPER_RE.test(str(rec[ck])))) ck = keys.find((k) => CODE_RE.test(str(rec[k])) || PAPER_RE.test(str(rec[k])));
+    if (!ck) return null;
+    const i = keys.indexOf(ck);
+    const get = (w, off) => { const k = named(w); return str(k ? rec[k] : rec[keys[i + off]]); };
+    const pm = str(rec[ck]).match(PAPER_RE);
+    if (pm) return { name: get('prenom', -1), classe: get('classe', 1), devoir: get('devoir', 2), paper: Number(pm[1]), valid: false, nameOk: false };
+    const code = str(rec[ck]);
+    const name = get('prenom', -1), classe = get('classe', 1), devoir = get('devoir', 2);
     const r = readCode(code);
     const valid = !!r && !r.invalid;
-    return { name, classe: String(field(rec, mapped, 'classe') ?? '').trim(), devoir: String(field(rec, mapped, 'devoir') ?? '').trim(), code, r: valid ? r : null, valid,
-      nameOk: valid && !!normName(name) && h8(normName(name)) === r.name };
+    return { name, classe, devoir, code, r: valid ? r : null, valid, nameOk: valid && !!normName(name) && h8(normName(name)) === r.name };
   }).filter(Boolean);
 }
 
@@ -129,12 +138,14 @@ function render() {
   let studs = [];
   if (D) {
     studs = Object.values(D.students).filter((S) => !fClasse || S.classe === fClasse);
-    studs.sort(sortBy === 'score' ? (p, q) => pickT(p).good - pickT(q).good || p.name.localeCompare(q.name, 'fr') : (p, q) => p.name.localeCompare(q.name, 'fr'));
-    const avg = studs.length ? studs.reduce((m, S) => m + pickT(S).good, 0) / studs.length : 0;
-    const low = studs.filter((S) => pickT(S).good / D.n < 0.5);
-    h += `<p class="sum"><b>${studs.length}</b> élève${studs.length > 1 ? 's ont' : ' a'} fait ce devoir${fClasse ? ` en ${esc(fClasse)}` : ''} · moyenne <b>${fmt(avg)} / ${D.n}</b>${low.length ? ` · <span class="ko-t">${low.length} sous la moitié</span>` : ''}</p>
+    const sv = (S) => (S.tries.length ? pickT(S).good : -1);
+    studs.sort(sortBy === 'score' ? (p, q) => sv(p) - sv(q) || p.name.localeCompare(q.name, 'fr') : (p, q) => p.name.localeCompare(q.name, 'fr'));
+    const online = studs.filter((S) => S.tries.length), paperOnly = studs.filter((S) => !S.tries.length);
+    const avg = online.length ? online.reduce((m, S) => m + pickT(S).good, 0) / online.length : 0;
+    const low = online.filter((S) => pickT(S).good / D.n < 0.5);
+    h += `<p class="sum"><b>${online.length}</b> élève${online.length > 1 ? 's ont' : ' a'} fait ce devoir en ligne${fClasse ? ` en ${esc(fClasse)}` : ''}${online.length ? ` · moyenne <b>${fmt(avg)} / ${D.n}</b>` : ''}${low.length ? ` · <span class="ko-t">${low.length} sous la moitié</span>` : ''}${paperOnly.length ? ` · <span class="warn-t">📝 ${paperOnly.length} sur papier, à vérifier</span>` : ''}</p>
       <div class="wrap"><table><thead><tr><th class="sortable" data-s="name" title="Trier par prénom">Élève${sortBy === 'name' ? ' ▲' : ''}</th><th>Classe</th><th class="sortable" data-s="score" title="Trier par score">Score retenu${sortBy === 'score' ? ' ▲' : ''}</th><th>Aide</th><th>Essais</th><th>Meilleur</th><th>Dernier envoi</th></tr></thead>
-      <tbody>${studs.map((S) => { const t = pickT(S); return `<tr><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td><span class="sc ${scoreCls(t.good, D.n)}">${t.good} / ${D.n}</span></td><td>${t.helped ? `${t.helped} avec aide` : 'sans aide'}</td><td>${S.tries.length}</td><td>${S.best.good} / ${D.n}</td><td>${nowStr(new Date(S.lastT.time)).replace(/^le /, '')}</td></tr>`; }).join('')}</tbody></table></div>`;
+      <tbody>${studs.map((S) => { if (!S.tries.length) return `<tr class="paper-row"><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td colspan="5"><span class="sc sc-paper">📝 Sur papier — à vérifier</span></td></tr>`; const t = pickT(S); return `<tr><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td><span class="sc ${scoreCls(t.good, D.n)}">${t.good} / ${D.n}</span>${S.paper ? ' <span class="small muted">+ papier</span>' : ''}</td><td>${t.helped ? `${t.helped} avec aide` : 'sans aide'}</td><td>${S.tries.length}</td><td>${S.best.good} / ${D.n}</td><td>${nowStr(new Date(S.lastT.time)).replace(/^le /, '')}</td></tr>`; }).join('')}</tbody></table></div>`;
     if (fClasse) {
       let roster = ''; try { roster = localStorage.getItem(ROSTER(fClasse)) || ''; } catch (e) { /* rien */ }
       const names = roster.split(/\n+/).map((x) => x.trim()).filter(Boolean);
@@ -154,7 +165,7 @@ function render() {
   app.querySelectorAll('th.sortable').forEach((th) => th.addEventListener('click', () => { sortBy = th.dataset.s; saveF(); render(); }));
   app.querySelector('#roster')?.addEventListener('change', (e) => { try { localStorage.setItem(ROSTER(fClasse), e.target.value); } catch (_) { /* rien */ } render(); });
   app.querySelector('#copy')?.addEventListener('click', async (e) => {
-    const tsv = ['Élève\tClasse\tScore\tSur\tAide\tEssais', ...studs.map((S) => { const t = pickT(S); return `${S.name}\t${S.classe}\t${t.good}\t${D.n}\t${t.helped}\t${S.tries.length}`; })].join('\n');
+    const tsv = ['Élève\tClasse\tScore\tSur\tAide\tEssais', ...studs.map((S) => { if (!S.tries.length) return `${S.name}\t${S.classe}\tpapier (à vérifier)\t${D.n}\t\t0`; const t = pickT(S); return `${S.name}\t${S.classe}\t${t.good}\t${D.n}\t${t.helped}\t${S.tries.length}`; })].join('\n');
     try { await navigator.clipboard.writeText(tsv); e.target.textContent = '✔ Copié'; } catch (_) { e.target.textContent = 'Copie impossible'; }
   });
 }
@@ -162,7 +173,7 @@ function render() {
 if (window.grist) {
   // Pas de correspondance de colonnes à régler : on reconnaît Prénom, Code, Classe, Devoir par leur nom
   grist.ready({ requiredAccess: 'read table' });
-  grist.onRecords((records) => { data = buildBilan(toRows(records, null)); render(); });
+  grist.onRecords((records) => { data = buildBilan(toRows(records)); render(); });
 } else {
   app.innerHTML = '<p class="empty">Cette page s\'utilise <b>à l\'intérieur de Grist</b>, comme widget personnalisé.<br><span class="small">Dans ton document Grist : Ajouter → Ajouter un widget à la page → Personnalisé → saisis l\'adresse de cette page.</span></p>';
 }

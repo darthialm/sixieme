@@ -759,3 +759,31 @@ table.bilan td:first-child { white-space: normal; }
 .gr-status.ko-t { background: var(--ko-soft); border-color: var(--ko); }
 .gr-status.warn-t { background: var(--warn-soft); border-color: var(--warn); }
 .widget-box { border-color: var(--accent); background: var(--accent-soft); }
+.mid-inp { width: 13em; } #dv-classe { font: inherit; padding: 9px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); } #dv-classe.wrong { border-color: var(--ko); background: var(--ko-soft); }
+.cl-select { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); margin: 0 4px; min-width: 9em; } .classes-box { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0; } .classes-box textarea { width: 100%; font: inherit; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); margin-top: 6px; }
+
+/* Devoir sur papier */
+.paper-bar { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin-bottom: 14px; }
+.paper-st { font-weight: 700; margin: 4px 0; }
+.paper-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 10px; font-size: 1.1rem; }
+.paper-head span { color: var(--muted); font-size: .95rem; }
+.pq { break-inside: avoid; page-break-inside: avoid; padding: 6px 0 10px; border-bottom: 1px dashed var(--line); }
+.pq h3 { margin: 6px 0; }
+.pq .blank { display: inline-block; min-width: 6em; border-bottom: 1.5px solid var(--ink); height: 1.2em; vertical-align: bottom; }
+.pq .box { font-size: 1.2em; margin-right: 4px; }
+.pq .as-text { border: 1.5px solid var(--line); border-radius: 8px; padding: 0 6px; display: inline-block; }
+.pq .digits .gap.as-text { border: none; width: 6px; padding: 0; }
+.pq .paper-board { height: 9cm; border: 1.5px dashed var(--muted); border-radius: 10px; display: grid; place-items: center; color: var(--muted); }
+.paper-row td { background: var(--warn-soft); }
+.sc-paper { background: var(--warn-soft); color: var(--warn); }
+@media print {
+  body * { visibility: hidden; }
+  .paper-sheet, .paper-sheet * { visibility: visible; }
+  .paper-sheet { position: absolute; left: 0; top: 0; width: 100%; color: #000; }
+  .top, .foot, .no-print, .update-banner { display: none !important; }
+  .nl-svg { min-width: 0 !important; }
+}
+.pq .blank.long { min-width: 18em; }
+.pq .paper-geo { width: 16cm; max-width: 100%; height: auto; border: 1px solid var(--line); background: #fff; display: block; }
+.pq .paper-geo .grid { stroke: #ddd; }
+@media print { .pq .paper-geo { width: 16cm !important; max-width: none; height: 11cm !important; } }
