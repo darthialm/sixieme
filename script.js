@@ -2855,7 +2855,58 @@ function renderChapterHome(ch) {
    #/devoir/clé1,clé2/nombre
    ========================================================= */
 const siteURL = () => location.href.split('#')[0];
-const devoirHash = (keys, n) => `#/devoir/${keys.join(',')}/${n}`;
+const devoirHash = (keys, n, extra = '') => `#/devoir/${keys.join(',')}/${n}${extra}`;
+
+/* ---------- Envoi automatique des résultats dans un formulaire Google ----------
+   Le professeur colle le « lien prérempli » de son formulaire (6 questions, dans l'ordre :
+   Prénom, Code, Classe, Devoir, Score, Détail). Le lien du devoir transporte l'identifiant
+   du formulaire : /f=<id>~<entrée1>~…~<entrée6>. */
+const FORM_FIELDS = ['Prénom', 'Code', 'Classe', 'Devoir', 'Score', 'Détail'];
+function parsePrefill(url) {
+  const m = String(url).match(/forms\/d\/e\/([\w-]+)\/(?:viewform|formResponse)/);
+  if (!m) return null;
+  const entries = [...String(url).matchAll(/entry\.(\d+)=/g)].map((x) => x[1]);
+  return { id: m[1], entries };
+}
+const formToSeg = (f) => `/f=${f.id}~${f.entries.join('~')}`;
+function segToForm(seg) { const p = seg.split('~'); return p.length === 7 && /^[\w-]{20,}$/.test(p[0]) && p.slice(1).every((x) => /^\d+$/.test(x)) ? { id: p[0], entries: p.slice(1) } : null; }
+function sendToForm(form, values) {
+  const body = new URLSearchParams();
+  form.entries.forEach((e, i) => body.append('entry.' + e, values[i] ?? ''));
+  return fetch(`https://docs.google.com/forms/d/e/${form.id}/formResponse`, { method: 'POST', mode: 'no-cors', body });
+}
+/* ---------- Grist (grist.numerique.gouv.fr) ----------
+   Lien d'un formulaire publié : https://…/o/docs/forms/<clé>/<n° de vue>
+   Un formulaire publié accepte l'ajout de lignes sans clé secrète (pas de lecture possible). */
+function parseGristUrl(url) {
+  const m = String(url).trim().match(/^(https:\/\/[^\s?#]+?)\/forms\/([A-Za-z0-9]+)\/(\d+)/);
+  return m ? { a: m[1], k: m[2], v: m[3] } : null;
+}
+const gristFormUrl = (g) => `${g.a}/forms/${g.k}/${g.v}`;
+const b64e = (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64d = (str) => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
+const gristToSeg = (g) => '/g=' + b64e(JSON.stringify(g));
+function segToGrist(seg) {
+  try { const g = JSON.parse(b64d(seg)); return g && /^https:\/\//.test(g.a) && /^[A-Za-z0-9]+$/.test(g.k) ? g : null; } catch (e) { return null; }
+}
+const GRIST_WANT = ['prenom', 'code', 'classe', 'devoir', 'score', 'detail'];
+async function gristStructure(g) {
+  const r = await fetch(`${g.a}/api/s/${g.k}/forms/${g.v}`);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  const fields = Object.values(j.formFieldsById || {});
+  const cols = GRIST_WANT.map((w) => (fields.find((f) => normName(f.question || '') === w) || fields.find((f) => normName(f.colId || '') === w) || {}).colId || null);
+  return { t: j.formTableId, cols };
+}
+async function gristSend(g, values) {
+  const fields = {};
+  g.c.forEach((c, i) => { if (c) fields[c] = values[i] ?? ''; });
+  const r = await fetch(`${g.a}/api/s/${g.k}/tables/${encodeURIComponent(g.t)}/records`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ records: [{ fields }] }),
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r;
+}
 const nowStr = (d = new Date()) => `le ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -2892,9 +2943,15 @@ function readCode(str) {
 /* ---------- Devoir : prénom, série, carte de résultat ---------- */
 let devoirSpec = null;
 function routeDevoir(spec) {
-  const [ks, nS] = spec.split('/');
+  const [ks, nS, ...more] = spec.split('/');
   const keys = (ks || '').split(',').filter((k) => GENS[k]);
   const n = clamp(parseInt(nS, 10) || 10, 1, 40);
+  let classe = '', form = null;
+  more.forEach((seg) => {
+    if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 20); } catch (e) { classe = ''; } }
+    if (seg.startsWith('f=')) { const f = segToForm(seg.slice(2)); if (f) form = { kind: 'google', ...f }; }
+    if (seg.startsWith('g=')) { const g = segToGrist(seg.slice(2)); if (g) form = { kind: g.t ? 'grist' : 'manual', ...g }; }
+  });
   const page = document.querySelector('.page[data-p="devoir"]');
   const head = page.querySelector('.devoir-head'), ex = page.querySelector('.devoir-ex'), start = page.querySelector('.devoir-start');
   if (!keys.length) {
@@ -2904,18 +2961,18 @@ function routeDevoir(spec) {
   }
   const chs = [...new Set(keys.map((k) => GENS[k].ch))];
   const canon = `${keys.join(',')}/${n}`;
-  if (canon === devoirSpec) return { ch: chs[0] };
-  devoirSpec = canon;
+  if (spec === devoirSpec) return { ch: chs[0] };
+  devoirSpec = spec;
   const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées';
   head.innerHTML = `<p class="kicker">Devoir</p><h1>${title}</h1>
-    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai. À la fin, tu obtiendras ton résultat et un code pour ton professeur.</p>
+    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai. ${form && form.kind !== 'manual' ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' : form ? 'À la fin, tu recopieras ton <b>code</b> dans le formulaire de ton professeur (un lien te sera donné).' : 'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
     <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
   ex.hidden = true; ex.innerHTML = '';
   start.hidden = false;
   start.innerHTML = `<label for="dv-name"><b>Écris ton prénom pour commencer :</b></label>
     <div class="prof-row"><input type="text" id="dv-name" autocomplete="given-name" maxlength="30" value="${esc(stats._name || '')}" aria-label="Ton prénom">
     <button type="button" class="btn primary" id="dv-go">Commencer le devoir →</button></div>
-    <p class="small muted">Ton prénom reste sur cet appareil : il s'affiche seulement sur ta carte de résultat.</p>`;
+    <p class="small muted">${form ? 'Ton prénom et ton résultat seront transmis à ton professeur, et à personne d\'autre.' : 'Ton prénom reste sur cet appareil : il s\'affiche seulement sur ta carte de résultat.'}</p>`;
   const go = () => {
     const name = start.querySelector('#dv-name').value.trim();
     if (!normName(name)) { start.querySelector('#dv-name').classList.add('wrong'); start.querySelector('#dv-name').focus(); return; }
@@ -2931,17 +2988,39 @@ function routeDevoir(spec) {
         const d = new Date();
         const code = makeCode({ good, n: limit, helped: helpedCount, attempt: rec.tries, time: d.getTime(), spec: canon, name });
         rec.best = Math.max(rec.best || 0, good); rec.last = good; rec.at = d.getTime(); persist();
+        if (form) {
+          const values = [name, code, classe, keys.length === 1 ? title : `${title} : ${keys.map((k) => GENS[k].label).join(', ')}`, `${good}/${limit}`,
+            `${helpedCount} avec aide · essai ${rec.tries} · terminé ${nowStr(d)}`];
+          const planB = (el, why, cls = 'ko') => {
+            el.className = 'rc-send ' + cls;
+            el.innerHTML = `${why} Ouvre le <a href="${gristFormUrl(form)}" target="_blank" rel="noopener"><b>formulaire de ton professeur</b></a> et recopie ton prénom, ton score (${good}/${limit}) et ton code : <b>${code}</b> <button type="button" class="mini">Copier le code</button>`;
+            el.querySelector('button').addEventListener('click', (e) => { navigator.clipboard?.writeText(code).then(() => { e.target.textContent = '✔ Copié'; }).catch(() => {}); });
+          };
+          const doSend = () => {
+            const el = document.getElementById('rc-send'); if (!el) return;
+            if (form.kind === 'manual') { planB(el, '📝', 'todo'); return; }
+            el.className = 'rc-send'; el.textContent = '📨 Envoi du résultat à ton professeur…';
+            (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
+              .then(() => { el.className = 'rc-send ok'; el.textContent = '✔ Résultat envoyé à ton professeur.'; })
+              .catch(() => {
+                if (form.kind === 'grist') { planB(el, '⚠ L\'envoi automatique n\'a pas marché.'); return; }
+                el.className = 'rc-send ko'; el.innerHTML = '⚠ Envoi impossible (pas de connexion ?). <button type="button" class="mini">Réessayer</button> Sinon, fais une capture d\'écran.'; el.querySelector('button').addEventListener('click', doSend);
+              });
+          };
+          setTimeout(doSend, 0);
+        }
         return `<div class="result-card" id="result-card">
           <p class="rc-kicker">Révisions 6<sup>e</sup> · Devoir</p>
-          <p class="rc-name">${esc(name)}</p>
+          <p class="rc-name">${esc(name)}${classe ? ` <span class="rc-cl">${esc(classe)}</span>` : ''}</p>
           <p class="rc-title">${title}</p>
           <p class="note">${good} / ${limit}</p>
           <p>${good} réussite${good > 1 ? 's' : ''} sur ${limit} question${limit > 1 ? 's' : ''}${helpedCount ? `, dont ${helpedCount} avec de l'aide` : ', sans aide'}.</p>
           <p class="rc-meta">Terminé ${nowStr(d)} · essai n° ${rec.tries}</p>
           <p class="rc-code">Code : <b>${code}</b></p>
+          ${form ? '<p class="rc-send" id="rc-send"></p>' : ''}
           {{LIST}}
         </div>
-        <p class="small center">📸 Fais une <b>capture d'écran</b> de ce cadre, ou recopie le <b>code</b> pour ton professeur.</p>`;
+        ${form ? '' : '<p class="small center">📸 Fais une <b>capture d\'écran</b> de ce cadre, ou recopie le <b>code</b> pour ton professeur.</p>'}`;
       },
       makeGen() {
         let bag = [], last = null;
@@ -3001,12 +3080,69 @@ function renderProf() {
   const update = () => {
     const ks = sel();
     if (!ks.length) { out.value = ''; out.placeholder = 'Coche au moins une notion ci-dessous.'; open.hidden = true; projo.hidden = true; return; }
-    out.value = siteURL() + devoirHash(ks, nSel.value);
-    open.href = devoirHash(ks, nSel.value); open.hidden = false;
+    out.value = siteURL() + devoirHash(ks, nSel.value, profExtra());
+    open.href = devoirHash(ks, nSel.value, profExtra()); open.hidden = false;
     projo.href = `#/projo/${ks.join(',')}`; projo.hidden = false;
   };
   host.addEventListener('change', update);
   nSel.addEventListener('change', update);
+  // Classe et formulaire (Grist ou Google)
+  const clInp = document.getElementById('prof-classe'), fInp = document.getElementById('prof-form'), fUse = document.getElementById('prof-form-use'), fSt = document.getElementById('prof-form-status'), fTest = document.getElementById('prof-form-test');
+  const FKEY = 'revisions6e-form', GKEY = 'revisions6e-grist';
+  const loadG = () => { try { return JSON.parse(localStorage.getItem(GKEY) || 'null'); } catch (e) { return null; } };
+  const saveG = (g) => { try { if (g) localStorage.setItem(GKEY, JSON.stringify(g)); else localStorage.removeItem(GKEY); } catch (e) { /* rien */ } };
+  /** destination actuellement reliée : segment à ajouter aux liens, ou null */
+  const destSeg = () => {
+    const pf = parsePrefill(fInp.value);
+    if (pf && pf.entries.length === 6) return formToSeg(pf);
+    const pg = parseGristUrl(fInp.value), g = loadG();
+    if (pg && g && g.k === pg.k && g.v === pg.v) return gristToSeg(g);
+    return null;
+  };
+  const say = (cls, html) => { fSt.className = 'small ' + cls; fSt.innerHTML = html; };
+  const showForm = () => {
+    const v = fInp.value.trim(), pf = parsePrefill(v), pg = parseGristUrl(v), g = loadG();
+    fTest.hidden = !pg;
+    fUse.disabled = !destSeg();
+    if (!v) say('muted', 'Aucun formulaire relié : les élèves te donneront leur code ou une capture d\'écran.');
+    else if (pf) say(pf.entries.length === 6 ? 'ok-t' : 'ko-t', pf.entries.length === 6 ? '✔ Formulaire Google relié : 6 questions détectées.' : `Il faut exactement 6 questions remplies dans le lien prérempli (j'en trouve ${pf.entries.length}).`);
+    else if (pg && g && g.k === pg.k && g.v === pg.v) say(g.t ? 'ok-t' : 'warn-t', g.t ? '✔ Formulaire Grist relié : les résultats arriveront automatiquement dans ta table.' : '⚠ Formulaire Grist relié en <b>mode manuel</b> : à la fin du devoir, l\'élève a un lien vers ton formulaire pour y recopier son code. Tu pourras retester une fois le site en ligne.');
+    else if (pg) say('muted', 'Lien Grist reconnu. Clique sur « Relier et tester ».');
+    else say('ko-t', 'Je ne reconnais pas ce lien : colle le lien du formulaire Grist publié (…/forms/…/…) ou le lien prérempli d\'un formulaire Google.');
+  };
+  fTest.addEventListener('click', async () => {
+    const pg = parseGristUrl(fInp.value); if (!pg) return;
+    fTest.disabled = true; say('muted', '⏳ Lecture du formulaire Grist…');
+    let st;
+    try { st = await gristStructure(pg); }
+    catch (e) {
+      saveG({ ...pg }); fTest.disabled = false; showForm(); fUse.checked = true; update();
+      say('warn-t', `⚠ Grist ne laisse pas ce site lire le formulaire (${esc(e.message)}). <b>Plan B activé</b> : à la fin du devoir, l'élève aura un lien vers ton formulaire pour y recopier son code ; tu vérifieras ensuite tous les codes dans la partie 3. Si tu déplaces le site (sur la Forge par exemple), clique à nouveau sur « Relier et tester » depuis la nouvelle adresse.`);
+      return;
+    }
+    const missing = GRIST_WANT.filter((w, i) => !st.cols[i]);
+    if (!st.t || missing.length) { fTest.disabled = false; say('ko-t', `Il manque des champs dans ton formulaire : ${missing.map((w) => FORM_FIELDS[GRIST_WANT.indexOf(w)]).join(', ')}. Ajoute-les (avec ces noms exacts), publie à nouveau, puis reteste.`); return; }
+    const g = { ...pg, t: st.t, c: st.cols };
+    say('muted', '⏳ Envoi d\'une ligne d\'essai…');
+    try { await gristSend(g, ['TEST', '—', '', 'Test de liaison du site', '', 'envoyé ' + nowStr()]); saveG(g); say('ok-t', '✔ Ça marche ! Une ligne « TEST » vient d\'arriver dans ta table Grist (tu peux la supprimer). Les liens de devoir enverront désormais les résultats automatiquement.'); }
+    catch (e) { saveG({ ...pg }); say('warn-t', `⚠ Grist a refusé la ligne d'essai (${esc(e.message)}). <b>Plan B activé</b> : l'élève aura un lien vers ton formulaire pour y recopier son code.`); }
+    fTest.disabled = false; fUse.disabled = false; fUse.checked = true; update();
+    if (!fSt.className.includes('ok-t') && !fSt.className.includes('warn-t')) showForm();
+  });
+  window.profExtra = () => {
+    let x = '';
+    const c = clInp.value.trim().replace(/\//g, '-');
+    if (c) x += '/c=' + encodeURIComponent(c);
+    const d = destSeg();
+    if (d && fUse.checked) x += d;
+    return x;
+  };
+  try { fInp.value = localStorage.getItem(FKEY) || ''; } catch (e) { /* rien */ }
+  fUse.checked = !!destSeg();
+  fInp.addEventListener('input', () => { try { localStorage.setItem(FKEY, fInp.value.trim()); } catch (e) { /* rien */ } fUse.checked = !!destSeg(); showForm(); update(); });
+  clInp.addEventListener('input', update);
+  fUse.addEventListener('change', update);
+  showForm();
   const copy = async (txt, btn) => {
     try { await navigator.clipboard.writeText(txt); } catch (e) { out.value = txt; out.select(); try { document.execCommand('copy'); } catch (_) { /* rien */ } }
     const old = btn.textContent; btn.textContent = '✔ Copié'; setTimeout(() => { btn.textContent = old; }, 1500);
@@ -3015,7 +3151,7 @@ function renderProf() {
     const all = e.target.closest('.prof-all');
     if (all) { const fs = all.closest('fieldset'), cbs = [...fs.querySelectorAll('input')], on = !cbs.every((c) => c.checked); cbs.forEach((c) => { c.checked = on; }); update(); return; }
     const one = e.target.closest('.prof-one');
-    if (one) { e.preventDefault(); copy(siteURL() + devoirHash([one.dataset.k], nSel.value), one); return; }
+    if (one) { e.preventDefault(); copy(siteURL() + devoirHash([one.dataset.k], nSel.value, profExtra()), one); return; }
     const cp = e.target.closest('.prof-copy');
     if (cp) copy(cp.dataset.url, cp);
   });
@@ -3029,8 +3165,14 @@ function renderProf() {
     const m = link.match(/#\/devoir\/([^/\s]+)\/(\d+)/);
     if (m) { const ks = m[1].split(',').filter((k) => GENS[k]); specH = h8(`${ks.join(',')}/${clamp(parseInt(m[2], 10) || 10, 1, 40)}`); }
     const rows = lines.map((l) => {
-      const cm2 = l.match(/([0-9A-Za-z]{4})[\s-]*([0-9A-Za-z]{5})[\s-]*([0-9A-Za-z]{5})\s*$/);
-      const name = cm2 ? l.slice(0, cm2.index).replace(/[:;,\-–\t]+\s*$/, '').trim() : l;
+      let cm2, name;
+      const cells = l.split('\t').map((x) => x.trim());
+      const ci = cells.findIndex((x) => /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/.test(x));
+      if (cells.length > 1 && ci > 0) { cm2 = cells[ci].replace(/-/g, '').match(/(.{4})(.{5})(.{5})/); name = cells[ci - 1]; }
+      else {
+        cm2 = l.match(/([0-9A-Za-z]{4})[\s-]*([0-9A-Za-z]{5})[\s-]*([0-9A-Za-z]{5})\s*$/);
+        name = cm2 ? l.slice(0, cm2.index).replace(/[:;,\-–\t]+\s*$/, '').trim() : l;
+      }
       const r = cm2 ? readCode(cm2[1] + cm2[2] + cm2[3]) : null;
       if (!r || r.invalid) return `<tr class="bad"><td>${esc(name || '—')}</td><td colspan="5">Code non valide (erreur de recopie ?)</td></tr>`;
       const nameOk = name ? (h8(normName(name)) === r.name ? '✔' : '✘ autre prénom') : '—';

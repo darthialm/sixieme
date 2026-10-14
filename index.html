@@ -60,20 +60,50 @@
       <p class="lead">Choisis une ou plusieurs notions, puis copie le lien du devoir pour tes élèves (ENT, Pronote…), ou lance-les au vidéoprojecteur. <button type="button" class="linkbtn" id="prof-relock">Verrouiller cet espace</button></p>
       <div class="prof-out card">
         <h2>1. Donner un devoir</h2>
-        <label for="prof-n"><b>Nombre de questions :</b></label>
-        <select id="prof-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+        <div class="prof-opts">
+          <span><label for="prof-n"><b>Nombre de questions :</b></label>
+          <select id="prof-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></span>
+          <span><label for="prof-classe"><b>Classe</b> (facultatif) :</label>
+          <input type="text" id="prof-classe" class="short-inp" maxlength="20" placeholder="6B"></span>
+          <label class="prof-chk"><input type="checkbox" id="prof-form-use" disabled> Envoyer les résultats dans mon formulaire (voir 2.)</label>
+        </div>
         <div class="prof-row">
           <input type="text" id="prof-link" readonly aria-label="Lien du devoir">
           <button type="button" class="btn primary" id="prof-copy-link">Copier le lien</button>
           <a class="btn" id="prof-open" hidden>Essayer</a>
           <a class="btn" id="prof-projo" hidden>📽 Vidéoprojecteur</a>
         </div>
-        <p class="small muted">L'élève écrit son prénom avant de commencer. À la fin, il obtient une carte de résultat (prénom, score, aide utilisée, date, numéro d'essai) à prendre en capture d'écran, et un <b>code</b> à te recopier. Rien n'est envoyé automatiquement.</p>
+        <p class="small muted">L'élève écrit son prénom avant de commencer. À la fin, il obtient une carte de résultat (prénom, score, aide utilisée, date, numéro d'essai, code). Si ton formulaire Google est relié, le résultat t'est <b>envoyé automatiquement</b> ; sinon, l'élève te montre une capture d'écran ou te recopie son code.</p>
       </div>
       <div id="prof-list"></div>
       <div class="card">
-        <h2>2. Vérifier les codes des élèves</h2>
-        <p class="small">Colle une ligne par élève : le prénom puis le code, par exemple <code>Léa 7K3Q-9XW2A-M4PRT</code>. Le site retrouve le score, l'aide, l'essai et la date, et vérifie que le code correspond bien à ce prénom.</p>
+        <h2>2. Recevoir les résultats automatiquement</h2>
+        <p class="small">Les résultats de toute la classe arrivent dans un tableau, une ligne par élève, sans rien recopier. À faire <b>une seule fois</b>, avec <b>Grist</b> (apps.education.fr) :</p>
+        <ol class="small steps-form">
+          <li>Dans Grist, crée un document avec une table de <b>6 colonnes</b> nommées exactement : <b>Prénom, Code, Classe, Devoir, Score, Détail</b>.</li>
+          <li>Ajoute une vue <b>Formulaire</b> sur cette table, avec ces 6 champs, puis clique sur <b>Publier</b>.</li>
+          <li>Copie le lien du formulaire publié (il ressemble à <code>…/o/docs/forms/…/1</code>), colle-le ci-dessous, puis clique sur <b>Relier et tester</b>.</li>
+        </ol>
+        <div class="prof-row">
+          <input type="text" id="prof-form" class="wide-inp" placeholder="https://grist.numerique.gouv.fr/o/docs/forms/…/1" aria-label="Lien du formulaire">
+          <button type="button" class="btn primary" id="prof-form-test" hidden>Relier et tester</button>
+        </div>
+        <p id="prof-form-status" class="small muted"></p>
+        <p class="small">Le test envoie une ligne « TEST » dans ta table : si elle arrive, tout fonctionne. Sinon, le site passe tout seul en <b>mode manuel</b> : à la fin du devoir, l'élève a un lien vers ton formulaire pour y recopier son code, et tu vérifies ensuite tous les codes d'un coup (partie 3).</p>
+        <details class="howto small">
+          <summary>Utiliser plutôt un formulaire Google</summary>
+          <ol class="steps-form">
+            <li>Sur forms.google.com, crée un formulaire avec 6 questions « Réponse courte », dans cet ordre : Prénom, Code, Classe, Devoir, Score, Détail.</li>
+            <li>Paramètres → Réponses : ne collecte pas les e-mails, et décoche « Limiter aux utilisateurs de [ton établissement] ».</li>
+            <li>Réponses → Associer à Sheets.</li>
+            <li>⋮ → Obtenir le lien prérempli : écris <b>x</b> dans les 6 réponses, « Obtenir le lien », « Copier le lien », puis colle-le dans le champ ci-dessus.</li>
+          </ol>
+        </details>
+        <p class="small muted">Ensuite, les liens de devoir que tu copies plus haut utilisent ce formulaire. Ce réglage reste enregistré sur cet appareil. Données transmises : prénom, classe, devoir, score, date, code. Vérifie avec ton établissement que l'outil choisi est autorisé.</p>
+      </div>
+      <div class="card">
+        <h2>3. Vérifier les codes (facultatif)</h2>
+        <p class="small">Colle une ligne par élève : le prénom puis le code, par exemple <code>Léa 7K3Q-9XW2A-M4PRT</code>, ou directement des lignes copiées depuis ton tableau Grist ou Google Sheets. Le site retrouve le score, l'aide, l'essai et la date, et vérifie que le code correspond bien à ce prénom.</p>
         <textarea id="prof-codes" rows="6" aria-label="Codes des élèves" placeholder="Léa 7K3Q-9XW2A-M4PRT&#10;Noah 2BX4-…"></textarea>
         <label class="small" for="prof-codes-link">Lien du devoir (facultatif, pour vérifier que c'est le bon devoir) :</label>
         <input type="text" id="prof-codes-link" class="wide-inp" aria-label="Lien du devoir à vérifier">
@@ -82,7 +112,7 @@
         <p class="small muted">Le code est une protection légère contre les recopies entre élèves, pas un système infalsifiable.</p>
       </div>
       <div class="card">
-        <h2>3. Vidéoprojecteur</h2>
+        <h2>4. Vidéoprojecteur</h2>
         <p class="small">Coche des notions plus haut puis clique sur « 📽 Vidéoprojecteur ». Une question s'affiche en grand ; <kbd>R</kbd> affiche la réponse, <kbd>→</kbd> passe à la suivante, <kbd>F</kbd> met en plein écran. Un minuteur est disponible.</p>
       </div>
     </div>
