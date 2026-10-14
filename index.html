@@ -29,6 +29,7 @@
       <h1>Quel chapitre veux-tu réviser ?</h1>
       <p class="lead">Choisis un chapitre : tu y trouveras la fiche de cours, des exercices corrigés qui changent à chaque fois, et un contrôle blanc noté sur 20.</p>
     </div>
+    <div id="auto-card"></div>
     <div class="chapters" id="chapters"></div>
     <p class="small muted">Ta progression est enregistrée uniquement sur cet appareil.
       <button type="button" id="reset" class="linkbtn">Tout remettre à zéro</button></p>
@@ -39,7 +40,8 @@
   <!-- ===================================================== -->
   <section class="page" data-ch="_" data-p="devoir">
     <div class="devoir-head hero"></div>
-    <div class="exercise devoir-ex"></div>
+    <div class="devoir-start card"></div>
+    <div class="exercise devoir-ex" hidden></div>
   </section>
 
   <!-- ===================================================== -->
@@ -47,18 +49,62 @@
   <!-- ===================================================== -->
   <section class="page" data-ch="_" data-p="prof">
     <h1>Espace professeur</h1>
-    <p class="lead">Choisis une ou plusieurs notions, puis copie le lien et donne-le à tes élèves (ENT, Pronote, cahier de textes…). Le lien ouvre directement une série d'exercices sur ces notions, avec indices, remédiation et correction.</p>
-    <div class="prof-out card">
-      <label for="prof-n"><b>Nombre de questions :</b></label>
-      <select id="prof-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
-      <div class="prof-row">
-        <input type="text" id="prof-link" readonly aria-label="Lien du devoir">
-        <button type="button" class="btn primary" id="prof-copy-link">Copier le lien</button>
-        <a class="btn" id="prof-open" hidden>Essayer</a>
-      </div>
-      <p class="small muted">À la fin de la série, l'élève voit son score (réussites, dont celles obtenues avec de l'aide) avec la date et l'heure. Rien n'est envoyé : demande-lui une capture d'écran si tu veux le résultat. Les questions changent à chaque essai.</p>
+    <div id="prof-lock" class="card lock">
+      <p class="lead">Cet espace est réservé au professeur.</p>
+      <label for="prof-code"><b>Code d'accès :</b></label>
+      <div class="prof-row"><input type="password" id="prof-code" autocomplete="off" aria-label="Code d'accès">
+      <button type="button" class="btn primary" id="prof-unlock">Entrer</button></div>
+      <p class="lock-msg"></p>
     </div>
-    <div id="prof-list"></div>
+    <div id="prof-content" hidden>
+      <p class="lead">Choisis une ou plusieurs notions, puis copie le lien du devoir pour tes élèves (ENT, Pronote…), ou lance-les au vidéoprojecteur. <button type="button" class="linkbtn" id="prof-relock">Verrouiller cet espace</button></p>
+      <div class="prof-out card">
+        <h2>1. Donner un devoir</h2>
+        <label for="prof-n"><b>Nombre de questions :</b></label>
+        <select id="prof-n"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+        <div class="prof-row">
+          <input type="text" id="prof-link" readonly aria-label="Lien du devoir">
+          <button type="button" class="btn primary" id="prof-copy-link">Copier le lien</button>
+          <a class="btn" id="prof-open" hidden>Essayer</a>
+          <a class="btn" id="prof-projo" hidden>📽 Vidéoprojecteur</a>
+        </div>
+        <p class="small muted">L'élève écrit son prénom avant de commencer. À la fin, il obtient une carte de résultat (prénom, score, aide utilisée, date, numéro d'essai) à prendre en capture d'écran, et un <b>code</b> à te recopier. Rien n'est envoyé automatiquement.</p>
+      </div>
+      <div id="prof-list"></div>
+      <div class="card">
+        <h2>2. Vérifier les codes des élèves</h2>
+        <p class="small">Colle une ligne par élève : le prénom puis le code, par exemple <code>Léa 7K3Q-9XW2A-M4PRT</code>. Le site retrouve le score, l'aide, l'essai et la date, et vérifie que le code correspond bien à ce prénom.</p>
+        <textarea id="prof-codes" rows="6" aria-label="Codes des élèves" placeholder="Léa 7K3Q-9XW2A-M4PRT&#10;Noah 2BX4-…"></textarea>
+        <label class="small" for="prof-codes-link">Lien du devoir (facultatif, pour vérifier que c'est le bon devoir) :</label>
+        <input type="text" id="prof-codes-link" class="wide-inp" aria-label="Lien du devoir à vérifier">
+        <p><button type="button" class="btn primary" id="prof-check">Vérifier</button></p>
+        <div id="prof-results"></div>
+        <p class="small muted">Le code est une protection légère contre les recopies entre élèves, pas un système infalsifiable.</p>
+      </div>
+      <div class="card">
+        <h2>3. Vidéoprojecteur</h2>
+        <p class="small">Coche des notions plus haut puis clique sur « 📽 Vidéoprojecteur ». Une question s'affiche en grand ; <kbd>R</kbd> affiche la réponse, <kbd>→</kbd> passe à la suivante, <kbd>F</kbd> met en plein écran. Un minuteur est disponible.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- VIDÉOPROJECTEUR                                        -->
+  <!-- ===================================================== -->
+  <section class="page" data-ch="_" data-p="projo">
+    <div class="projo-stage"></div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- AUTOMATISMES DU JOUR                                   -->
+  <!-- ===================================================== -->
+  <section class="page" data-ch="_" data-p="auto">
+    <div class="hero">
+      <p class="kicker">Tous les chapitres</p>
+      <h1>⚡ Automatismes du jour</h1>
+      <p class="lead auto-info"></p>
+    </div>
+    <div class="exercise auto-ex" style="margin-top:18px"></div>
   </section>
 
   <!-- ===================================================== -->

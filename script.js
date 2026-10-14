@@ -1,6 +1,13 @@
 'use strict';
 
 /* =========================================================
+   RÉGLAGE DU PROFESSEUR
+   Code d'accès à l'Espace professeur : remplace « prof6e » par ton propre code.
+   (Protection légère : un élève très curieux peut lire ce fichier.)
+   ========================================================= */
+const CODE_PROF = 'prof6e';
+
+/* =========================================================
    Outils
    ========================================================= */
 const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
@@ -128,6 +135,7 @@ function mcq(prompt, options, correct, explain, { col = false, label, keepOrder 
 /** Cases à cocher : items [{html, ok, kind}] ; remed(kind, item) pour une case fausse cochée */
 function multiQ(prompt, items, explain, remed, { col = false } = {}) {
   return {
+    _items: items,
     q: `${prompt}<div class="choices${col ? ' col' : ''}">${items.map((it, j) => `<label class="choice${col ? ' text' : ''}"><input type="checkbox" class="cb" data-j="${j}"> <span>${it.html}</span></label>`).join('')}</div>`,
     remediate(r) {
       const cbs = [...r.querySelectorAll('.cb')];
@@ -1334,7 +1342,7 @@ function genCombien() {
   const ans = Math.floor(m / 10 ** (3 - k)), digit = ans % 10;
   return {
     hints: [
-      `Combien de ${word} dans une unité ? (1 = ${k === 1 ? '10 dixièmes' : '100 centièmes'}). Relis ${ficheLink('decimaux1')}.`,
+      `Combien de ${word} dans une unité ? (1 unité, c'est ${k === 1 ? '10 dixièmes' : '100 centièmes'}.) Relis ${ficheLink('decimaux1')}.`,
       'Exemple : dans 83,614, il y a 836 dixièmes et 8 361 centièmes.',
       `Outil : écris le nombre sans la virgule, puis garde tous les chiffres jusqu'au chiffre des ${word} (inclus).`,
     ],
@@ -2160,7 +2168,12 @@ const hlVal = (c, i) => (c.a + i * c.s) / 10 ** c.k;
 const hlLab = (c, i) => i === 0 || (c.a + i * c.s) % (c.s * c.every) === 0;
 const prevLab = (c, i) => { let j = Math.floor(i); while (j > 0 && !hlLab(c, j)) j--; return j; };
 const nextLab = (c, i) => { let j = Math.ceil(i + 1e-9); while (j < c.n && !hlLab(c, j)) j++; return j; };
-function pickTickHL(c) { const opts = []; for (let i = 1; i < c.n; i++) if (!hlLab(c, i)) opts.push(i); return pick(opts); }
+/** graduation non étiquetée, située ENTRE deux nombres écrits (jamais après le dernier) */
+function pickTickHL(c) {
+  const opts = [];
+  for (let i = 1; i < c.n; i++) if (!hlLab(c, i) && hlLab(c, nextLab(c, i))) opts.push(i);
+  return pick(opts);
+}
 
 /* ---------- 1. Lire une abscisse ---------- */
 function genLireHL() {
@@ -2526,8 +2539,8 @@ const GENS = {
   'd-noms': { ch: 'droites', f: genNoms, label: 'Nommer une droite' },
   'd-position': { ch: 'droites', f: genPosition, label: 'Position de deux droites' },
   'd-prop': { ch: 'droites', f: genPropPar, label: 'Deux perpendiculaires à une même droite' },
-  'd-perp': { ch: 'droites', f: genTracePerp, label: 'Tracer une perpendiculaire' },
-  'd-par': { ch: 'droites', f: genTracePar, label: 'Tracer une parallèle' },
+  'd-perp': { ch: 'droites', f: genTracePerp, label: 'Tracer une perpendiculaire', slow: true },
+  'd-par': { ch: 'droites', f: genTracePar, label: 'Tracer une parallèle', slow: true },
   // Chapitre 2 — Nombres décimaux (partie 1)
   'n-rang': { ch: 'decimaux1', f: genRang, label: 'Rang d\'un chiffre' },
   'n-combien': { ch: 'decimaux1', f: genCombien, label: 'Nombre de dizaines, de dixièmes…' },
@@ -2541,13 +2554,13 @@ const GENS = {
   'c-notation': { ch: 'cercle', f: genNotation, label: 'Segment, demi-droite, droite' },
   'c-ecrire': { ch: 'cercle', f: genEcrire, label: 'Bien écrire les notations' },
   'c-milieu': { ch: 'cercle', f: genMilieu, label: 'Milieu d\'un segment' },
-  'c-tracer': { ch: 'cercle', f: genTracer, label: 'Tracer une demi-droite, un milieu' },
+  'c-tracer': { ch: 'cercle', f: genTracer, label: 'Tracer une demi-droite, un milieu', slow: true },
   'c-med-prop': { ch: 'cercle', f: genMedProp, label: 'Propriété de la médiatrice' },
-  'c-med-trace': { ch: 'cercle', f: genMedTrace, label: 'Tracer une médiatrice' },
+  'c-med-trace': { ch: 'cercle', f: genMedTrace, label: 'Tracer une médiatrice', slow: true },
   'c-voc': { ch: 'cercle', f: genVocCercle, label: 'Vocabulaire du cercle' },
   'c-rd': { ch: 'cercle', f: genRayonDiam, label: 'Rayon et diamètre' },
   'c-disque': { ch: 'cercle', f: genDisque, label: 'Cercle et disque' },
-  'c-trace-cercle': { ch: 'cercle', f: genTraceCercle, label: 'Tracer un cercle' },
+  'c-trace-cercle': { ch: 'cercle', f: genTraceCercle, label: 'Tracer un cercle', slow: true },
   // Chapitre 4 — Nombres décimaux (partie 2)
   'e-lire': { ch: 'decimaux2', f: genLireHL, label: 'Lire une abscisse' },
   'e-placer': { ch: 'decimaux2', f: genPlacerHL, label: 'Placer un point' },
@@ -2574,7 +2587,7 @@ try { stats = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { stats
 function persist() { try { localStorage.setItem(STORE, JSON.stringify(stats)); } catch (e) { /* stockage indisponible */ } }
 function saveStat(key, good, helped) {
   const s = stats[key] || (stats[key] = { ok: 0, total: 0, hint: 0 });
-  s.total++;
+  s.total++; s.last = Date.now();
   if (good) { s.ok++; if (helped) s.hint = (s.hint || 0) + 1; }
   persist();
 }
@@ -2718,6 +2731,7 @@ function makeExercise(root, gen, opts = {}) {
     const w = k ? updateWeak(k, res.ok, h) : null;
     if (w && GENS[k]) refreshWeakBadge(GENS[k].ch);
     if (limit) history.push({ label: label(), ok: res.ok, helped: res.ok && h });
+    if (opts.onResult) opts.onResult(k, res.ok, w, label());
     root.classList.add('done');
     qEl.querySelectorAll('input').forEach((i) => { i.disabled = true; });
     fb.className = 'ex-fb ' + (res.ok ? 'ok' : 'ko');
@@ -2727,7 +2741,7 @@ function makeExercise(root, gen, opts = {}) {
     filmButton();
     hintButton();
     bNext.disabled = false;
-    bNext.textContent = limit && count >= limit ? (opts.devoir ? 'Voir mon résultat' : 'Voir ma note') : 'Question suivante →';
+    bNext.textContent = limit && count >= limit ? (opts.exam ? 'Voir ma note' : 'Voir mon résultat') : 'Question suivante →';
     bar();
     bNext.focus({ preventScroll: true });
   }
@@ -2735,15 +2749,8 @@ function makeExercise(root, gen, opts = {}) {
   function summary() {
     const weak = history.filter((x) => !x.ok).length;
     let head;
-    if (opts.devoir) {
-      const k = 'devoir:' + opts.devoirId;
-      stats[k] = { last: good, best: Math.max(good, stats[k]?.best ?? 0), n: limit, at: Date.now() };
-      persist();
-      const d = new Date();
-      head = `<p class="note">${good} / ${limit}</p>
-        <p>${good} réussite${good > 1 ? 's' : ''} sur ${limit} question${limit > 1 ? 's' : ''}${helpedCount ? `, dont ${helpedCount} avec de l'aide` : ''}.</p>
-        <p class="small muted">Devoir terminé le ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Montre ce résultat à ton professeur si il ou elle te le demande.</p>`;
-    } else {
+    if (opts.summary) {
+      head = opts.summary({ good, limit, helpedCount, history });    } else {
       const note = Math.round((good / limit) * 20 * 2) / 2;
       const k = opts.examKey;
       stats[k] = { last: note, best: Math.max(note, stats[k]?.best ?? 0), n: (stats[k]?.n ?? 0) + 1 };
@@ -2752,15 +2759,16 @@ function makeExercise(root, gen, opts = {}) {
       head = `<p class="note">${fmt(note)} / 20</p><p>${good} bonne${good > 1 ? 's' : ''} réponse${good > 1 ? 's' : ''} sur ${limit}. ${advice}</p>`;
     }
     const chs = [...new Set(history.map(() => opts.ch).filter(Boolean))];
-    qEl.innerHTML = `<div class="result">${head}
-      <ul>${history.map((x) => `<li class="${x.ok ? 'ok' : 'ko'}">${x.label}${x.helped ? ' <span class="small muted">(avec aide)</span>' : ''}</li>`).join('')}</ul>
+    const list = `<ul class="res-list">${history.map((x) => `<li class="${x.ok ? 'ok' : 'ko'}">${x.label}${x.helped ? ' <span class="small muted">(avec aide)</span>' : ''}</li>`).join('')}</ul>`;
+    qEl.innerHTML = opts.summary ? head.replace('{{LIST}}', list) : `<div class="result">${head}${list}
       ${weak && chs.length ? `<p><a class="btn primary" href="#/${chs[0]}/erreurs">Retravailler mes erreurs →</a></p>` : ''}</div>`;
     fb.className = 'ex-fb'; fb.innerHTML = ''; hEl.innerHTML = ''; aEl.innerHTML = '';
     bCheck.hidden = true; bHint.hidden = true; bFilm.hidden = true;
-    bNext.textContent = opts.devoir ? 'Recommencer le devoir' : 'Recommencer un contrôle';
+    bNext.textContent = opts.restartLabel || 'Recommencer un contrôle';
     sEl.textContent = ''; cEl.textContent = '';
     restart = () => {
       restart = null; count = 0; good = 0; history = []; helpedCount = 0;
+      if (opts.onRestart) opts.onRestart();
       if (opts.makeGen) gen = opts.makeGen();
       render(true);
     };
@@ -2848,30 +2856,95 @@ function renderChapterHome(ch) {
    ========================================================= */
 const siteURL = () => location.href.split('#')[0];
 const devoirHash = (keys, n) => `#/devoir/${keys.join(',')}/${n}`;
-let devoirSpec = null, devoirCtl = null;
+const nowStr = (d = new Date()) => `le ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- Code de résultat (vérifiable par le professeur) ----------
+   14 caractères = score, nombre de questions, réussites avec aide, numéro d'essai,
+   date et heure (à la minute), empreinte du devoir, empreinte du prénom, clé de contrôle. */
+const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const EPOCH = Date.UTC(2026, 0, 1);
+function h8(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) ^ (h >>> 8) ^ (h >>> 16) ^ (h >>> 24)) & 255; }
+const normName = (s) => String(s).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
+function makeCode({ good, n, helped, attempt, time, spec, name }) {
+  const mins = clamp(Math.floor((time - EPOCH) / 60000), 0, 2 ** 21 - 1);
+  let v = 0n;
+  const push = (x, b) => { v = (v << BigInt(b)) | BigInt(x & (2 ** b - 1)); };
+  push(good, 6); push(n, 6); push(helped, 6); push(Math.min(attempt, 31), 5); push(mins, 21); push(h8(spec), 8); push(h8(normName(name)), 8);
+  push(h8('v6e:' + v.toString(36)), 8);
+  let s = '';
+  for (let i = 0; i < 14; i++) { s = B32[Number(v & 31n)] + s; v >>= 5n; }
+  return `${s.slice(0, 4)}-${s.slice(4, 9)}-${s.slice(9)}`;
+}
+function readCode(str) {
+  const s = String(str).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V').replace(/[^0-9A-Z]/g, '');
+  if (s.length !== 14) return null;
+  let v = 0n;
+  for (const c of s) { const i = B32.indexOf(c); if (i < 0) return null; v = (v << 5n) | BigInt(i); }
+  const take = (b) => { const x = Number(v & ((1n << BigInt(b)) - 1n)); v >>= BigInt(b); return x; };
+  const chk = take(8);
+  if (h8('v6e:' + v.toString(36)) !== chk) return { invalid: true };
+  const name = take(8), spec = take(8), mins = take(21), attempt = take(5), helped = take(6), n = take(6), good = take(6);
+  if (v !== 0n || good > n || helped > good || n === 0) return { invalid: true };
+  return { good, n, helped, attempt, time: EPOCH + mins * 60000, spec, name };
+}
+
+/* ---------- Devoir : prénom, série, carte de résultat ---------- */
+let devoirSpec = null;
 function routeDevoir(spec) {
   const [ks, nS] = spec.split('/');
   const keys = (ks || '').split(',').filter((k) => GENS[k]);
   const n = clamp(parseInt(nS, 10) || 10, 1, 40);
   const page = document.querySelector('.page[data-p="devoir"]');
-  const head = page.querySelector('.devoir-head'), ex = page.querySelector('.devoir-ex');
+  const head = page.querySelector('.devoir-head'), ex = page.querySelector('.devoir-ex'), start = page.querySelector('.devoir-start');
   if (!keys.length) {
     head.innerHTML = '<h1>Devoir introuvable</h1><p class="lead">Ce lien ne correspond à aucun exercice. Vérifie que tu as copié le lien en entier, ou demande-le à nouveau à ton professeur.</p><p><a class="btn" href="#/">Retour à l\'accueil</a></p>';
-    ex.hidden = true; devoirSpec = null;
+    ex.hidden = true; start.hidden = true; devoirSpec = null;
     return { ch: '' };
   }
   const chs = [...new Set(keys.map((k) => GENS[k].ch))];
-  if (spec !== devoirSpec) {
-    devoirSpec = spec;
-    head.innerHTML = `<p class="kicker">Devoir</p><h1>${keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées'}</h1>
-      <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai. À la fin, tu verras ton résultat.</p>
-      <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
-    ex.hidden = false;
-    devoirCtl = makeExercise(ex, null, {
-      limit: n, devoir: true, devoirId: spec, ch: chs[0],
+  const canon = `${keys.join(',')}/${n}`;
+  if (canon === devoirSpec) return { ch: chs[0] };
+  devoirSpec = canon;
+  const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées';
+  head.innerHTML = `<p class="kicker">Devoir</p><h1>${title}</h1>
+    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai. À la fin, tu obtiendras ton résultat et un code pour ton professeur.</p>
+    <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
+  ex.hidden = true; ex.innerHTML = '';
+  start.hidden = false;
+  start.innerHTML = `<label for="dv-name"><b>Écris ton prénom pour commencer :</b></label>
+    <div class="prof-row"><input type="text" id="dv-name" autocomplete="given-name" maxlength="30" value="${esc(stats._name || '')}" aria-label="Ton prénom">
+    <button type="button" class="btn primary" id="dv-go">Commencer le devoir →</button></div>
+    <p class="small muted">Ton prénom reste sur cet appareil : il s'affiche seulement sur ta carte de résultat.</p>`;
+  const go = () => {
+    const name = start.querySelector('#dv-name').value.trim();
+    if (!normName(name)) { start.querySelector('#dv-name').classList.add('wrong'); start.querySelector('#dv-name').focus(); return; }
+    stats._name = name; persist();
+    const rec = stats['devoir:' + canon] || (stats['devoir:' + canon] = { tries: 0 });
+    rec.tries = (rec.tries || 0) + 1; persist();
+    start.hidden = true; ex.hidden = false;
+    makeExercise(ex, null, {
+      limit: n, ch: chs[0],
+      restartLabel: 'Recommencer le devoir',
+      onRestart() { rec.tries++; persist(); },
+      summary({ good, limit, helpedCount }) {
+        const d = new Date();
+        const code = makeCode({ good, n: limit, helped: helpedCount, attempt: rec.tries, time: d.getTime(), spec: canon, name });
+        rec.best = Math.max(rec.best || 0, good); rec.last = good; rec.at = d.getTime(); persist();
+        return `<div class="result-card" id="result-card">
+          <p class="rc-kicker">Révisions 6<sup>e</sup> · Devoir</p>
+          <p class="rc-name">${esc(name)}</p>
+          <p class="rc-title">${title}</p>
+          <p class="note">${good} / ${limit}</p>
+          <p>${good} réussite${good > 1 ? 's' : ''} sur ${limit} question${limit > 1 ? 's' : ''}${helpedCount ? `, dont ${helpedCount} avec de l'aide` : ', sans aide'}.</p>
+          <p class="rc-meta">Terminé ${nowStr(d)} · essai n° ${rec.tries}</p>
+          <p class="rc-code">Code : <b>${code}</b></p>
+          {{LIST}}
+        </div>
+        <p class="small center">📸 Fais une <b>capture d'écran</b> de ce cadre, ou recopie le <b>code</b> pour ton professeur.</p>`;
+      },
       makeGen() {
-        let bag = [];
-        let last = null;
+        let bag = [], last = null;
         return () => {
           if (!bag.length) bag = shuffle([...keys]);
           let k = bag.shift();
@@ -2881,11 +2954,35 @@ function routeDevoir(spec) {
         };
       },
     });
-  }
+    ex.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+  start.querySelector('#dv-go').addEventListener('click', go);
+  start.querySelector('#dv-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+  start.querySelector('#dv-name').addEventListener('input', (e) => e.target.classList.remove('wrong'));
   return { ch: chs[0] };
 }
 
 /* ---------- Espace professeur ---------- */
+const PROF_KEY = 'revisions6e-prof';
+const profOpen = () => { try { return localStorage.getItem(PROF_KEY) === normName(CODE_PROF) + ':ok'; } catch (e) { return false; } };
+function renderProfLock() {
+  const lock = document.getElementById('prof-lock'), content = document.getElementById('prof-content');
+  const open = profOpen();
+  lock.hidden = open; content.hidden = !open;
+  if (open) { renderProf(); return; }
+  if (lock.dataset.ready) return;
+  lock.dataset.ready = '1';
+  const inpC = lock.querySelector('#prof-code'), msg = lock.querySelector('.lock-msg');
+  const tryCode = () => {
+    if (normName(inpC.value) && inpC.value.trim().toLowerCase() === CODE_PROF.trim().toLowerCase()) {
+      try { localStorage.setItem(PROF_KEY, normName(CODE_PROF) + ':ok'); } catch (e) { /* rien */ }
+      inpC.value = ''; msg.textContent = ''; renderProfLock();
+    } else { msg.textContent = 'Code incorrect.'; inpC.classList.add('wrong'); inpC.select(); }
+  };
+  lock.querySelector('#prof-unlock').addEventListener('click', tryCode);
+  inpC.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryCode(); });
+  inpC.addEventListener('input', () => inpC.classList.remove('wrong'));
+}
 function renderProf() {
   const host = document.getElementById('prof-list');
   if (host.dataset.ready) return;
@@ -2894,23 +2991,24 @@ function renderProf() {
     const keys = Object.keys(GENS).filter((k) => GENS[k].ch === c.id);
     return `<fieldset class="prof-ch" data-ch="${c.id}"><legend>Chapitre ${c.num} · ${c.title}
       <button type="button" class="mini prof-all">tout cocher</button></legend>
-      ${keys.map((k) => `<label class="prof-k"><input type="checkbox" value="${k}"> <span>${GENS[k].label}</span>
+      ${keys.map((k) => `<label class="prof-k"><input type="checkbox" value="${k}"> <span>${GENS[k].label}${GENS[k].slow ? ' <span class="small muted">(tracé)</span>' : ''}</span>
         <button type="button" class="mini prof-one" data-k="${k}" title="Copier le lien de cette seule notion">🔗 lien seul</button></label>`).join('')}
       <p class="small">Fiche de cours : <code class="prof-url">${siteURL()}#/${c.id}/fiche</code> <button type="button" class="mini prof-copy" data-url="${siteURL()}#/${c.id}/fiche">Copier</button></p>
     </fieldset>`;
   }).join('');
-  const out = document.getElementById('prof-link'), nSel = document.getElementById('prof-n'), open = document.getElementById('prof-open');
+  const out = document.getElementById('prof-link'), nSel = document.getElementById('prof-n'), open = document.getElementById('prof-open'), projo = document.getElementById('prof-projo');
   const sel = () => [...host.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
   const update = () => {
     const ks = sel();
-    if (!ks.length) { out.value = ''; out.placeholder = 'Coche au moins une notion ci-dessous.'; open.hidden = true; return; }
+    if (!ks.length) { out.value = ''; out.placeholder = 'Coche au moins une notion ci-dessous.'; open.hidden = true; projo.hidden = true; return; }
     out.value = siteURL() + devoirHash(ks, nSel.value);
     open.href = devoirHash(ks, nSel.value); open.hidden = false;
+    projo.href = `#/projo/${ks.join(',')}`; projo.hidden = false;
   };
   host.addEventListener('change', update);
   nSel.addEventListener('change', update);
   const copy = async (txt, btn) => {
-    try { await navigator.clipboard.writeText(txt); } catch (e) { out.value = txt; out.select(); document.execCommand?.('copy'); }
+    try { await navigator.clipboard.writeText(txt); } catch (e) { out.value = txt; out.select(); try { document.execCommand('copy'); } catch (_) { /* rien */ } }
     const old = btn.textContent; btn.textContent = '✔ Copié'; setTimeout(() => { btn.textContent = old; }, 1500);
   };
   host.addEventListener('click', (e) => {
@@ -2922,16 +3020,207 @@ function renderProf() {
     if (cp) copy(cp.dataset.url, cp);
   });
   document.getElementById('prof-copy-link').addEventListener('click', (e) => { if (out.value) copy(out.value, e.currentTarget); });
+  document.getElementById('prof-relock').addEventListener('click', () => { try { localStorage.removeItem(PROF_KEY); } catch (e) { /* rien */ } renderProfLock(); });
+  // Vérification des codes
+  document.getElementById('prof-check').addEventListener('click', () => {
+    const lines = document.getElementById('prof-codes').value.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const link = document.getElementById('prof-codes-link').value.trim();
+    let specH = null;
+    const m = link.match(/#\/devoir\/([^/\s]+)\/(\d+)/);
+    if (m) { const ks = m[1].split(',').filter((k) => GENS[k]); specH = h8(`${ks.join(',')}/${clamp(parseInt(m[2], 10) || 10, 1, 40)}`); }
+    const rows = lines.map((l) => {
+      const cm2 = l.match(/([0-9A-Za-z]{4})[\s-]*([0-9A-Za-z]{5})[\s-]*([0-9A-Za-z]{5})\s*$/);
+      const name = cm2 ? l.slice(0, cm2.index).replace(/[:;,\-–\t]+\s*$/, '').trim() : l;
+      const r = cm2 ? readCode(cm2[1] + cm2[2] + cm2[3]) : null;
+      if (!r || r.invalid) return `<tr class="bad"><td>${esc(name || '—')}</td><td colspan="5">Code non valide (erreur de recopie ?)</td></tr>`;
+      const nameOk = name ? (h8(normName(name)) === r.name ? '✔' : '✘ autre prénom') : '—';
+      const devOk = specH === null ? '—' : specH === r.spec ? '✔' : '✘ autre devoir';
+      return `<tr><td>${esc(name || '—')}</td><td><b>${r.good} / ${r.n}</b>${r.helped ? ` <span class="small muted">(${r.helped} avec aide)</span>` : ''}</td><td>${r.attempt}</td><td>${nowStr(new Date(r.time)).replace(/^le /, '')}</td><td>${nameOk}</td><td>${devOk}</td></tr>`;
+    });
+    document.getElementById('prof-results').innerHTML = rows.length ? `<div class="table-wrap"><table class="voc res-tab"><thead><tr><th>Prénom</th><th>Score</th><th>Essai</th><th>Terminé</th><th>Prénom vérifié</th><th>Bon devoir</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '<p class="small muted">Colle au moins une ligne.</p>';
+  });
   update();
 }
 
 /* =========================================================
-   Navigation : #/chapitre/page, #/devoir/…, #/prof
+   Mode vidéoprojecteur : #/projo/clé1,clé2
+   ========================================================= */
+/** Affiche la correction d'une question sans réponse de l'élève */
+function revealAnswer(cur, q) {
+  if (q.querySelector('.board')) return { anim: !!cur.anim, msg: cur.anim ? '' : 'Construction à faire au tableau.' };
+  if (cur._correct !== undefined) {
+    q.querySelector(`.rb[data-o="${cur._correct}"]`).checked = true;
+    return cur.check(q);
+  }
+  if (cur._items) {
+    q.querySelectorAll('.cb').forEach((c, j) => { c.checked = cur._items[j].ok; });
+    return cur.check(q);
+  }
+  q.querySelectorAll('.ans').forEach((i) => { if (!i.value) i.value = i.classList.contains('frac') ? '1/10' : '0'; });
+  const z = q.querySelector('.zbtn:not(.on), .gap:not(.on)'); if (z) z.click();
+  q.querySelectorAll('.ordbtn').forEach((b) => b.click());
+  const nl = q.querySelector('.nl'); if (nl && q.querySelector('.hit') && nl.dataset.sel === undefined) nl.dataset.sel = '-1';
+  const res = cur.check(q) || { msg: '' };
+  q.querySelectorAll('.ans').forEach((i) => { i.value = ''; i.classList.remove('wrong', 'right'); i.placeholder = '?'; });
+  q.querySelectorAll('.bad, .on, .sel').forEach((e) => { if (!e.classList.contains('good')) e.classList.remove('bad', 'on', 'sel'); });
+  q.querySelectorAll('.rk').forEach((e) => { e.textContent = ''; });
+  const out = q.querySelector('.ord-out'); if (out) out.innerHTML = '';
+  return res;
+}
+let projo = null;
+function routeProjo(spec) {
+  const keys = (spec || '').split(',').filter((k) => GENS[k]);
+  const page = document.querySelector('.page[data-p="projo"]');
+  if (projo && projo.spec === spec) return keys.length ? GENS[keys[0]].ch : '';
+  if (projo) projo.stop();
+  const stage = page.querySelector('.projo-stage');
+  if (!keys.length) { stage.innerHTML = '<p class="lead">Aucune notion choisie. Passe par l\'<a href="#/prof">Espace professeur</a>.</p>'; projo = null; return ''; }
+  stage.innerHTML = `<div class="pj-bar">
+      <span class="pj-tag"></span><span class="pj-count"></span><span class="pj-timer" aria-live="polite"></span>
+      <span class="sep"></span>
+      <select class="pj-time" aria-label="Minuteur"><option value="0">Sans minuteur</option><option value="30">30 s</option><option value="60">1 min</option><option value="90">1 min 30</option><option value="120">2 min</option></select>
+      <button type="button" class="btn pj-full" title="Plein écran (F)">⛶ Plein écran</button>
+      <a class="btn" href="#/prof" title="Quitter">✕</a>
+    </div>
+    <div class="ex-q pj-q"></div>
+    <div class="ex-fb pj-fb"></div>
+    <div class="ex-anim pj-anim"></div>
+    <div class="ex-actions pj-actions">
+      <button type="button" class="btn primary pj-reveal">👁 Afficher la réponse <kbd>R</kbd></button>
+      <button type="button" class="btn pj-next">Question suivante <kbd>→</kbd></button>
+    </div>`;
+  const $ = (s) => stage.querySelector(s);
+  let cur = null, n = 0, last = null, t0 = 0, tick = null, revealed = false;
+  const timeSel = $('.pj-time');
+  try { timeSel.value = localStorage.getItem('revisions6e-projo-t') || '0'; } catch (e) { /* rien */ }
+  function timer() {
+    clearInterval(tick); const T = Number(timeSel.value); const el = $('.pj-timer');
+    if (!T) { el.textContent = ''; el.className = 'pj-timer'; return; }
+    t0 = Date.now();
+    const upd = () => { const r = Math.max(0, T - Math.floor((Date.now() - t0) / 1000)); el.textContent = r ? `⏱ ${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}` : '⏰ Temps écoulé'; el.className = 'pj-timer' + (r <= 10 ? ' hot' : ''); if (!r) clearInterval(tick); };
+    upd(); tick = setInterval(upd, 250);
+  }
+  function next() {
+    const choices = keys.length > 1 ? keys.filter((k) => k !== last) : keys;
+    last = pick(choices); n++;
+    cur = wrapGen(last, false);
+    revealed = false;
+    $('.pj-tag').textContent = GENS[last].label; $('.pj-count').textContent = `Question ${n}`;
+    $('.pj-q').innerHTML = cur.q; if (cur.mount) cur.mount($('.pj-q'));
+    $('.pj-fb').className = 'ex-fb pj-fb'; $('.pj-fb').innerHTML = ''; $('.pj-anim').innerHTML = '';
+    $('.pj-reveal').disabled = false;
+    timer();
+  }
+  function reveal() {
+    if (revealed) return; revealed = true;
+    clearInterval(tick);
+    const res = revealAnswer(cur, $('.pj-q'));
+    $('.pj-q').querySelectorAll('input').forEach((i) => { i.disabled = true; });
+    $('.pj-q').closest('.page').classList.add('done');
+    if (res.msg) { $('.pj-fb').className = 'ex-fb pj-fb ok'; $('.pj-fb').innerHTML = '<strong>Correction :</strong> ' + res.msg; }
+    if (res.anim) makePlayer($('.pj-anim'), cur.anim()).play();
+    $('.pj-reveal').disabled = true;
+  }
+  const nextQ = () => { $('.pj-q').closest('.page').classList.remove('done'); next(); };
+  $('.pj-reveal').addEventListener('click', reveal);
+  $('.pj-next').addEventListener('click', nextQ);
+  timeSel.addEventListener('change', () => { try { localStorage.setItem('revisions6e-projo-t', timeSel.value); } catch (e) { /* rien */ } if (!revealed) timer(); });
+  const full = () => { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.(); };
+  $('.pj-full').addEventListener('click', full);
+  const onKey = (e) => {
+    if (!page.classList.contains('active') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); reveal(); }
+    else if (e.key === 'ArrowRight' || e.key === 'n' || e.key === 'N') { e.preventDefault(); nextQ(); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); full(); }
+  };
+  document.addEventListener('keydown', onKey);
+  projo = { spec, stop() { clearInterval(tick); document.removeEventListener('keydown', onKey); } };
+  next();
+  return GENS[keys[0]].ch;
+}
+
+/* =========================================================
+   Automatismes du jour : en priorité les points faibles,
+   puis les notions déjà travaillées les moins réussies ou les plus anciennes
+   ========================================================= */
+const AUTO_N = 5, AUTO_WEAK = 3;
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const dayDiff = (a, b) => Math.round((new Date(b.replace(/-/g, '/')) - new Date(a.replace(/-/g, '/'))) / 86400000);
+function autoPlan() {
+  const quick = Object.keys(GENS).filter((k) => !GENS[k].slow);
+  const weak = shuffle(Object.keys(stats._weak || {}).filter((k) => quick.includes(k))).slice(0, AUTO_WEAK);
+  const now = Date.now();
+  const practiced = quick.filter((k) => stats[k]?.total && !weak.includes(k));
+  const score = (k) => { const s = stats[k]; const rate = s.ok / s.total; const age = Math.min(14, (now - (s.last || 0)) / 86400000); return (1 - rate) * 2 + age / 7 + Math.random() * 0.6; };
+  const rev = practiced.sort((a, b) => score(b) - score(a)).slice(0, AUTO_N - weak.length);
+  const plan = [...weak.map((k) => ({ k, why: 'weak' })), ...rev.map((k) => ({ k, why: 'rev' }))];
+  if (plan.length < AUTO_N) {
+    const seenCh = new Set(Object.keys(stats).filter((k) => GENS[k] && stats[k].total).map((k) => GENS[k].ch));
+    if (!seenCh.size) seenCh.add(CHAPTERS[0].id);
+    const pool = shuffle(quick.filter((k) => seenCh.has(GENS[k].ch) && !plan.some((p) => p.k === k)));
+    while (plan.length < AUTO_N && pool.length) plan.push({ k: pool.shift(), why: 'new' });
+  }
+  return shuffle(plan);
+}
+function autoStatus() {
+  const a = stats._auto || {};
+  const t = today();
+  const done = a.last === t;
+  const alive = a.last && dayDiff(a.last, t) <= 1;
+  return { done, streak: alive ? a.streak || 0 : 0 };
+}
+function renderAutoCard() {
+  const el = document.getElementById('auto-card'); if (!el) return;
+  const { done, streak } = autoStatus();
+  const nWeak = Object.keys(stats._weak || {}).filter((k) => GENS[k] && !GENS[k].slow).length;
+  el.innerHTML = `<a class="auto-card${done ? ' done' : ''}" href="#/auto">
+    <span class="auto-ico">⚡</span>
+    <span class="auto-txt"><b>Automatismes du jour</b><br><span class="small">${AUTO_N} questions rapides pour ne rien oublier${nWeak ? ` — en priorité tes ${nWeak} point${nWeak > 1 ? 's' : ''} faible${nWeak > 1 ? 's' : ''}` : ''}.</span></span>
+    <span class="auto-st">${done ? '✔ Fait aujourd\'hui' : 'À faire'}${streak ? `<br><span class="small">🔥 ${streak} jour${streak > 1 ? 's' : ''} de suite</span>` : ''}</span></a>`;
+}
+let autoCtl = null;
+function routeAuto() {
+  const page = document.querySelector('.page[data-p="auto"]');
+  const info = page.querySelector('.auto-info'), ex = page.querySelector('.auto-ex');
+  let plan = autoPlan(), fixed = [];
+  const describe = () => {
+    const w = plan.filter((p) => p.why === 'weak').length, r = plan.length - w;
+    info.innerHTML = `${w ? `<b>${w}</b> question${w > 1 ? 's' : ''} sur tes points faibles` : 'Aucun point faible en ce moment 🎉'}${r ? `, et <b>${r}</b> pour réviser des notions déjà travaillées` : ''}.
+      ${plan.length ? '' : ''}<span class="small muted"> Les tracés (règle, compas…) restent dans « Mes erreurs » de chaque chapitre.</span>`;
+  };
+  describe();
+  autoCtl = makeExercise(ex, null, {
+    limit: plan.length,
+    restartLabel: 'Encore 5 questions',
+    onResult(k, ok, w, lab) { if (w === 'fixed') fixed.push(lab); },
+    onRestart() { plan = autoPlan(); fixed = []; describe(); },
+    summary({ good, limit, helpedCount }) {
+      const a = stats._auto || (stats._auto = {});
+      const t = today();
+      if (a.last !== t) { a.streak = a.last && dayDiff(a.last, t) === 1 ? (a.streak || 0) + 1 : 1; a.last = t; }
+      a.best = Math.max(a.best || 0, a.streak); persist();
+      const left = Object.keys(stats._weak || {}).filter((k) => GENS[k]).length;
+      return `<div class="result">
+        <p class="note">${good} / ${limit}</p>
+        <p>${good === limit ? 'Parfait !' : good >= limit - 1 ? 'Très bien !' : 'Continue, c\'est en répétant qu\'on retient.'}${helpedCount ? ` (${helpedCount} avec de l'aide)` : ''}</p>
+        <p>🔥 Série : <b>${a.streak} jour${a.streak > 1 ? 's' : ''}</b> d'automatismes${a.best > a.streak ? ` (record : ${a.best})` : ''}.</p>
+        ${fixed.length ? `<p class="weak-note fixed">✨ Point${fixed.length > 1 ? 's' : ''} faible${fixed.length > 1 ? 's' : ''} corrigé${fixed.length > 1 ? 's' : ''} : ${fixed.join(', ')}</p>` : ''}
+        {{LIST}}
+        ${left ? `<p class="small">Il te reste ${left} point${left > 1 ? 's' : ''} faible${left > 1 ? 's' : ''} : ils reviendront demain.</p>` : ''}
+        <p><a class="btn" href="#/">Retour à l'accueil</a></p></div>`;
+    },
+    makeGen() { let i = 0; return () => { const p = plan[i++] || plan[plan.length - 1]; return wrapGen(p.k); }; },
+  });
+}
+
+/* =========================================================
+   Navigation : #/chapitre/page, #/devoir/…, #/prof, #/projo/…, #/auto
    ========================================================= */
 const WEAK_CTL = {};
 function setChrome(ch, page, { pill = null, nav = '' } = {}) {
   document.querySelectorAll('.page').forEach((x) => x.classList.toggle('active', x === page));
   document.body.dataset.ch = ch || '';
+  document.body.classList.toggle('projo-mode', page.dataset.p === 'projo');
   const chap = CHAPTERS.find((c) => c.id === ch);
   const elPill = document.getElementById('chap-pill');
   document.getElementById('logo-mark').innerHTML = chap ? chap.symbol : '<span>6<sup>e</sup></span>';
@@ -2941,18 +3230,12 @@ function setChrome(ch, page, { pill = null, nav = '' } = {}) {
 function route() {
   stopSpeaking();
   let h = location.hash.replace(/^#\/?/, '');
-  if (h.startsWith('devoir/')) {
-    const { ch } = routeDevoir(h.slice(7));
-    setChrome(ch, document.querySelector('.page[data-p="devoir"]'), { pill: 'Accueil' });
-    document.title = 'Devoir — Révisions 6e';
-    window.scrollTo(0, 0); return;
-  }
-  if (h === 'prof') {
-    renderProf();
-    setChrome('', document.querySelector('.page[data-p="prof"]'), { pill: 'Accueil' });
-    document.title = 'Espace professeur — Révisions 6e';
-    window.scrollTo(0, 0); return;
-  }
+  const special = (p, ch, title) => { setChrome(ch, document.querySelector(`.page[data-p="${p}"]`), { pill: 'Accueil' }); document.title = `${title} — Révisions 6e`; window.scrollTo(0, 0); };
+  if (!h.startsWith('projo') && projo) { projo.stop(); projo = null; }
+  if (h.startsWith('devoir/')) { const { ch } = routeDevoir(h.slice(7)); special('devoir', ch, 'Devoir'); return; }
+  if (h === 'prof') { renderProfLock(); special('prof', '', 'Espace professeur'); return; }
+  if (h.startsWith('projo')) { const ch = routeProjo(h.split('/')[1] || ''); special('projo', ch, 'Vidéoprojecteur'); return; }
+  if (h === 'auto') { routeAuto(); special('auto', '', 'Automatismes du jour'); return; }
   if (h === 'accueil') h = '';
   let [ch, p] = h.split('/');
   if (!CHAPTERS.some((c) => c.id === ch)) { ch = ''; p = ''; }
@@ -2971,7 +3254,7 @@ function route() {
     setChrome('', page);
     document.title = 'Révisions 6e — Mathématiques';
   }
-  if (!ch) renderChapters();
+  if (!ch) { renderChapters(); renderAutoCard(); }
   else if (p === 'accueil') renderChapterHome(ch);
   else if (p === 'erreurs') WEAK_CTL[ch]?.renew();
   window.scrollTo(0, 0);
