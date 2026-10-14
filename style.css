@@ -758,3 +758,4 @@ table.bilan td:first-child { white-space: normal; }
 .gr-status.ok-t { background: var(--ok-soft); border-color: var(--ok); }
 .gr-status.ko-t { background: var(--ko-soft); border-color: var(--ko); }
 .gr-status.warn-t { background: var(--warn-soft); border-color: var(--warn); }
+.widget-box { border-color: var(--accent); background: var(--accent-soft); }

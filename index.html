@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
-  <meta name="site-version" content="2026-10-14.4">
-  <link rel="stylesheet" href="style.css?v=2026-10-14.4">
+  <meta name="site-version" content="2026-10-14.6">
+  <link rel="stylesheet" href="style.css?v=2026-10-14.6">
 </head>
 <body>
 
@@ -105,8 +105,18 @@
       </div>
       <div class="card">
         <h2>3. Bilan des résultats</h2>
+        <div class="grist-auto widget-box">
+          <p class="small"><b>⭐ Le plus simple : le bilan directement dans Grist</b>, toujours à jour, sans rien copier. À régler une fois :</p>
+          <ol class="small steps-form">
+            <li>Dans ton document Grist, clique sur <b>Ajouter</b> → <b>Ajouter un widget à la page</b>.</li>
+            <li>Choisis le widget <b>Personnalisé</b> et, comme données, ta table de résultats, puis <b>Ajouter à la page</b>.</li>
+            <li>Dans le panneau de droite, choisis « URL personnalisée » et colle cette adresse : <code id="widget-url"></code> <button type="button" class="mini" id="widget-copy">Copier</button></li>
+            <li>Règle l'accès du widget sur <b>Lecture de la table</b> (Grist te le demande : clique sur « Accepter »).</li>
+          </ol>
+          <p class="small muted">Le bilan s'affiche alors dans Grist : une ligne par élève, choix du meilleur, premier ou dernier essai, élèves qui n'ont pas fait le devoir, codes suspects.</p>
+        </div>
         <div class="grist-auto">
-          <p class="small"><b>Chargement automatique depuis Grist</b> (à régler une fois) :</p>
+          <p class="small"><b>Chargement automatique depuis Grist</b> (avec une clé API ; refusé par le Grist de l'État) :</p>
           <ol class="small steps-form">
             <li>Dans Grist, ouvre ta table de résultats et copie l'adresse de la page (le lien du <b>document</b>) :
               <input type="text" id="gr-doc" class="wide-inp" placeholder="https://grist.numerique.gouv.fr/o/docs/…" aria-label="Lien du document Grist"></li>
@@ -743,6 +753,6 @@
   <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a> · <span id="site-version" class="muted"></span></p>
 </footer>
 
-<script src="script.js?v=2026-10-14.4"></script>
+<script src="script.js?v=2026-10-14.6"></script>
 </body>
 </html>

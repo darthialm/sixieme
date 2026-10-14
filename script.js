@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.4';
+const SITE_VERSION = '2026-10-14.6';
 
 /* =========================================================
    Outils
@@ -3171,6 +3171,9 @@ function renderProf() {
   document.getElementById('prof-relock').addEventListener('click', () => { try { localStorage.removeItem(PROF_KEY); localStorage.removeItem('revisions6e-grist-key'); } catch (e) { /* rien */ } document.getElementById('gr-key').value = ''; document.getElementById('bilan-in').value = ''; document.getElementById('bilan-out').innerHTML = ''; renderProfLock(); });
   // Bilan des résultats (lignes copiées depuis Grist ou Google Sheets)
   setupBilan();
+  const wUrl = siteURL().replace(/index\.html$/, '').replace(/\/?$/, '/') + 'bilan.html';
+  document.getElementById('widget-url').textContent = wUrl;
+  document.getElementById('widget-copy').addEventListener('click', (e) => copy(wUrl, e.currentTarget));
   update();
 }
 
@@ -3299,7 +3302,12 @@ function setupBilan() {
       gForget.hidden = false;
     } catch (e) {
       const cors = e instanceof TypeError;
-      gsay('warn-t', cors ? '⚠ Grist ne laisse pas ce site lire tes données (réglage du serveur). Continue avec le copier-coller ci-dessous : <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>C</kbd> dans ta table, <kbd>Ctrl</kbd>+<kbd>V</kbd> ici.'
+      if (cors) {
+        // la clé ne peut pas servir depuis ce site : on ne la garde pas
+        ls(AKEY, null); kIn.value = ''; gForget.hidden = true;
+        const det = ta.closest('details'); if (det) det.open = true;
+      }
+      gsay('warn-t', cors ? '⚠ Grist ne laisse pas ce site lire tes données (réglage de sécurité du serveur). J\'ai effacé ta clé de cet appareil ; tu peux aussi la supprimer dans Grist (Paramètres du profil → Clé API). Utilise le copier-coller juste en dessous : <kbd>Ctrl</kbd>+<kbd>A</kbd> et <kbd>Ctrl</kbd>+<kbd>C</kbd> dans ta table Grist, puis <kbd>Ctrl</kbd>+<kbd>V</kbd> dans la zone.'
         : `⚠ Chargement impossible : ${esc(e.message)}. Vérifie le lien du document et la clé, ou utilise le copier-coller ci-dessous.`);
     }
     gGo.disabled = false;
