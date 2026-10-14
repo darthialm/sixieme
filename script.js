@@ -2947,6 +2947,7 @@ function routeDevoir(spec) {
   const keys = (ks || '').split(',').filter((k) => GENS[k]);
   const n = clamp(parseInt(nS, 10) || 10, 1, 40);
   let classe = '', form = null;
+  const once = more.includes('u');
   more.forEach((seg) => {
     if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 20); } catch (e) { classe = ''; } }
     if (seg.startsWith('f=')) { const f = segToForm(seg.slice(2)); if (f) form = { kind: 'google', ...f }; }
@@ -2965,7 +2966,7 @@ function routeDevoir(spec) {
   devoirSpec = spec;
   const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées';
   head.innerHTML = `<p class="kicker">Devoir</p><h1>${title}</h1>
-    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai. ${form && form.kind !== 'manual' ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' : form ? 'À la fin, tu recopieras ton <b>code</b> dans le formulaire de ton professeur (un lien te sera donné).' : 'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
+    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai.${once ? ' <b>Seul ton premier essai compte</b> : tu pourras ensuite refaire le devoir pour t\'entraîner.' : ''} ${form && form.kind !== 'manual' ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' : form ? 'À la fin, tu recopieras ton <b>code</b> dans le formulaire de ton professeur (un lien te sera donné).' : 'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
     <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
   ex.hidden = true; ex.innerHTML = '';
   start.hidden = false;
@@ -2988,7 +2989,8 @@ function routeDevoir(spec) {
         const d = new Date();
         const code = makeCode({ good, n: limit, helped: helpedCount, attempt: rec.tries, time: d.getTime(), spec: canon, name });
         rec.best = Math.max(rec.best || 0, good); rec.last = good; rec.at = d.getTime(); persist();
-        if (form) {
+        const training = once && rec.tries > 1;
+        if (form && !training) {
           const values = [name, code, classe, keys.length === 1 ? title : `${title} : ${keys.map((k) => GENS[k].label).join(', ')}`, `${good}/${limit}`,
             `${helpedCount} avec aide · essai ${rec.tries} · terminé ${nowStr(d)}`];
           const planB = (el, why, cls = 'ko') => {
@@ -3010,14 +3012,14 @@ function routeDevoir(spec) {
           setTimeout(doSend, 0);
         }
         return `<div class="result-card" id="result-card">
-          <p class="rc-kicker">Révisions 6<sup>e</sup> · Devoir</p>
+          <p class="rc-kicker">Révisions 6<sup>e</sup> · ${training ? 'Entraînement' : 'Devoir'}</p>
           <p class="rc-name">${esc(name)}${classe ? ` <span class="rc-cl">${esc(classe)}</span>` : ''}</p>
           <p class="rc-title">${title}</p>
           <p class="note">${good} / ${limit}</p>
           <p>${good} réussite${good > 1 ? 's' : ''} sur ${limit} question${limit > 1 ? 's' : ''}${helpedCount ? `, dont ${helpedCount} avec de l'aide` : ', sans aide'}.</p>
           <p class="rc-meta">Terminé ${nowStr(d)} · essai n° ${rec.tries}</p>
           <p class="rc-code">Code : <b>${code}</b></p>
-          ${form ? '<p class="rc-send" id="rc-send"></p>' : ''}
+          ${training ? '<p class="rc-send todo">🏋️ Essai d\'entraînement : seul ton premier essai compte, il a déjà été transmis.</p>' : form ? '<p class="rc-send" id="rc-send"></p>' : ''}
           {{LIST}}
         </div>
         ${form ? '' : '<p class="small center">📸 Fais une <b>capture d\'écran</b> de ce cadre, ou recopie le <b>code</b> pour ton professeur.</p>'}`;
@@ -3048,7 +3050,7 @@ function renderProfLock() {
   const lock = document.getElementById('prof-lock'), content = document.getElementById('prof-content');
   const open = profOpen();
   lock.hidden = open; content.hidden = !open;
-  if (open) { renderProf(); return; }
+  if (open) { const first = !document.getElementById('prof-list').dataset.ready; renderProf(); if (!first && window._bilanAuto) window._bilanAuto(); return; }
   if (lock.dataset.ready) return;
   lock.dataset.ready = '1';
   const inpC = lock.querySelector('#prof-code'), msg = lock.querySelector('.lock-msg');
@@ -3133,6 +3135,7 @@ function renderProf() {
     let x = '';
     const c = clInp.value.trim().replace(/\//g, '-');
     if (c) x += '/c=' + encodeURIComponent(c);
+    if (document.getElementById('prof-once').checked) x += '/u';
     const d = destSeg();
     if (d && fUse.checked) x += d;
     return x;
@@ -3141,6 +3144,7 @@ function renderProf() {
   fUse.checked = !!destSeg();
   fInp.addEventListener('input', () => { try { localStorage.setItem(FKEY, fInp.value.trim()); } catch (e) { /* rien */ } fUse.checked = !!destSeg(); showForm(); update(); });
   clInp.addEventListener('input', update);
+  document.getElementById('prof-once').addEventListener('change', update);
   fUse.addEventListener('change', update);
   showForm();
   const copy = async (txt, btn) => {
@@ -3156,32 +3160,150 @@ function renderProf() {
     if (cp) copy(cp.dataset.url, cp);
   });
   document.getElementById('prof-copy-link').addEventListener('click', (e) => { if (out.value) copy(out.value, e.currentTarget); });
-  document.getElementById('prof-relock').addEventListener('click', () => { try { localStorage.removeItem(PROF_KEY); } catch (e) { /* rien */ } renderProfLock(); });
-  // Vérification des codes
-  document.getElementById('prof-check').addEventListener('click', () => {
-    const lines = document.getElementById('prof-codes').value.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-    const link = document.getElementById('prof-codes-link').value.trim();
-    let specH = null;
-    const m = link.match(/#\/devoir\/([^/\s]+)\/(\d+)/);
-    if (m) { const ks = m[1].split(',').filter((k) => GENS[k]); specH = h8(`${ks.join(',')}/${clamp(parseInt(m[2], 10) || 10, 1, 40)}`); }
-    const rows = lines.map((l) => {
-      let cm2, name;
-      const cells = l.split('\t').map((x) => x.trim());
-      const ci = cells.findIndex((x) => /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/.test(x));
-      if (cells.length > 1 && ci > 0) { cm2 = cells[ci].replace(/-/g, '').match(/(.{4})(.{5})(.{5})/); name = cells[ci - 1]; }
-      else {
-        cm2 = l.match(/([0-9A-Za-z]{4})[\s-]*([0-9A-Za-z]{5})[\s-]*([0-9A-Za-z]{5})\s*$/);
-        name = cm2 ? l.slice(0, cm2.index).replace(/[:;,\-–\t]+\s*$/, '').trim() : l;
-      }
-      const r = cm2 ? readCode(cm2[1] + cm2[2] + cm2[3]) : null;
-      if (!r || r.invalid) return `<tr class="bad"><td>${esc(name || '—')}</td><td colspan="5">Code non valide (erreur de recopie ?)</td></tr>`;
-      const nameOk = name ? (h8(normName(name)) === r.name ? '✔' : '✘ autre prénom') : '—';
-      const devOk = specH === null ? '—' : specH === r.spec ? '✔' : '✘ autre devoir';
-      return `<tr><td>${esc(name || '—')}</td><td><b>${r.good} / ${r.n}</b>${r.helped ? ` <span class="small muted">(${r.helped} avec aide)</span>` : ''}</td><td>${r.attempt}</td><td>${nowStr(new Date(r.time)).replace(/^le /, '')}</td><td>${nameOk}</td><td>${devOk}</td></tr>`;
-    });
-    document.getElementById('prof-results').innerHTML = rows.length ? `<div class="table-wrap"><table class="voc res-tab"><thead><tr><th>Prénom</th><th>Score</th><th>Essai</th><th>Terminé</th><th>Prénom vérifié</th><th>Bon devoir</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '<p class="small muted">Colle au moins une ligne.</p>';
-  });
+  document.getElementById('prof-relock').addEventListener('click', () => { try { localStorage.removeItem(PROF_KEY); localStorage.removeItem('revisions6e-grist-key'); } catch (e) { /* rien */ } document.getElementById('gr-key').value = ''; document.getElementById('bilan-in').value = ''; document.getElementById('bilan-out').innerHTML = ''; renderProfLock(); });
+  // Bilan des résultats (lignes copiées depuis Grist ou Google Sheets)
+  setupBilan();
   update();
+}
+
+/* ---------- Bilan : une ligne par élève, à partir des lignes copiées ---------- */
+const CODE_CELL = /^[0-9A-Za-z]{4}-?[0-9A-Za-z]{5}-?[0-9A-Za-z]{5}$/;
+/** Lit des lignes copiées (Grist : Prénom, Code, Classe, Devoir, Score, Détail ; Google Sheets : horodatage en plus ; ou « Prénom CODE ») */
+function parseResultRows(text) {
+  const rows = [];
+  for (const line of String(text).split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const cells = line.split('\t').map((x) => x.trim());
+    const ci = cells.findIndex((x) => CODE_CELL.test(x));
+    let codeStr, name, classe = '', devoir = '';
+    if (ci >= 0) { codeStr = cells[ci]; name = cells[ci - 1] || ''; classe = cells[ci + 1] || ''; devoir = cells[ci + 2] || ''; }
+    else {
+      const m = line.match(/([0-9A-Za-z]{4})[\s-]*([0-9A-Za-z]{5})[\s-]*([0-9A-Za-z]{5})\s*$/);
+      if (!m) continue;
+      codeStr = m[1] + m[2] + m[3]; name = line.slice(0, m.index).replace(/[:;,\-–\t]+\s*$/, '').trim();
+    }
+    const r = readCode(codeStr);
+    const valid = !!r && !r.invalid;
+    rows.push({ name, classe, devoir, code: codeStr, r: valid ? r : null, valid, nameOk: valid && !!normName(name) && h8(normName(name)) === r.name });
+  }
+  return rows;
+}
+/** Regroupe par devoir puis par élève */
+function buildBilan(rows) {
+  const ok = rows.filter((x) => x.valid && x.nameOk);
+  const devoirs = {};
+  for (const x of ok) {
+    const dk = `${x.devoir || 'Devoir'} — ${x.r.n} questions`;
+    const D = devoirs[dk] || (devoirs[dk] = { label: dk, n: x.r.n, students: {}, last: 0 });
+    D.last = Math.max(D.last, x.r.time);
+    const sk = `${normName(x.classe)}|${normName(x.name)}`;
+    const S = D.students[sk] || (D.students[sk] = { name: x.name, classe: x.classe, tries: [] });
+    S.tries.push(x.r);
+  }
+  for (const D of Object.values(devoirs)) {
+    for (const S of Object.values(D.students)) {
+      S.tries.sort((p, q) => p.time - q.time);
+      S.first = S.tries[0]; S.lastT = S.tries[S.tries.length - 1];
+      S.best = S.tries.reduce((m, t) => (t.good > m.good || (t.good === m.good && t.helped < m.helped) ? t : m), S.tries[0]);
+    }
+  }
+  return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.valid || !x.nameOk) };
+}
+const ROSTER_KEY = (c) => 'revisions6e-liste-' + normName(c || 'sans');
+function setupBilan() {
+  const ta = document.getElementById('bilan-in'), out = document.getElementById('bilan-out');
+  let data = null, fDevoir = '', fClasse = '', crit = 'best';
+  const scoreCls = (g, n) => { const r = g / n; return r >= 0.8 ? 'sc-ok' : r >= 0.5 ? 'sc-mid' : 'sc-ko'; };
+  const pick2 = (S) => (crit === 'first' ? S.first : crit === 'last' ? S.lastT : S.best);
+  function render() {
+    if (!data) { out.innerHTML = ''; return; }
+    const { devoirs, suspects } = data;
+    if (!devoirs.length && !suspects.length) { out.innerHTML = '<p class="small ko-t">Je ne trouve aucun code dans ce que tu as collé. Copie bien les lignes de ta table (avec la colonne Code).</p>'; return; }
+    const classes = [...new Set(devoirs.flatMap((D) => Object.values(D.students).map((S) => S.classe)).filter(Boolean))].sort();
+    if (fDevoir && !devoirs.some((D) => D.label === fDevoir)) fDevoir = '';
+    const D = devoirs.find((x) => x.label === fDevoir) || devoirs[0];
+    if (D) fDevoir = D.label;
+    let html = `<div class="bilan-filters">
+      <label>Devoir : <select id="bf-dev">${devoirs.map((x) => `<option${x.label === fDevoir ? ' selected' : ''}>${esc(x.label)}</option>`).join('')}</select></label>
+      <label>Classe : <select id="bf-cl"><option value="">Toutes</option>${classes.map((c) => `<option${c === fClasse ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+      <label>Score retenu : <select id="bf-crit"><option value="best"${crit === 'best' ? ' selected' : ''}>le meilleur essai</option><option value="first"${crit === 'first' ? ' selected' : ''}>le premier essai</option><option value="last"${crit === 'last' ? ' selected' : ''}>le dernier essai</option></select></label>
+    </div>`;
+    if (D) {
+      const studs = Object.values(D.students).filter((S) => !fClasse || S.classe === fClasse).sort((p, q) => p.name.localeCompare(q.name, 'fr'));
+      const sc = studs.map((S) => pick2(S));
+      const avg = sc.length ? sc.reduce((m, t) => m + t.good, 0) / sc.length : 0;
+      const low = studs.filter((S) => pick2(S).good / D.n < 0.5);
+      html += `<p class="bilan-sum"><b>${studs.length}</b> élève${studs.length > 1 ? 's ont' : ' a'} fait ce devoir${fClasse ? ` en ${esc(fClasse)}` : ''} · moyenne <b>${fmt(Math.round(avg * 10) / 10)} / ${D.n}</b>${low.length ? ` · <span class="ko-t">${low.length} sous la moitié</span>` : ''}</p>`;
+      html += `<div class="table-wrap"><table class="voc res-tab bilan"><thead><tr><th>Élève</th><th>Classe</th><th>Score retenu</th><th>Aide</th><th>Essais</th><th>Meilleur</th><th>Dernier envoi</th></tr></thead><tbody>${studs.map((S) => {
+        const t = pick2(S);
+        return `<tr><td><b>${esc(S.name)}</b></td><td>${esc(S.classe || '—')}</td><td><span class="sc ${scoreCls(t.good, D.n)}">${t.good} / ${D.n}</span></td><td>${t.helped ? `${t.helped} avec aide` : 'sans aide'}</td><td>${S.tries.length}</td><td>${S.best.good} / ${D.n}</td><td>${nowStr(new Date(S.lastT.time)).replace(/^le /, '')}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
+      // Liste de classe : qui n'a pas fait le devoir ?
+      if (fClasse) {
+        let roster = ''; try { roster = localStorage.getItem(ROSTER_KEY(fClasse)) || ''; } catch (e) { /* rien */ }
+        const names = roster.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+        const done = new Set(studs.map((S) => normName(S.name)));
+        const missing = names.filter((x) => !done.has(normName(x)));
+        html += `<div class="bilan-roster"><p>${names.length ? (missing.length ? `<b class="ko-t">Pas encore fait (${missing.length}) :</b> ${missing.map(esc).join(', ')}` : '<b class="ok-t">✔ Toute la classe a fait le devoir.</b>') : `Colle la liste des prénoms de la ${esc(fClasse)} pour voir qui n'a pas encore fait le devoir :`}</p>
+          <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, gardée sur cet appareil)</summary><textarea id="bf-roster" rows="5">${esc(roster)}</textarea></details></div>`;
+      } else html += '<p class="small muted">Choisis une classe pour voir aussi qui n\'a pas encore fait le devoir.</p>';
+      html += `<p><button type="button" class="btn" id="bf-copy">Copier ce bilan</button> <span class="small muted">(à coller dans un tableur ou pour Pronote)</span></p>`;
+    }
+    if (suspects.length) html += `<div class="bilan-sus"><p><b class="warn-t">⚠ ${suspects.length} ligne${suspects.length > 1 ? 's' : ''} à vérifier</b> <span class="small muted">(non comptée${suspects.length > 1 ? 's' : ''} dans le bilan)</span></p><ul class="small">${suspects.map((x) => `<li><b>${esc(x.name || '—')}</b> ${x.classe ? `(${esc(x.classe)})` : ''} : ${!x.valid ? `code « ${esc(x.code)} » non valide (erreur de recopie ou code inventé)` : 'ce code a été obtenu avec un autre prénom'}</li>`).join('')}</ul></div>`;
+    out.innerHTML = html;
+    out.querySelector('#bf-dev')?.addEventListener('change', (e) => { fDevoir = e.target.value; render(); });
+    out.querySelector('#bf-cl')?.addEventListener('change', (e) => { fClasse = e.target.value; render(); });
+    out.querySelector('#bf-crit')?.addEventListener('change', (e) => { crit = e.target.value; render(); });
+    out.querySelector('#bf-roster')?.addEventListener('change', (e) => { try { localStorage.setItem(ROSTER_KEY(fClasse), e.target.value); } catch (_) { /* rien */ } render(); });
+    out.querySelector('#bf-copy')?.addEventListener('click', async (e) => {
+      const studs = Object.values(D.students).filter((S) => !fClasse || S.classe === fClasse).sort((p, q) => p.name.localeCompare(q.name, 'fr'));
+      const tsv = ['Élève\tClasse\tScore\tSur\tAide\tEssais', ...studs.map((S) => { const t = pick2(S); return `${S.name}\t${S.classe}\t${t.good}\t${D.n}\t${t.helped}\t${S.tries.length}`; })].join('\n');
+      try { await navigator.clipboard.writeText(tsv); e.target.textContent = '✔ Copié'; } catch (_) { e.target.textContent = 'Copie impossible'; }
+    });
+  }
+  const run = () => { data = ta.value.trim() ? buildBilan(parseResultRows(ta.value)) : null; render(); };
+  ta.addEventListener('input', run);
+  // Chargement automatique depuis Grist (clé API du professeur, gardée sur cet appareil)
+  const DKEY = 'revisions6e-grist-doc', AKEY = 'revisions6e-grist-key', GKEY2 = 'revisions6e-grist';
+  const dIn = document.getElementById('gr-doc'), kIn = document.getElementById('gr-key'), gSt = document.getElementById('gr-status'), gGo = document.getElementById('gr-load'), gForget = document.getElementById('gr-forget');
+  const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ''; } return ''; };
+  const parseDoc = (u) => { const m = String(u).trim().match(/^(https:\/\/[^\s?#]+?)\/(?:o\/[^/]+\/)?([A-Za-z0-9]{10,})(?:\/|$|\?|#)/); if (!m) return null; const base = String(u).trim().match(/^(https:\/\/[^/]+(?:\/o\/[^/]+)?)/)[1]; return { a: base, d: m[2] }; };
+  const gsay = (cls, h) => { gSt.className = 'small ' + cls; gSt.innerHTML = h; };
+  async function loadGrist() {
+    const doc = parseDoc(dIn.value), key = kIn.value.trim();
+    if (!doc) { gsay('ko-t', 'Colle le lien de ton <b>document</b> Grist (l\'adresse affichée quand la table est ouverte).'); return; }
+    if (!key) { gsay('ko-t', 'Colle ta clé API Grist.'); return; }
+    let g = null; try { g = JSON.parse(ls(GKEY2) || 'null'); } catch (e) { g = null; }
+    const table = (g && g.t) || 'Resultats';
+    const cols = (g && g.c && g.c.every(Boolean)) ? g.c : ['Prenom', 'Code', 'Classe', 'Devoir', 'Score', 'Detail'];
+    gGo.disabled = true; gsay('muted', '⏳ Chargement des résultats depuis Grist…');
+    try {
+      const r = await fetch(`${doc.a}/api/docs/${doc.d}/tables/${encodeURIComponent(table)}/records`, { headers: { Authorization: 'Bearer ' + key } });
+      if (r.status === 401 || r.status === 403) throw new Error('clé refusée');
+      if (r.status === 404) throw new Error(`table « ${table} » introuvable dans ce document`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      const recs = j.records || [];
+      ls(DKEY, dIn.value.trim()); ls(AKEY, key);
+      ta.value = recs.map((x) => cols.map((c) => String(x.fields?.[c] ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
+      run();
+      gsay('ok-t', `✔ ${recs.length} ligne${recs.length > 1 ? 's' : ''} chargée${recs.length > 1 ? 's' : ''} depuis Grist ${nowStr()}. Le bilan se mettra à jour tout seul à chaque ouverture de cet espace.`);
+      gForget.hidden = false;
+    } catch (e) {
+      const cors = e instanceof TypeError;
+      gsay('warn-t', cors ? '⚠ Grist ne laisse pas ce site lire tes données (réglage du serveur). Continue avec le copier-coller ci-dessous : <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>C</kbd> dans ta table, <kbd>Ctrl</kbd>+<kbd>V</kbd> ici.'
+        : `⚠ Chargement impossible : ${esc(e.message)}. Vérifie le lien du document et la clé, ou utilise le copier-coller ci-dessous.`);
+    }
+    gGo.disabled = false;
+  }
+  dIn.value = ls(DKEY); kIn.value = ls(AKEY);
+  gForget.hidden = !kIn.value;
+  gGo.addEventListener('click', loadGrist);
+  gForget.addEventListener('click', () => { ls(AKEY, null); kIn.value = ''; gForget.hidden = true; gsay('muted', 'Clé oubliée sur cet appareil.'); });
+  window._bilanAuto = () => { if (dIn.value && kIn.value) loadGrist(); };
+  window._bilanAuto();
+  document.getElementById('bilan-clear').addEventListener('click', () => { ta.value = ''; run(); });
+  window._bilanTest = { parseResultRows, buildBilan };
 }
 
 /* =========================================================

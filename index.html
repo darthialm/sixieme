@@ -66,6 +66,7 @@
           <span><label for="prof-classe"><b>Classe</b> (facultatif) :</label>
           <input type="text" id="prof-classe" class="short-inp" maxlength="20" placeholder="6B"></span>
           <label class="prof-chk"><input type="checkbox" id="prof-form-use" disabled> Envoyer les résultats dans mon formulaire (voir 2.)</label>
+          <label class="prof-chk"><input type="checkbox" id="prof-once"> Seul le premier essai compte (les suivants servent d'entraînement et ne sont pas envoyés)</label>
         </div>
         <div class="prof-row">
           <input type="text" id="prof-link" readonly aria-label="Lien du devoir">
@@ -102,14 +103,26 @@
         <p class="small muted">Ensuite, les liens de devoir que tu copies plus haut utilisent ce formulaire. Ce réglage reste enregistré sur cet appareil. Données transmises : prénom, classe, devoir, score, date, code. Vérifie avec ton établissement que l'outil choisi est autorisé.</p>
       </div>
       <div class="card">
-        <h2>3. Vérifier les codes (facultatif)</h2>
-        <p class="small">Colle une ligne par élève : le prénom puis le code, par exemple <code>Léa 7K3Q-9XW2A-M4PRT</code>, ou directement des lignes copiées depuis ton tableau Grist ou Google Sheets. Le site retrouve le score, l'aide, l'essai et la date, et vérifie que le code correspond bien à ce prénom.</p>
-        <textarea id="prof-codes" rows="6" aria-label="Codes des élèves" placeholder="Léa 7K3Q-9XW2A-M4PRT&#10;Noah 2BX4-…"></textarea>
-        <label class="small" for="prof-codes-link">Lien du devoir (facultatif, pour vérifier que c'est le bon devoir) :</label>
-        <input type="text" id="prof-codes-link" class="wide-inp" aria-label="Lien du devoir à vérifier">
-        <p><button type="button" class="btn primary" id="prof-check">Vérifier</button></p>
-        <div id="prof-results"></div>
-        <p class="small muted">Le code est une protection légère contre les recopies entre élèves, pas un système infalsifiable.</p>
+        <h2>3. Bilan des résultats</h2>
+        <div class="grist-auto">
+          <p class="small"><b>Chargement automatique depuis Grist</b> (à régler une fois) :</p>
+          <ol class="small steps-form">
+            <li>Dans Grist, ouvre ta table de résultats et copie l'adresse de la page (le lien du <b>document</b>) :
+              <input type="text" id="gr-doc" class="wide-inp" placeholder="https://grist.numerique.gouv.fr/o/docs/…" aria-label="Lien du document Grist"></li>
+            <li>Dans Grist, clique sur ton nom (en haut à droite) → <b>Paramètres du profil</b> → <b>Clé API</b> → <b>Créer</b>, puis copie la clé :
+              <input type="password" id="gr-key" class="wide-inp" autocomplete="off" placeholder="Clé API Grist" aria-label="Clé API Grist"></li>
+          </ol>
+          <p><button type="button" class="btn primary" id="gr-load">🔄 Charger les résultats</button> <button type="button" class="linkbtn" id="gr-forget" hidden>Oublier la clé sur cet appareil</button></p>
+          <p id="gr-status" class="small muted">La clé reste uniquement sur cet appareil : elle n'est jamais mise dans les liens des élèves. Ne la donne à personne ; « Verrouiller cet espace » l'efface.</p>
+        </div>
+        <details class="howto small"${''}>
+          <summary>Sans clé : copier-coller depuis Grist ou Google Sheets</summary>
+          <p>Clique dans ta table, fais <kbd>Ctrl</kbd>+<kbd>A</kbd> pour tout sélectionner puis <kbd>Ctrl</kbd>+<kbd>C</kbd> pour copier, et colle ici avec <kbd>Ctrl</kbd>+<kbd>V</kbd> :</p>
+        <textarea id="bilan-in" rows="4" aria-label="Lignes copiées depuis la table des résultats" placeholder="Colle ici toute ta table de résultats…"></textarea>
+        <p><button type="button" class="linkbtn" id="bilan-clear">Effacer</button></p>
+        </details>
+        <div id="bilan-out"></div>
+        <p class="small muted">Le bilan donne une ligne par élève, même s'il a fait le devoir plusieurs fois : tu choisis de retenir son meilleur essai, son premier ou son dernier. Chaque code est vérifié : une ligne tapée à la main ou recopiée sur un camarade est signalée à part. Rien de ce que tu colles n'est enregistré, sauf les listes de classe sur cet appareil.</p>
       </div>
       <div class="card">
         <h2>4. Vidéoprojecteur</h2>

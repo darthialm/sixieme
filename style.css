@@ -741,3 +741,15 @@ body.projo-mode main { max-width: 1400px; padding-top: 14px; }
 .rc-send.ko { color: var(--ko); }
 .warn-t { color: var(--warn); font-weight: 700; }
 .rc-send.todo { color: var(--ink); background: var(--accent-soft); border-radius: 10px; padding: 8px 12px; font-weight: 400; }
+#bilan-in, #bf-roster { width: 100%; font: inherit; font-size: .9rem; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); margin: 6px 0 0; }
+.bilan-filters { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0; }
+.bilan-filters select { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); max-width: 100%; }
+.bilan-sum { font-size: 1.05rem; }
+table.bilan td:first-child { white-space: normal; }
+.sc { display: inline-block; font-weight: 700; padding: 2px 10px; border-radius: 99px; }
+.sc-ok { background: var(--ok-soft); color: var(--ok); }
+.sc-mid { background: var(--warn-soft); color: var(--warn); }
+.sc-ko { background: var(--ko-soft); color: var(--ko); }
+.bilan-roster, .bilan-sus { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin: 10px 0; }
+.bilan-roster p, .bilan-sus p { margin: 4px 0; }
+.grist-auto { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin: 8px 0 10px; }
