@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta name="site-version" content="2026-10-14.4">
+  <link rel="stylesheet" href="style.css?v=2026-10-14.4">
 </head>
 <body>
 
@@ -113,7 +114,7 @@
               <input type="password" id="gr-key" class="wide-inp" autocomplete="off" placeholder="Clé API Grist" aria-label="Clé API Grist"></li>
           </ol>
           <p><button type="button" class="btn primary" id="gr-load">🔄 Charger les résultats</button> <button type="button" class="linkbtn" id="gr-forget" hidden>Oublier la clé sur cet appareil</button></p>
-          <p id="gr-status" class="small muted">La clé reste uniquement sur cet appareil : elle n'est jamais mise dans les liens des élèves. Ne la donne à personne ; « Verrouiller cet espace » l'efface.</p>
+          <p id="gr-status" class="gr-status muted">La clé reste uniquement sur cet appareil : elle n'est jamais mise dans les liens des élèves. Ne la donne à personne ; « Verrouiller cet espace » l'efface.</p>
         </div>
         <details class="howto small"${''}>
           <summary>Sans clé : copier-coller depuis Grist ou Google Sheets</summary>
@@ -739,9 +740,9 @@
 </main>
 
 <footer class="foot">
-  <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a></p>
+  <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a> · <span id="site-version" class="muted"></span></p>
 </footer>
 
-<script src="script.js"></script>
+<script src="script.js?v=2026-10-14.4"></script>
 </body>
 </html>

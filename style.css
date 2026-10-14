@@ -753,3 +753,8 @@ table.bilan td:first-child { white-space: normal; }
 .bilan-roster, .bilan-sus { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin: 10px 0; }
 .bilan-roster p, .bilan-sus p { margin: 4px 0; }
 .grist-auto { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin: 8px 0 10px; }
+.update-banner { position: sticky; top: 0; z-index: 50; background: #fff3bf; color: #3b3000; border-bottom: 2px solid #f59f00; padding: 10px 16px; text-align: center; font-weight: 700; }
+.gr-status { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: .92rem; }
+.gr-status.ok-t { background: var(--ok-soft); border-color: var(--ok); }
+.gr-status.ko-t { background: var(--ko-soft); border-color: var(--ko); }
+.gr-status.warn-t { background: var(--warn-soft); border-color: var(--warn); }

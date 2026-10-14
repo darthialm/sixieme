@@ -7,6 +7,9 @@
    ========================================================= */
 const CODE_PROF = 'prof6e';
 
+/** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
+const SITE_VERSION = '2026-10-14.4';
+
 /* =========================================================
    Outils
    ========================================================= */
@@ -3050,7 +3053,12 @@ function renderProfLock() {
   const lock = document.getElementById('prof-lock'), content = document.getElementById('prof-content');
   const open = profOpen();
   lock.hidden = open; content.hidden = !open;
-  if (open) { const first = !document.getElementById('prof-list').dataset.ready; renderProf(); if (!first && window._bilanAuto) window._bilanAuto(); return; }
+  if (open) {
+    const first = !document.getElementById('prof-list').dataset.ready;
+    try { renderProf(); if (!first && window._bilanAuto) window._bilanAuto(); }
+    catch (e) { content.insertAdjacentHTML('afterbegin', `<p class="ex-fb ko">⚠ Problème dans l'Espace professeur : ${esc(e.message)}. Recharge la page avec <kbd>Ctrl</kbd>+<kbd>F5</kbd> ; si le message reste, envoie-le à la personne qui gère le site.</p>`); }
+    return;
+  }
   if (lock.dataset.ready) return;
   lock.dataset.ready = '1';
   const inpC = lock.querySelector('#prof-code'), msg = lock.querySelector('.lock-msg');
@@ -3268,7 +3276,7 @@ function setupBilan() {
   const dIn = document.getElementById('gr-doc'), kIn = document.getElementById('gr-key'), gSt = document.getElementById('gr-status'), gGo = document.getElementById('gr-load'), gForget = document.getElementById('gr-forget');
   const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ''; } return ''; };
   const parseDoc = (u) => { const m = String(u).trim().match(/^(https:\/\/[^\s?#]+?)\/(?:o\/[^/]+\/)?([A-Za-z0-9]{10,})(?:\/|$|\?|#)/); if (!m) return null; const base = String(u).trim().match(/^(https:\/\/[^/]+(?:\/o\/[^/]+)?)/)[1]; return { a: base, d: m[2] }; };
-  const gsay = (cls, h) => { gSt.className = 'small ' + cls; gSt.innerHTML = h; };
+  const gsay = (cls, h) => { gSt.className = 'gr-status ' + cls; gSt.innerHTML = h; };
   async function loadGrist() {
     const doc = parseDoc(dIn.value), key = kIn.value.trim();
     if (!doc) { gsay('ko-t', 'Colle le lien de ton <b>document</b> Grist (l\'adresse affichée quand la table est ouverte).'); return; }
@@ -3537,6 +3545,12 @@ function wrapGen(k, tag = true) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Fichiers d'âges différents (cache du navigateur) : on prévient au lieu de laisser des boutons muets
+  const vHtml = document.querySelector('meta[name="site-version"]')?.content;
+  document.getElementById('site-version').textContent = 'version ' + SITE_VERSION;
+  if (vHtml !== SITE_VERSION) {
+    document.body.insertAdjacentHTML('afterbegin', `<div class="update-banner">🔄 Le site vient d'être mis à jour, mais ton navigateur garde une partie de l'ancienne version. Appuie sur <kbd>Ctrl</kbd>+<kbd>F5</kbd> (ou <kbd>Cmd</kbd>+<kbd>Maj</kbd>+<kbd>R</kbd> sur Mac). Si ce message revient, attends quelques minutes : GitHub met parfois un peu de temps à publier.</div>`);
+  }
   // [[a|b]] -> fractions
   document.querySelectorAll('.page').forEach((el) => {
     if (el.innerHTML.includes('[[')) el.innerHTML = el.innerHTML.replace(/\[\[(.+?)\|(.+?)\]\]/g, (m, a, b) => F(a, b));
