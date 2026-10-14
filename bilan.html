@@ -13,7 +13,7 @@
   h1 { font-size: 1.25rem; margin: 0 0 8px; }
   .muted { color: var(--muted); } .small { font-size: .88rem; }
   .filters { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 8px 0 12px; }
-  select, textarea { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--soft); color: var(--ink); max-width: 100%; }
+  select, textarea, input { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--soft); color: var(--ink); max-width: 100%; }
   textarea { width: 100%; margin-top: 6px; }
   .sum { font-size: 1.05rem; margin: 6px 0 10px; }
   table { border-collapse: collapse; width: 100%; font-size: .93rem; }
@@ -86,7 +86,6 @@ function buildBilan(rows) {
   return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.paper && (!x.valid || !x.nameOk)) };
 }
 
-
 /* ---------- Lecture des lignes de la table ----------
    On reconnaît les colonnes par leur nom (Prénom, Code, Classe, Devoir) si elles sont nommées ainsi ;
    sinon (colonnes A, B, C…), on trouve la colonne qui contient un code et on prend :
@@ -121,18 +120,23 @@ const saveF = () => { try { localStorage.setItem('bilan6e-filtres', JSON.stringi
 const scoreCls = (g, n) => { const r = g / n; return r >= 0.8 ? 'sc-ok' : r >= 0.5 ? 'sc-mid' : 'sc-ko'; };
 const pickT = (S) => (crit === 'first' ? S.first : crit === 'last' ? S.lastT : S.best);
 const ROSTER = (c) => 'bilan6e-liste-' + normName(c || 'sans');
+/** Classes ajoutées à la main (pour coller leur liste avant même le premier résultat) */
+const KNOWN = 'bilan6e-classes';
+const getKnown = () => { try { return JSON.parse(localStorage.getItem(KNOWN) || '[]'); } catch (e) { return []; } };
+const setKnown = (l) => { try { localStorage.setItem(KNOWN, JSON.stringify([...new Set(l)])); } catch (e) { /* rien */ } };
 
 function render() {
   if (!data) return;
   const { devoirs, suspects } = data;
   if (!devoirs.length && !suspects.length) { app.innerHTML = '<p class="empty">Aucun résultat pour l\'instant. Les lignes arriveront ici dès que des élèves auront terminé un devoir.<br><span class="small">(La ligne « TEST » est ignorée.)</span></p>'; return; }
-  const classes = [...new Set(devoirs.flatMap((D) => Object.values(D.students).map((S) => S.classe)).filter(Boolean))].sort();
+  const classes = [...new Set([...devoirs.flatMap((D) => Object.values(D.students).map((S) => S.classe)), ...getKnown()].filter(Boolean))].sort((p, q) => p.localeCompare(q, 'fr'));
   if (fClasse && !classes.includes(fClasse)) fClasse = '';
   const D = devoirs.find((x) => x.label === fDevoir) || devoirs[0];
   if (D) fDevoir = D.label;
   let h = `<div class="filters">
     <label>Devoir : <select id="f-dev">${devoirs.map((x) => `<option${x.label === fDevoir ? ' selected' : ''}>${esc(x.label)}</option>`).join('')}</select></label>
     <label>Classe : <select id="f-cl"><option value="">Toutes</option>${classes.map((c) => `<option${c === fClasse ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+    <label class="small">＋ <input id="f-new" size="14" placeholder="autre classe" title="Ajoute une classe qui n'a encore aucun résultat, pour coller sa liste d'élèves"></label>
     <label>Score retenu : <select id="f-crit"><option value="best"${crit === 'best' ? ' selected' : ''}>le meilleur essai</option><option value="first"${crit === 'first' ? ' selected' : ''}>le premier essai</option><option value="last"${crit === 'last' ? ' selected' : ''}>le dernier essai</option></select></label>
   </div>`;
   let studs = [];
@@ -152,7 +156,7 @@ function render() {
       const done = new Set(studs.map((S) => normName(S.name)));
       const missing = names.filter((x) => !done.has(normName(x)));
       h += `<div class="box"><p>${names.length ? (missing.length ? `<span class="ko-t">Pas encore fait (${missing.length}) :</span> ${missing.map(esc).join(', ')}` : '<span class="ok-t">✔ Toute la classe a fait le devoir.</span>') : `Colle la liste des prénoms de la ${esc(fClasse)} pour voir qui n'a pas encore fait le devoir :`}</p>
-        <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, gardée sur cet ordinateur)</summary><textarea id="roster" rows="5">${esc(roster)}</textarea></details></div>`;
+        <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, à coller une seule fois : elle sert pour tous les devoirs, sur cet ordinateur)</summary><textarea id="roster" rows="5">${esc(roster)}</textarea></details></div>`;
     } else h += '<p class="small muted">Choisis une classe pour voir aussi qui n\'a pas encore fait le devoir.</p>';
     h += '<p><button type="button" id="copy">Copier ce bilan</button> <span class="small muted">(à coller dans un tableur ou pour Pronote)</span></p>';
   }
@@ -161,6 +165,7 @@ function render() {
   app.innerHTML = h;
   app.querySelector('#f-dev')?.addEventListener('change', (e) => { fDevoir = e.target.value; saveF(); render(); });
   app.querySelector('#f-cl')?.addEventListener('change', (e) => { fClasse = e.target.value; saveF(); render(); });
+  app.querySelector('#f-new')?.addEventListener('change', (e) => { const c = e.target.value.trim(); if (!c) return; setKnown([...getKnown(), c]); fClasse = c; saveF(); render(); });
   app.querySelector('#f-crit')?.addEventListener('change', (e) => { crit = e.target.value; saveF(); render(); });
   app.querySelectorAll('th.sortable').forEach((th) => th.addEventListener('click', () => { sortBy = th.dataset.s; saveF(); render(); }));
   app.querySelector('#roster')?.addEventListener('change', (e) => { try { localStorage.setItem(ROSTER(fClasse), e.target.value); } catch (_) { /* rien */ } render(); });

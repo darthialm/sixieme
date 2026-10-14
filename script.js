@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.12';
+const SITE_VERSION = '2026-10-14.13';
 
 /* =========================================================
    Outils
@@ -3333,7 +3333,8 @@ function setupBilan() {
     if (!data) { out.innerHTML = ''; return; }
     const { devoirs, suspects } = data;
     if (!devoirs.length && !suspects.length) { out.innerHTML = '<p class="small ko-t">Je ne trouve aucun code dans ce que tu as collé. Copie bien les lignes de ta table (avec la colonne Code).</p>'; return; }
-    const classes = [...new Set(devoirs.flatMap((D) => Object.values(D.students).map((S) => S.classe)).filter(Boolean))].sort();
+    let mine = []; try { mine = (localStorage.getItem('revisions6e-classes') || '').split('\n').map((x) => x.trim()); } catch (e) { /* rien */ }
+    const classes = [...new Set([...devoirs.flatMap((D) => Object.values(D.students).map((S) => S.classe)), ...mine].filter(Boolean))].sort((p, q) => p.localeCompare(q, 'fr'));
     if (fDevoir && !devoirs.some((D) => D.label === fDevoir)) fDevoir = '';
     const D = devoirs.find((x) => x.label === fDevoir) || devoirs[0];
     if (D) fDevoir = D.label;
@@ -3361,7 +3362,7 @@ function setupBilan() {
         const done = new Set(studs.map((S) => normName(S.name)));
         const missing = names.filter((x) => !done.has(normName(x)));
         html += `<div class="bilan-roster"><p>${names.length ? (missing.length ? `<b class="ko-t">Pas encore fait (${missing.length}) :</b> ${missing.map(esc).join(', ')}` : '<b class="ok-t">✔ Toute la classe a fait le devoir.</b>') : `Colle la liste des prénoms de la ${esc(fClasse)} pour voir qui n'a pas encore fait le devoir :`}</p>
-          <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, gardée sur cet appareil)</summary><textarea id="bf-roster" rows="5">${esc(roster)}</textarea></details></div>`;
+          <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, à coller une seule fois : elle sert pour tous les devoirs, sur cet appareil)</summary><textarea id="bf-roster" rows="5">${esc(roster)}</textarea></details></div>`;
       } else html += '<p class="small muted">Choisis une classe pour voir aussi qui n\'a pas encore fait le devoir.</p>';
       html += `<p><button type="button" class="btn" id="bf-copy">Copier ce bilan</button> <span class="small muted">(à coller dans un tableur ou pour Pronote)</span></p>`;
     }
