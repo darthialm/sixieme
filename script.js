@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.11';
+const SITE_VERSION = '2026-10-14.12';
 
 /* =========================================================
    Outils
@@ -2907,7 +2907,7 @@ async function gristSend(g, values) {
   const r = await fetch(`${g.a}/api/s/${g.k}/tables/${encodeURIComponent(g.t)}/records`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ records: [{ fields }] }),
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  if (!r.ok) { let t = ''; try { t = (await r.text()).slice(0, 160); } catch (e) { /* rien */ } throw new Error(`refus de Grist (${r.status}) ${t}`); }
   return r;
 }
 const nowStr = (d = new Date()) => `le ${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
@@ -3017,8 +3017,8 @@ function routeDevoir(spec) {
             el.className = 'rc-send'; el.textContent = '📨 Envoi du résultat à ton professeur…';
             (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
               .then(() => { el.className = 'rc-send ok'; el.textContent = '✔ Résultat envoyé à ton professeur.'; })
-              .catch(() => {
-                if (form.kind === 'grist') { planB(el, '⚠ L\'envoi automatique n\'a pas marché.'); return; }
+              .catch((e) => {
+                if (form.kind === 'grist') { planB(el, `⚠ L'envoi automatique n'a pas marché <span class="small muted">(${esc(e instanceof TypeError ? 'réponse de Grist illisible ou pas de connexion' : e.message)})</span>.`); return; }
                 el.className = 'rc-send ko'; el.innerHTML = '⚠ Envoi impossible (pas de connexion ?). <button type="button" class="mini">Réessayer</button> Sinon, fais une capture d\'écran.'; el.querySelector('button').addEventListener('click', doSend);
               });
           };
@@ -3109,7 +3109,7 @@ function routeDevoir(spec) {
       st.className = 'paper-st'; st.textContent = '📨 J\'informe ton professeur que tu fais ce devoir sur papier…';
       (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
         .then(() => { st.className = 'paper-st ok-t'; st.textContent = '✔ Ton professeur sait que tu fais ce devoir sur papier. N\'oublie pas de lui rendre ta feuille !'; })
-        .catch(() => { st.className = 'paper-st warn-t'; st.textContent = '⚠ Je n\'ai pas pu prévenir ton professeur (pas de connexion ?). Dis-lui toi-même que tu as fait ce devoir sur papier.'; });
+        .catch((e) => { st.className = 'paper-st warn-t'; st.innerHTML = `⚠ Je n'ai pas pu prévenir ton professeur. Dis-lui toi-même que tu as fait ce devoir sur papier.<br><span class="small muted">Détail : ${esc(e instanceof TypeError ? 'réponse de Grist illisible ou pas de connexion' : e.message)}</span>`; });
     } else st.textContent = '📝 Fais ce devoir sur ta feuille et rends-la à ton professeur.';
     ex.querySelector('#paper-print').addEventListener('click', () => window.print());
     ex.querySelector('#paper-back').addEventListener('click', () => { ex.innerHTML = ''; go(); });
