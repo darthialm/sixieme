@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-14.13';
+const SITE_VERSION = '2026-10-16.1';
 
 /* =========================================================
    Outils
@@ -3323,6 +3323,16 @@ function buildBilan(rows) {
   }
   return { devoirs: Object.values(devoirs).sort((p, q) => q.last - p.last), suspects: rows.filter((x) => !x.paper && (!x.valid || !x.nameOk)) };
 }
+/** Le prénom de la liste correspond-il au nom tapé par l'élève ? « Léa M. » = « Léa Martin » = « léa » (même prénom, initiale compatible) */
+function sameStudent(listName, typed) {
+  const tok = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[-']/g, '').replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const a = tok(listName), b = tok(typed);
+  if (!a.length || !b.length) return false;
+  if (a.join('') === b.join('')) return true;
+  if (a[0] !== b[0]) return false;
+  const ra = a.slice(1).join(''), rb = b.slice(1).join('');
+  return !ra || !rb || ra.startsWith(rb) || rb.startsWith(ra);
+}
 const ROSTER_KEY = (c) => 'revisions6e-liste-' + normName(c || 'sans');
 function setupBilan() {
   const ta = document.getElementById('bilan-in'), out = document.getElementById('bilan-out');
@@ -3359,8 +3369,7 @@ function setupBilan() {
       if (fClasse) {
         let roster = ''; try { roster = localStorage.getItem(ROSTER_KEY(fClasse)) || ''; } catch (e) { /* rien */ }
         const names = roster.split(/\n+/).map((x) => x.trim()).filter(Boolean);
-        const done = new Set(studs.map((S) => normName(S.name)));
-        const missing = names.filter((x) => !done.has(normName(x)));
+        const missing = names.filter((x) => !studs.some((S) => sameStudent(x, S.name)));
         html += `<div class="bilan-roster"><p>${names.length ? (missing.length ? `<b class="ko-t">Pas encore fait (${missing.length}) :</b> ${missing.map(esc).join(', ')}` : '<b class="ok-t">✔ Toute la classe a fait le devoir.</b>') : `Colle la liste des prénoms de la ${esc(fClasse)} pour voir qui n'a pas encore fait le devoir :`}</p>
           <details${names.length ? '' : ' open'}><summary class="small">Liste des élèves de ${esc(fClasse)} (un prénom par ligne, à coller une seule fois : elle sert pour tous les devoirs, sur cet appareil)</summary><textarea id="bf-roster" rows="5">${esc(roster)}</textarea></details></div>`;
       } else html += '<p class="small muted">Choisis une classe pour voir aussi qui n\'a pas encore fait le devoir.</p>';
