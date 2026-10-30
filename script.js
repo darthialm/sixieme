@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-16.1';
+const SITE_VERSION = '2026-10-29.1';
 
 /* =========================================================
    Outils
@@ -260,6 +260,7 @@ const TOOLS = [
   { id: 'perp', icon: '⊥', label: 'Équerre' },
   { id: 'par', icon: '∥', label: 'Parallèle' },
   { id: 'pan', icon: '✋', label: 'Déplacer' },
+  { id: 'prot', icon: '◠', label: 'Rapporteur', extra: true },
 ];
 const HELP = {
   seg: ['Règle : clique sur le point de départ.', 'Déplace, puis clique pour placer l\'extrémité.'],
@@ -270,13 +271,14 @@ const HELP = {
   pan: ['Déplacer : fais glisser la feuille pour déplacer toute la figure (si elle sort du cadre).'],
   perp: ['Équerre : clique sur la droite ou le segment de référence.', 'Clique sur le point par lequel doit passer la perpendiculaire.'],
   par: ['Parallèle (règle + équerre) : clique sur la droite de référence.', 'Clique sur le point par lequel doit passer la parallèle.'],
+  prot: ['Rapporteur : clique sur le sommet de l\'angle (le centre du rapporteur se place dessus).', 'Clique sur un point du côté de départ : le 0° du rapporteur se place sur ce côté.', 'Tourne jusqu\'à la mesure voulue, puis clique pour faire une petite marque. Relie-la ensuite au sommet (outil Demi-droite).'],
 };
 
 function createBoard(host, opts = {}) {
   const W = 16, H = 11;
   const st = { points: [], objs: [], hist: [], tool: 'seg', step: 0, tmp: {}, cur: null, next: null, adj: null, uid: 1 };
   const taskNames = opts.names || [];
-  const tools = TOOLS.filter((t) => !opts.tools || opts.tools.includes(t.id));
+  const tools = TOOLS.filter((t) => (opts.tools ? opts.tools.includes(t.id) : !t.extra || opts.prot));
 
   host.innerHTML = `<div class="geo">
     <div class="geo-tools" role="toolbar" aria-label="Instruments">
@@ -418,11 +420,34 @@ function createBoard(host, opts = {}) {
     return addPoint(s.x, s.y, st.tmp.created).id;
   }
 
+  /** rapporteur : angle entier (en degrés) entre le côté de départ et la direction du pointeur */
+  function protAt(p) {
+    const C = pt(st.tmp.c), ref = st.tmp.ref; if (!C || !ref) return null;
+    const v = G.sub(p, C), r = G.len(v); if (r < 0.2) return null;
+    const a = Math.round(angDeg(ref, v)), sg = G.cross(ref, v) >= 0 ? 1 : -1;
+    const R = clamp(r, 1.2, 9);
+    const d = G.rot(ref, sg * a);
+    return { x: C.x + d.x * R, y: C.y + d.y * R, a, sg, r: R };
+  }
+  function protSVG(C, ref, sg, a) {
+    const R = 3.2, n = G.mul(G.perp(ref), sg);
+    const at = (deg, rr) => G.add(C, G.add(G.mul(ref, rr * Math.cos((deg * Math.PI) / 180)), G.mul(n, rr * Math.sin((deg * Math.PI) / 180))));
+    const e0 = at(0, R), e1 = at(180, R);
+    let s = `<path d="M${e0.x} ${e0.y} A ${R} ${R} 0 0 ${sg > 0 ? 1 : 0} ${e1.x} ${e1.y} Z" class="prot"/>`;
+    for (let k = 0; k <= 180; k += 5) { const q0 = at(k, R), q1 = at(k, R - (k % 10 ? 0.15 : 0.32)); s += `<line x1="${q0.x}" y1="${q0.y}" x2="${q1.x}" y2="${q1.y}" class="prot-tk"/>`; if (k % 30 === 0) { const q = at(k, R - 0.6); s += `<text x="${q.x}" y="${q.y}" class="prot-txt">${k}</text>`; } }
+    if (a != null) { const q = at(a, R + 0.4); s += `<line x1="${C.x}" y1="${C.y}" x2="${q.x}" y2="${q.y}" class="pv-dash"/>`; }
+    return s;
+  }
+
   function handle(p) {
     const t = st.tool;
     if (t === 'point') {
       const s = snap(p);
-      if (s.type === 'point') { msg('Il y a déjà un point ici.', true); return; }
+      if (s.type === 'point') {
+        const q = pt(s.pid);
+        if (q && q.tick) { q.tick = false; q.name = takeName(); st.adj = null; commit([]); help(); render(); return; }
+        msg('Il y a déjà un point ici.', true); return;
+      }
       const c = []; addPoint(s.x, s.y, c); commit(c); help(); render(); return;
     }
     if (t === 'seg' || t === 'line' || t === 'hray') {
@@ -442,6 +467,24 @@ function createBoard(host, opts = {}) {
       const o = { id: st.uid++, kind: 'circle', c: st.tmp.c, r };
       st.objs.push(o); st.tmp.created.push(o.id); commit(st.tmp.created);
       st.adj = { kind: 'rad', o }; st.step = 0; st.tmp = {}; help(); render(); return;
+    }
+    if (t === 'prot') {
+      if (st.step === 0) {
+        const s = snap(p);
+        if (s.type !== 'point') { msg('Clique sur un point : le sommet de l\'angle.', true); return; }
+        st.tmp = { created: [], c: s.pid }; st.step = 1; help(); render(); return;
+      }
+      if (st.step === 1) {
+        const s = snap(p, { exclude: st.tmp.c });
+        const C = pt(st.tmp.c);
+        if (s.type === 'free' || G.dist(s, C) < 0.3) { msg('Clique sur un point ou sur un tracé du côté de départ.', true); return; }
+        st.tmp.ref = G.norm(G.sub(s, C)); st.step = 2; help(); render(); return;
+      }
+      const g = protAt(p); if (!g) return;
+      const q = { id: st.uid++, x: g.x, y: g.y, name: '', tick: true };
+      st.points.push(q); commit([q.id]);
+      st.adj = { kind: 'ang', q, c: st.tmp.c, ref: st.tmp.ref, a: g.a, sg: g.sg, r: g.r };
+      st.step = 0; st.tmp = {}; help(); render(); return;
     }
     if (t === 'perp' || t === 'par') {
       if (st.step === 0) {
@@ -479,6 +522,10 @@ function createBoard(host, opts = {}) {
       const u = G.norm(G.sub(B, A)); B.x = A.x + u.x * L; B.y = A.y + u.y * L;
     } else if (a.kind === 'rad') {
       a.o.r = Math.max(0.1, round1(a.o.r + d * 0.1));
+    } else if (a.kind === 'ang') {
+      const na = clamp(a.a + d, 0, 180); a.a = na;
+      const C = pt(a.c), dd = G.rot(a.ref, a.sg * na);
+      a.q.x = C.x + dd.x * a.r; a.q.y = C.y + dd.y * a.r;
     }
     render();
   }
@@ -505,16 +552,19 @@ function createBoard(host, opts = {}) {
       elAdj.hidden = false;
       if (a.kind === 'len') elRead.textContent = `Longueur : ${cm(G.dist(pt(a.o.a), pt(a.o.b)))}`;
       if (a.kind === 'rad') elRead.textContent = `Rayon : ${cm(a.o.r)}`;
+      if (a.kind === 'ang') elRead.textContent = `Marque à ${a.a}°`;
     } else if (st.step === 0) { elAdj.hidden = true; elRead.textContent = ''; }
     else elAdj.hidden = true;
   }
   function render() {
     gObjs.innerHTML = st.objs.map((o) => objSVG(o)).join('');
     const all = st.points.filter((p) => !p.hidden);
-    const c = all.length ? centroid(...all) : { x: 8, y: 5 };
+    const named = all.filter((p) => !p.tick);
+    const c = named.length ? centroid(...named) : { x: 8, y: 5 };
     gPts.innerHTML = all.map((p) => {
       let d = G.sub(p, c); d = G.len(d) < 0.3 ? { x: 0.3, y: -1 } : d;
       const l = G.add(p, G.mul(G.norm(G.add(G.mul(G.norm(d), 0.6), { x: 0.7, y: -0.7 })), 0.45));
+      if (p.tick) return `<circle cx="${p.x}" cy="${p.y}" r="0.09" class="snap"/>`;
       return `${p.mark && p.mark.dash ? dashSVG(p, p.mark.dash, 0.2, 'g-pt') : crossSVG(p, 0.11, 'g-pt')}<text x="${l.x}" y="${l.y}" class="g-lbl">${p.name}</text>`;
     }).join('');
     renderNames(); readout(); preview();
@@ -547,6 +597,13 @@ function createBoard(host, opts = {}) {
       const e = G.add(C, G.mul(G.norm(G.sub(p, C)), r));
       s += `<circle cx="${C.x}" cy="${C.y}" r="${r}" class="pv"/>` + L2(C, e, 'pv-dash');
       elRead.textContent = `Rayon : ${cm(r)}`;
+    } else if (t === 'prot' && st.step === 1) {
+      const C = pt(st.tmp.c), sp = snap(p, { exclude: st.tmp.c });
+      if (sp.type !== 'free') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.12" class="snap"/>` + L2(C, far(C, G.sub(sp, C), 40), 'hl');
+      elRead.textContent = '';
+    } else if (t === 'prot' && st.step === 2) {
+      const C = pt(st.tmp.c), g = protAt(p);
+      if (g) { s += protSVG(C, st.tmp.ref, g.sg, g.a) + `<circle cx="${g.x}" cy="${g.y}" r="0.1" class="snap"/>`; elRead.textContent = `Angle : ${g.a}°`; }
     } else if ((t === 'perp' || t === 'par') && st.step === 0) {
       const o = nearestLinear(p); if (o) s += objSVG(o, 'hl');
     } else if ((t === 'perp' || t === 'par') && st.step === 1) {
@@ -556,7 +613,8 @@ function createBoard(host, opts = {}) {
       const u = G.norm(lin(ref).d), d = t === 'perp' ? G.perp(u) : u;
       s += L2(far(sp, d, -40), far(sp, d, 40), 'pv-dash');
     }
-    if (st.step === 0 && t !== 'perp' && t !== 'par') {
+    if (st.step === 0 && t === 'prot') { const sp = snap(p); if (sp.type === 'point') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.14" class="snap"/>`; }
+    if (st.step === 0 && t !== 'perp' && t !== 'par' && t !== 'prot') {
       const sp = snap(p);
       if (sp.type === 'point' || sp.type === 'inter') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.12" class="snap"/>`;
     }
@@ -984,9 +1042,9 @@ function membershipScene() {
 }
 
 /* ---------- 2. Appartenance et alignement ---------- */
-function genAppartient() {
+function genAppartient(hard = false) {
   const S = membershipScene();
-  const v = rand(0, 2);
+  const v = hard ? rand(1, 2) : rand(0, 2); // ★ : droite nommée par deux de ses points, ou points alignés
   if (v < 2) {
     const isOn = Math.random() < 0.5;
     const X = isOn ? pick(S.on) : pick(S.off);
@@ -1033,8 +1091,9 @@ function genNoms() {
 }
 
 /* ---------- 4. Position de deux droites ---------- */
-function genPosition() {
-  const kind = pick(['par', 'perp', 'sec', 'out', 'out']);
+function genPosition(hard = false) {
+  // ★ : sécantes en dehors du cadre, ou sécantes presque perpendiculaires (à vérifier à l'équerre)
+  const kind = hard ? pick(['out', 'sec']) : pick(['par', 'perp', 'sec', 'out', 'out']);
   const c = { x: rand(40, 60) / 10, y: rand(26, 34) / 10 };
   let L1, L2, X = null, extBox = null;
   if (kind === 'par') {
@@ -1042,7 +1101,7 @@ function genPosition() {
     L1 = { P: G.add(c, G.mul(n, -h / 2)), u }; L2 = { P: G.add(c, G.mul(n, h / 2)), u };
   } else if (kind === 'perp' || kind === 'sec') {
     const a = rand(-60, 60), u = dirDeg(a);
-    const v = kind === 'perp' ? G.perp(u) : dirDeg(a + pick([1, -1]) * rand(32, 62));
+    const v = kind === 'perp' ? G.perp(u) : dirDeg(a + pick([1, -1]) * (hard ? rand(72, 80) : rand(32, 62)));
     L1 = { P: c, u }; L2 = { P: c, u: v }; X = c;
   } else {
     // sécantes en dehors du cadre : elles ont l'air parallèles
@@ -1078,9 +1137,9 @@ function genPosition() {
 }
 
 /* ---------- 5. Propriété : deux perpendiculaires à une même droite ---------- */
-function genPropPar() {
+function genPropPar(hard = false) {
   const sub = (k) => `(d<sub>${k}</sub>)`;
-  const v = rand(0, 1);
+  const v = hard ? 1 : rand(0, 1); // ★ : perpendiculaire à une perpendiculaire
   const stmt = v === 0 ? `${sub(1)} ⊥ (d) et ${sub(2)} ⊥ (d).<br>Que peut-on dire des droites ${sub(1)} et ${sub(2)} ?`
     : `${sub(1)} ⊥ (d) et ${sub(2)} ⊥ ${sub(1)}.<br>Que peut-on dire des droites (d) et ${sub(2)} ?`;
   const pair = v === 0 ? `${sub(1)} et ${sub(2)}` : `(d) et ${sub(2)}`;
@@ -1267,16 +1326,18 @@ function numTable(intS, decS = '', { hl = null, empty = false } = {}) {
 const numStr = (intS, decS) => groupInt(intS) + (decS ? ',' + decS : '');
 
 /* ---------- 1. Rang d'un chiffre ---------- */
-function genRang() {
+function genRang(hard = false) {
+  // ★ : grands nombres (rang des millions ou plus) ou rang des centièmes / millièmes
   const isDec = Math.random() < 0.5;
-  const intS = isDec ? digitsStr(rand(1, 3)) : digitsStr(rand(4, 10));
-  const decS = isDec ? digitsStr(rand(1, 3), { first: false, zeros: 0.1 }).replace(/0$/, String(rand(1, 9))) : '';
+  const intS = isDec ? digitsStr(hard ? rand(2, 3) : rand(1, 3)) : digitsStr(hard ? rand(8, 10) : rand(4, 10));
+  const decS = isDec ? digitsStr(hard ? 3 : rand(1, 3), { first: false, zeros: 0.1 }).replace(/0$/, String(rand(1, 9))) : '';
   // position : p >= 0 partie entière (0 = unités), p < 0 partie décimale
   const choices = [];
   for (let p = 0; p < intS.length; p++) if (intS[intS.length - 1 - p] !== '0') choices.push(p);
   for (let j = 0; j < decS.length; j++) if (decS[j] !== '0') choices.push(-j - 1);
   let p = pick(choices);
   if (isDec && Math.random() < 0.6 && decS.length) p = pick(choices.filter((x) => x < 0)) ?? p;
+  if (hard) p = pick(choices.filter((x) => (isDec ? x <= -2 : x >= 6))) ?? p;
   const fromLeft = p >= 0 ? intS.length - 1 - p : null;
   const opts = [{ p, kind: 'ok' }];
   const add = (q, kind) => { if (q !== undefined && q !== null && rankName(q) && !opts.some((o) => o.p === q)) opts.push({ p: q, kind }); };
@@ -1312,8 +1373,9 @@ function genRang() {
 }
 
 /* ---------- 2. Nombre de dizaines, de dixièmes… ---------- */
-function genCombien() {
-  if (Math.random() < 0.5) {
+function genCombien(hard = false) {
+  // ★ : nombre de dixièmes / centièmes dans un nombre décimal
+  if (!hard && Math.random() < 0.5) {
     const n = Number(digitsStr(rand(4, 6), { zeros: 0.1 }));
     const p = pick([1, 2, 3]);
     const word = ['', 'dizaines', 'centaines', 'milliers'][p];
@@ -1340,7 +1402,7 @@ function genCombien() {
     };
   }
   const m = Number(digitsStr(rand(4, 5), { zeros: 0.1 }).replace(/0$/, '7')); // 3 décimales
-  const x = m / 1000, k = pick([1, 2]);
+  const x = m / 1000, k = hard ? 2 : pick([1, 2]);
   const word = ['', 'dixièmes', 'centièmes'][k];
   const ans = Math.floor(m / 10 ** (3 - k)), digit = ans % 10;
   return {
@@ -1366,8 +1428,8 @@ function genCombien() {
 }
 
 /* ---------- 3. Tranches de trois chiffres ---------- */
-function genTranches() {
-  const s = digitsStr(rand(7, 10), { zeros: 0.25 }), L = s.length;
+function genTranches(hard = false) {
+  const s = digitsStr(hard ? rand(10, 12) : rand(7, 10), { zeros: hard ? 0.4 : 0.25 }), L = s.length;
   const good = new Set(), left = new Set();
   for (let i = 0; i < L - 1; i++) { if ((L - 1 - i) % 3 === 0) good.add(i); if ((i + 1) % 3 === 0) left.add(i); }
   const html = [...s].map((d, i) => `<span class="dg">${d}</span>${i < L - 1 ? `<button type="button" class="gap" data-i="${i}" aria-label="Espace après le chiffre ${i + 1}"></button>` : ''}`).join('');
@@ -1397,12 +1459,13 @@ function genTranches() {
 
 /* ---------- 4. Décomposer / recomposer ---------- */
 const P10S = (p) => fmt(10 ** p);
-function genDecomp() {
-  let s; do { s = digitsStr(rand(4, 6), { zeros: 0.35 }); } while (!/0/.test(s.slice(1)) && Math.random() < 0.7);
+function genDecomp(hard = false) {
+  // ★ : 6 à 7 chiffres avec des rangs vides, parenthèses dans le désordre
+  let s; do { s = digitsStr(hard ? rand(6, 7) : rand(4, 6), { zeros: 0.35 }); } while (!/0/.test(s.slice(1)) && (hard || Math.random() < 0.7));
   const L = s.length, n = Number(s);
   const terms = [...s].map((d, i) => ({ d: Number(d), p: L - 1 - i }));
   const full = terms.filter((t) => t.d).map((t) => `(${t.d} × ${P10S(t.p)})`).join(' + ');
-  if (Math.random() < 0.5) {
+  if (!hard && Math.random() < 0.5) {
     return {
       hints: [
         `Quel est le chiffre des unités, des dizaines, des centaines… ? Relis « Décomposition » dans ${ficheLink('decimaux1')}.`,
@@ -1426,7 +1489,7 @@ function genDecomp() {
     };
   }
   const shown = terms.filter((t) => t.d);
-  const order = Math.random() < 0.5 ? shuffle([...shown]) : shown;
+  const order = hard || Math.random() < 0.5 ? shuffle([...shown]) : shown;
   const concat = Number(order.map((t) => t.d).join(''));
   return {
     hints: [
@@ -1450,8 +1513,8 @@ function genDecomp() {
 }
 
 /* ---------- 5. Zéros inutiles ---------- */
-function genZeros() {
-  const t = pick(['lead', 'mid', 'unit', 'small', 'int']);
+function genZeros(hard = false) {
+  const t = hard ? pick(['mid', 'small']) : pick(['lead', 'mid', 'unit', 'small', 'int']);
   let intS, decS;
   if (t === 'lead') { intS = '0'.repeat(rand(1, 2)) + digitsStr(rand(1, 2), { zeros: 0 }); decS = String(rand(1, 9)) + '0'.repeat(rand(1, 2)); }
   else if (t === 'mid') { intS = String(rand(1, 9)) + '0' + rand(1, 9); decS = '0' + rand(1, 9) + '0'.repeat(rand(1, 2)); }
@@ -1560,8 +1623,9 @@ function genFracDec() {
 }
 
 /* ---------- 7. Des lettres aux chiffres ---------- */
-function genLettres() {
-  if (Math.random() < 0.55) {
+function genLettres(hard = false) {
+  // ★ : « … unités et … millièmes » avec des zéros à placer (12 unités et 7 millièmes = 12,007)
+  if (!hard && Math.random() < 0.55) {
     const k = rand(1, 3);
     let N = pick([rand(2, 19), rand(20, 99), rand(100, 999)]);
     if (N % 10 === 0) N++;
@@ -1588,8 +1652,8 @@ function genLettres() {
       },
     };
   }
-  const E = pick([rand(1, 20), rand(21, 999)]), k = rand(2, 3);
-  const N = Math.random() < 0.5 ? rand(1, 9) : rand(10, 10 ** k - 1);
+  const E = pick([rand(1, 20), rand(21, 999)]), k = hard ? 3 : rand(2, 3);
+  const N = hard ? (() => { let v; do { v = rand(1, 99); } while (v % 10 === 0); return v; })() : Math.random() < 0.5 ? rand(1, 9) : rand(10, 10 ** k - 1);
   const x = E + N / 10 ** k, rk = RANKW[k];
   const words = `${numWords(E)} unité${E > 1 ? 's' : ''} et ${numWords(N)} ${N > 1 ? rk : rk.slice(0, -1)}`;
   return {
@@ -1614,9 +1678,10 @@ function genLettres() {
 }
 
 /* ---------- 8. Différentes écritures d'un nombre ---------- */
-function genFormes() {
-  const k = pick([1, 2, 2, 3]), I = rand(1, 999);
-  const d = digitsStr(k, { first: false, zeros: 0.2 }).replace(/0$/, String(rand(1, 9)));
+function genFormes(hard = false) {
+  // ★ : trois décimales, avec des zéros (5,047)
+  const k = hard ? 3 : pick([1, 2, 2, 3]), I = rand(1, 999);
+  const d = digitsStr(k, { first: false, zeros: hard ? 0.45 : 0.2 }).replace(/0$/, String(rand(1, 9)));
   const den = 10 ** k, dn = Number(d), m = Number(String(I) + d), x = m / den;
   const exk = (I === 614 ? '12,35' : '614,28');
   return {
@@ -1742,11 +1807,12 @@ function genEcrire() {
 }
 
 /* ---------- 3. Milieu d'un segment ---------- */
-function genMilieu() {
+function genMilieu(hard = false) {
   const [a, b] = pick(PAIRS);
-  if (Math.random() < 0.4) {
-    const half = rand(12, 48) / 10;
-    const fromWhole = Math.random() < 0.5;
+  // ★ : longueur avec un nombre impair de dixièmes (7,3 cm → 3,65 cm)
+  if (hard || Math.random() < 0.4) {
+    const half = hard ? (2 * rand(12, 48) + 1) / 20 : rand(12, 48) / 10;
+    const fromWhole = hard ? true : Math.random() < 0.5;
     const ans = fromWhole ? half : 2 * half;
     const given = fromWhole ? `${a}${b} = ${cm(2 * half)}` : `${a}I = ${cm(half)}`;
     const asked = fromWhole ? `${a}I` : `${a}${b}`;
@@ -1873,10 +1939,11 @@ function genTracer() {
 }
 
 /* ---------- 5. Médiatrice : propriété et réciproque ---------- */
-function genMedProp() {
+function genMedProp(hard = false) {
   const [A, B] = pick(PAIRS), M = pick(['M', 'P', 'K']);
   const x = rand(15, 95) / 10;
-  if (Math.random() < 0.6) {
+  // ★ : la réciproque
+  if (!hard && Math.random() < 0.6) {
     return {
       hints: [`Relis la propriété d'équidistance de la médiatrice dans ${ficheLink('cercle')}.`,
         A === 'R' ? 'Exemple : P est sur la médiatrice de [EF] et PE = 3 cm. Alors PF = 3 cm.' : 'Exemple : P est sur la médiatrice de [RS] et PR = 3 cm. Alors PS = 3 cm.',
@@ -1970,7 +2037,8 @@ function genMedTrace() {
 function circleScene() {
   const O = { x: 0, y: 0 }, R = 2.4;
   const at = (deg) => ({ x: R * Math.cos((deg * Math.PI) / 180), y: -R * Math.sin((deg * Math.PI) / 180) });
-  const a1 = rand(150, 200), a2 = rand(100, 130), a3 = rand(-70, -40), a4 = a3 + rand(75, 105);
+  // D au moins 28° après C (sinon les lettres C et D se chevauchent), E à plus de 30° de B
+  const a1 = rand(150, 200), a2 = rand(100, 130), a3 = a2 - 180 + rand(28, 40), a4 = a3 + rand(75, 105);
   return { O, R, A: at(a1), B: at(a2), C: at(a2 + 180), D: at(a3), E: at(a4) };
 }
 function circleFig(S, hl, names = true) {
@@ -1980,14 +2048,14 @@ function circleFig(S, hl, names = true) {
   const pts = names ? { O, A, B, C, D, E } : { O };
   return figure(pts, items, { pad: 0.9, marks: { O: 'x', A: 'none', B: 'none', C: 'none', D: 'none', E: 'none' }, center: O, extra: [{ x: -R, y: -R }, { x: R, y: R }] });
 }
-function genVocCercle() {
+function genVocCercle(hard = false) {
   const S = circleScene();
   const terms = ['un rayon', 'un diamètre', 'une corde', 'un arc de cercle'];
   const keys = ['rayon', 'diametre', 'corde', 'arc'];
   const k = rand(0, 3);
   const DEF = ['un segment qui relie le centre O à un point du cercle', 'un segment qui passe par le centre O et relie deux points du cercle', 'un segment qui relie deux points du cercle', 'une portion du cercle comprise entre deux points'];
   const NM = ['[OA]', '[BC]', '[DE]', 'l\'arc DE'];
-  const v = Math.random() < 0.5;
+  const v = hard ? false : Math.random() < 0.5; // ★ : élément donné par son nom, sans couleur
   const prompt = v ? `<p>Comment s'appelle l'élément tracé en <b class="red">rouge</b> ?</p>${circleFig(S, keys[k])}` : `<p>Sur la figure, O est le centre du cercle. Que représente <b>${NM[k]}</b> ?</p>${circleFig(S, null)}`;
   return withRemed(withHints(mcq(prompt, terms, k, `C'est ${terms[k]} : ${DEF[k]}.`, { keepOrder: true }),
     [`Relis « Vocabulaire du cercle » dans ${ficheLink('cercle')}. Est-ce un segment ou une partie du cercle ? Passe-t-il par le centre O ?`,
@@ -2003,9 +2071,10 @@ function genVocCercle() {
 }
 
 /* ---------- 8. Rayon et diamètre ---------- */
-function genRayonDiam() {
-  const rr = rand(10, 60) / 10;
-  const toD = Math.random() < 0.5;
+function genRayonDiam(hard = false) {
+  // ★ : du diamètre au rayon, avec un nombre impair de dixièmes (7,3 cm → 3,65 cm)
+  const rr = hard ? (2 * rand(10, 60) + 1) / 20 : rand(10, 60) / 10;
+  const toD = hard ? false : Math.random() < 0.5;
   const ctx = Math.random() < 0.5;
   const [a, b] = pick([['A', 'B'], ['E', 'F'], ['M', 'N']]);
   const q = toD
@@ -2179,8 +2248,9 @@ function pickTickHL(c) {
 }
 
 /* ---------- 1. Lire une abscisse ---------- */
-function genLireHL() {
-  const type = pick(['half', 'dix', 'dix', 'cent', 'diz']);
+function genLireHL(hard = false) {
+  // ★ : graduations de 0,01
+  const type = hard ? 'cent' : pick(['half', 'dix', 'dix', 'cent', 'diz']);
   const c = HL_CFG[type]();
   const i = c.half ? rand(0, c.n - 1) + 0.5 : pickTickHL(c);
   const x = c.half ? hlVal(c, Math.floor(i)) + 0.5 : hlVal(c, i);
@@ -2217,12 +2287,13 @@ function genLireHL() {
 }
 
 /* ---------- 2. Placer un point ---------- */
-function genPlacerHL() {
-  const type = pick(['dix', 'dix', 'cent', 'diz']);
+function genPlacerHL(hard = false) {
+  // ★ : le nombre est donné sous forme de fraction décimale (ou entier + fraction)
+  const type = hard ? pick(['dix', 'cent']) : pick(['dix', 'dix', 'cent', 'diz']);
   const c = HL_CFG[type]();
   const i = pickTickHL(c), x = hlVal(c, i), units = c.a + i * c.s;
   let disp = fmt(x);
-  const r = Math.random();
+  const r = hard ? (type === 'dix' ? pick([0.1, 0.4]) : 0.1) : Math.random();
   if (type === 'dix' && r < 0.3) disp = `${fmt(Math.floor(x))} + ${F(units % 10, 10)}`;
   else if (type === 'dix' && r < 0.55) disp = F(units, 10);
   else if (type === 'cent' && r < 0.35) disp = F(units, 100);
@@ -2274,8 +2345,9 @@ const padZeros = (list) => { const L = Math.max(...list.map((x) => (x.d || '').l
 const nz = () => String(rand(1, 9));
 
 /* ---------- 3. Comparer ---------- */
-function genComparer() {
-  const t = pick(['long', 'long', 'zero', 'eqz', 'int', 'same']);
+function genComparer(hard = false) {
+  // ★ : seulement des cas « piège » (nombres de décimales différents, zéro après la virgule)
+  const t = hard ? pick(['long', 'zero', 'eqz']) : pick(['long', 'long', 'zero', 'eqz', 'int', 'same']);
   const I = rand(1, 60);
   let x, y;
   if (t === 'long') { const a = rand(2, 9); let b; do { b = rand(10, a * 10 - 1); } while (b % 10 === 0 || b <= a); x = D(I, String(b).padStart(2, '0')); y = D(I, String(a)); }
@@ -2306,12 +2378,12 @@ function genComparer() {
 }
 
 /* ---------- 4. Ranger ---------- */
-function genRanger() {
+function genRanger(hard = false) {
   const I = rand(2, 40);
   const pool = [D(I, nz()), D(I, nz() + nz()), D(I, '0' + nz()), D(I + 1, ''), D(I, nz() + nz() + nz()), D(I - 1, nz() + nz())];
   let list;
   for (let t = 0; t < 50; t++) {
-    list = shuffle([...pool]).slice(0, rand(4, 5));
+    list = shuffle([...pool]).slice(0, hard ? 6 : rand(4, 5)); // ★ : les 6 nombres
     const vs = list.map((x) => x.v);
     if (new Set(vs.map((v) => v.toFixed(6))).size === vs.length && list.filter((x) => x.I === I).length >= 3) break;
   }
@@ -2347,8 +2419,8 @@ function genRanger() {
 }
 
 /* ---------- 5. Intercaler ---------- */
-function genIntercaler() {
-  const t = pick(['cent', 'dix', 'int', 'mixed', 'border']);
+function genIntercaler(hard = false) {
+  const t = hard ? pick(['cent', 'mixed', 'border']) : pick(['cent', 'dix', 'int', 'mixed', 'border']);
   const I = rand(1, 40);
   let a, b;
   if (t === 'cent') { const n = rand(10, 98); a = D(I, String(n)); b = D(I, String(n + 1)); if (n % 10 === 9) b = D(I, String(n + 1)); }
@@ -2381,11 +2453,12 @@ function genIntercaler() {
 }
 
 /* ---------- 6. Encadrer ---------- */
-function genEncadrer() {
-  const unit = Math.random() < 0.5;
+function genEncadrer(hard = false) {
+  // ★ : encadrement au dixième d'un nombre dont le chiffre des dixièmes est 9 (4,96 → 4,9 < 4,96 < 5)
+  const unit = hard ? false : Math.random() < 0.5;
   let m, x, lo, hi, k;
   if (unit) { k = pick([1, 2]); do { m = rand(10, 999) * (k === 1 ? 1 : 1) + rand(0, 9); } while (m % 10 ** k === 0); x = m / 10 ** k; lo = Math.floor(x); hi = lo + 1; }
-  else { k = 2; do { m = rand(100, 9999); } while (m % 10 === 0); x = m / 100; lo = Math.floor(m / 10) / 10; hi = round1(lo + 0.1); }
+  else { k = 2; do { m = rand(100, 9999); } while (m % 10 === 0 || (hard && Math.floor(m / 10) % 10 !== 9)); x = m / 100; lo = Math.floor(m / 10) / 10; hi = round1(lo + 0.1); }
   const prec = unit ? 'deux nombres entiers consécutifs' : 'deux nombres qui ont un seul chiffre après la virgule (au dixième)';
   return {
     hints: [
@@ -2420,9 +2493,11 @@ function arrDemo(m, k, p) {
   const idxRank = p === 0 ? comma - 1 : comma + p, idxNext = idxRank === comma - 1 ? comma + 1 : idxRank + 1;
   return `<span class="arr">${[...s].map((ch, i) => (i === idxRank ? `<b class="arr-rk">${ch}</b>` : i === idxNext ? `<b class="arr-nx">${ch}</b>` : ch)).join('')}</span>`;
 }
-function genArrondir() {
+function genArrondir(hard = false) {
   const k = pick([2, 3, 3]), p = rand(0, k - 1);
-  let m; do { m = rand(10 ** (k + 0), 10 ** (k + 2) * 9); } while (m % 10 === 0);
+  // ★ : la retenue se propage (chiffre du rang = 9 et chiffre suivant ≥ 5 : 3,96 → 4,0)
+  const carry = (mm) => Math.floor(mm / 10 ** (k - p)) % 10 === 9 && Math.floor(mm / 10 ** (k - p - 1)) % 10 >= 5;
+  let m, t = 0; do { m = rand(10 ** (k + 0), 10 ** (k + 2) * 9); t++; } while (m % 10 === 0 || (hard && !carry(m) && t < 2000));
   const x = m / 10 ** k;
   const q = Math.floor(m / 10 ** (k - p)), next = Math.floor(m / 10 ** (k - p - 1)) % 10;
   const res = (q + (next >= 5 ? 1 : 0)) / 10 ** p, trunc = q / 10 ** p, up = (q + 1) / 10 ** p;
@@ -2538,40 +2613,40 @@ function speak(text, btn) {
 const GENS = {
   // Chapitre 1 — Droites
   'd-codage': { ch: 'droites', f: genCodage, label: 'Coder un point' },
-  'd-appartient': { ch: 'droites', f: genAppartient, label: 'Appartenance et alignement' },
+  'd-appartient': { ch: 'droites', f: genAppartient, label: 'Appartenance et alignement', hard: true },
   'd-noms': { ch: 'droites', f: genNoms, label: 'Nommer une droite' },
-  'd-position': { ch: 'droites', f: genPosition, label: 'Position de deux droites' },
-  'd-prop': { ch: 'droites', f: genPropPar, label: 'Deux perpendiculaires à une même droite' },
+  'd-position': { ch: 'droites', f: genPosition, label: 'Position de deux droites', hard: true },
+  'd-prop': { ch: 'droites', f: genPropPar, label: 'Deux perpendiculaires à une même droite', hard: true },
   'd-perp': { ch: 'droites', f: genTracePerp, label: 'Tracer une perpendiculaire', slow: true },
   'd-par': { ch: 'droites', f: genTracePar, label: 'Tracer une parallèle', slow: true },
   // Chapitre 2 — Nombres décimaux (partie 1)
-  'n-rang': { ch: 'decimaux1', f: genRang, label: 'Rang d\'un chiffre' },
-  'n-combien': { ch: 'decimaux1', f: genCombien, label: 'Nombre de dizaines, de dixièmes…' },
-  'n-tranches': { ch: 'decimaux1', f: genTranches, label: 'Tranches de trois chiffres' },
-  'n-decomp': { ch: 'decimaux1', f: genDecomp, label: 'Décomposer un nombre' },
-  'n-zeros': { ch: 'decimaux1', f: genZeros, label: 'Zéros inutiles' },
+  'n-rang': { ch: 'decimaux1', f: genRang, label: 'Rang d\'un chiffre', hard: true },
+  'n-combien': { ch: 'decimaux1', f: genCombien, label: 'Nombre de dizaines, de dixièmes…', hard: true },
+  'n-tranches': { ch: 'decimaux1', f: genTranches, label: 'Tranches de trois chiffres', hard: true },
+  'n-decomp': { ch: 'decimaux1', f: genDecomp, label: 'Décomposer un nombre', hard: true },
+  'n-zeros': { ch: 'decimaux1', f: genZeros, label: 'Zéros inutiles', hard: true },
   'n-fracdec': { ch: 'decimaux1', f: genFracDec, label: 'Fractions décimales' },
-  'n-lettres': { ch: 'decimaux1', f: genLettres, label: 'Des lettres aux chiffres' },
-  'n-formes': { ch: 'decimaux1', f: genFormes, label: 'Différentes écritures' },
+  'n-lettres': { ch: 'decimaux1', f: genLettres, label: 'Des lettres aux chiffres', hard: true },
+  'n-formes': { ch: 'decimaux1', f: genFormes, label: 'Différentes écritures', hard: true },
   // Chapitre 3 — Distance et cercle
   'c-notation': { ch: 'cercle', f: genNotation, label: 'Segment, demi-droite, droite' },
   'c-ecrire': { ch: 'cercle', f: genEcrire, label: 'Bien écrire les notations' },
-  'c-milieu': { ch: 'cercle', f: genMilieu, label: 'Milieu d\'un segment' },
+  'c-milieu': { ch: 'cercle', f: genMilieu, label: 'Milieu d\'un segment', hard: true },
   'c-tracer': { ch: 'cercle', f: genTracer, label: 'Tracer une demi-droite, un milieu', slow: true },
-  'c-med-prop': { ch: 'cercle', f: genMedProp, label: 'Propriété de la médiatrice' },
+  'c-med-prop': { ch: 'cercle', f: genMedProp, label: 'Propriété de la médiatrice', hard: true },
   'c-med-trace': { ch: 'cercle', f: genMedTrace, label: 'Tracer une médiatrice', slow: true },
-  'c-voc': { ch: 'cercle', f: genVocCercle, label: 'Vocabulaire du cercle' },
-  'c-rd': { ch: 'cercle', f: genRayonDiam, label: 'Rayon et diamètre' },
+  'c-voc': { ch: 'cercle', f: genVocCercle, label: 'Vocabulaire du cercle', hard: true },
+  'c-rd': { ch: 'cercle', f: genRayonDiam, label: 'Rayon et diamètre', hard: true },
   'c-disque': { ch: 'cercle', f: genDisque, label: 'Cercle et disque' },
   'c-trace-cercle': { ch: 'cercle', f: genTraceCercle, label: 'Tracer un cercle', slow: true },
   // Chapitre 4 — Nombres décimaux (partie 2)
-  'e-lire': { ch: 'decimaux2', f: genLireHL, label: 'Lire une abscisse' },
-  'e-placer': { ch: 'decimaux2', f: genPlacerHL, label: 'Placer un point' },
-  'e-comparer': { ch: 'decimaux2', f: genComparer, label: 'Comparer deux nombres' },
-  'e-ranger': { ch: 'decimaux2', f: genRanger, label: 'Ranger des nombres' },
-  'e-intercaler': { ch: 'decimaux2', f: genIntercaler, label: 'Intercaler un nombre' },
-  'e-encadrer': { ch: 'decimaux2', f: genEncadrer, label: 'Encadrer un nombre' },
-  'e-arrondir': { ch: 'decimaux2', f: genArrondir, label: 'Arrondir un nombre' },
+  'e-lire': { ch: 'decimaux2', f: genLireHL, label: 'Lire une abscisse', hard: true },
+  'e-placer': { ch: 'decimaux2', f: genPlacerHL, label: 'Placer un point', hard: true },
+  'e-comparer': { ch: 'decimaux2', f: genComparer, label: 'Comparer deux nombres', hard: true },
+  'e-ranger': { ch: 'decimaux2', f: genRanger, label: 'Ranger des nombres', hard: true },
+  'e-intercaler': { ch: 'decimaux2', f: genIntercaler, label: 'Intercaler un nombre', hard: true },
+  'e-encadrer': { ch: 'decimaux2', f: genEncadrer, label: 'Encadrer un nombre', hard: true },
+  'e-arrondir': { ch: 'decimaux2', f: genArrondir, label: 'Arrondir un nombre', hard: true },
 };
 
 const CHAPTERS = [
@@ -2813,6 +2888,9 @@ function chapterStats(ch) {
 }
 function renderChapters() {
   document.getElementById('chapters').innerHTML = CHAPTERS.map((c) => {
+    if (c.locked) return `<div class="chapter-card locked" data-ch="${c.id}" aria-disabled="true">
+      <span class="symbol">🔒</span><span class="num">Chapitre ${c.num}</span><h2>${c.title}</h2>
+      <p>${c.desc}</p><span class="stat">Bientôt : on le verra d'abord en classe.</span></div>`;
     const s = chapterStats(c.id);
     const pct = s.total ? Math.round((s.ok / s.total) * 100) : 0;
     const parts = [];
@@ -2825,7 +2903,7 @@ function renderChapters() {
       <h2>${c.title}</h2>
       <p>${c.desc}</p>
       <div class="bar"><span style="width:${pct}%"></span></div>
-      <span class="stat">${parts.length ? parts.join(' · ') : 'Pas encore commencé'}</span></a>`;
+      <span class="stat">${parts.length ? parts.join(' · ') : 'Pas encore commencé'}</span>${c.hiddenNote ? `<span class="hidden-note">${c.hiddenNote}</span>` : ''}</a>`;
   }).join('');
 }
 function renderChapterHome(ch) {
@@ -3151,9 +3229,12 @@ function renderProf() {
   const host = document.getElementById('prof-list');
   if (host.dataset.ready) return;
   host.dataset.ready = '1';
-  host.innerHTML = CHAPTERS.map((c) => {
+  let folded = {};
+  try { folded = JSON.parse(localStorage.getItem('revisions6e-prof-plie') || 'null') || {}; } catch (e) { folded = {}; }
+  host.innerHTML = CHAPTERS.slice().reverse().map((c) => {
     const keys = Object.keys(GENS).filter((k) => GENS[k].ch === c.id);
-    return `<fieldset class="prof-ch" data-ch="${c.id}"><legend>Chapitre ${c.num} · ${c.title}
+    const shut = c.id in folded ? folded[c.id] : c.num <= 4;
+    return `<fieldset class="prof-ch${shut ? ' folded' : ''}" data-ch="${c.id}"><legend><button type="button" class="prof-fold" aria-expanded="${!shut}">Chapitre ${c.num} · ${c.title} <span class="prof-nb"></span></button>
       <button type="button" class="mini prof-all">tout cocher</button></legend>
       ${keys.map((k) => `<label class="prof-k"><input type="checkbox" value="${k}"> <span>${GENS[k].label}${GENS[k].slow ? ' <span class="small muted">(tracé)</span>' : ''}</span>
         <button type="button" class="mini prof-one" data-k="${k}" title="Copier le lien de cette seule notion">🔗 lien seul</button></label>`).join('')}
@@ -3164,6 +3245,7 @@ function renderProf() {
   const sel = () => [...host.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
   const update = () => {
     const ks = sel();
+    host.querySelectorAll('.prof-ch').forEach((fs) => { const n = fs.querySelectorAll('input[type=checkbox]:checked').length; fs.querySelector('.prof-nb').textContent = n ? `(${n} cochée${n > 1 ? 's' : ''})` : ''; });
     if (!ks.length) { out.value = ''; out.placeholder = 'Coche au moins une notion ci-dessous.'; open.hidden = true; projo.hidden = true; return; }
     out.value = siteURL() + devoirHash(ks, nSel.value, profExtra());
     open.href = devoirHash(ks, nSel.value, profExtra()); open.hidden = false;
@@ -3251,6 +3333,12 @@ function renderProf() {
     const old = btn.textContent; btn.textContent = '✔ Copié'; setTimeout(() => { btn.textContent = old; }, 1500);
   };
   host.addEventListener('click', (e) => {
+    const fold = e.target.closest('.prof-fold');
+    if (fold) {
+      const fs = fold.closest('fieldset'); fs.classList.toggle('folded'); fold.setAttribute('aria-expanded', String(!fs.classList.contains('folded')));
+      try { const f = JSON.parse(localStorage.getItem('revisions6e-prof-plie') || 'null') || {}; f[fs.dataset.ch] = fs.classList.contains('folded'); localStorage.setItem('revisions6e-prof-plie', JSON.stringify(f)); } catch (_) { /* rien */ }
+      return;
+    }
     const all = e.target.closest('.prof-all');
     if (all) { const fs = all.closest('fieldset'), cbs = [...fs.querySelectorAll('input')], on = !cbs.every((c) => c.checked); cbs.forEach((c) => { c.checked = on; }); update(); return; }
     const one = e.target.closest('.prof-one');
@@ -3271,6 +3359,7 @@ function renderProf() {
   try { bl.value = localStorage.getItem('revisions6e-bilan-link') || ''; } catch (e) { /* rien */ }
   bl.addEventListener('input', () => { try { localStorage.setItem('revisions6e-bilan-link', bl.value.trim()); } catch (e) { /* rien */ } showBL(); });
   showBL();
+  setupControles();
   update();
 }
 
@@ -3451,6 +3540,7 @@ function revealAnswer(cur, q) {
     q.querySelectorAll('.cb').forEach((c, j) => { c.checked = cur._items[j].ok; });
     return cur.check(q);
   }
+  if (cur._rb !== undefined) { const rb = q.querySelector(`.rb[data-o="${cur._rb}"]`); if (rb) rb.checked = true; }
   q.querySelectorAll('.ans').forEach((i) => { if (!i.value) i.value = i.classList.contains('frac') ? '1/10' : '0'; });
   const z = q.querySelector('.zbtn:not(.on), .gap:not(.on)'); if (z) z.click();
   q.querySelectorAll('.ordbtn').forEach((b) => b.click());
@@ -3461,6 +3551,31 @@ function revealAnswer(cur, q) {
   q.querySelectorAll('.rk').forEach((e) => { e.textContent = ''; });
   const out = q.querySelector('.ord-out'); if (out) out.innerHTML = '';
   return res;
+}
+/** Réponse courte et bien visible pour le vidéoprojecteur ; remplit aussi les cases avec la bonne réponse si on peut la vérifier */
+function projoShortAnswer(cur, q, res) {
+  try {
+    if (cur._correct !== undefined) { const t = document.createElement('div'); t.innerHTML = cur._opts[cur._correct]; return t.querySelector('svg, .p2-pose') ? '' : t.innerHTML; }
+    if (cur._items) { const ok = cur._items.filter((it) => it.ok); return ok.every((it) => !/<svg/.test(it.html)) ? ok.map((it) => it.html).join(' &nbsp;·&nbsp; ') : ''; }
+    const ins = [...q.querySelectorAll('.ans')];
+    if (!ins.length || !res || !res.msg) return '';
+    let vals = [];
+    if (ins.length === 1) {
+      const nums = [...res.msg.matchAll(/<b>([^<]*)<\/b>/g)].map((m) => { const x = m[1].replace(/[\s\u202f\u00a0]/g, '').match(/-?\d+(,\d+)?(\/\d+)?/); return x && x[0]; }).filter(Boolean);
+      vals = nums.length ? [nums[nums.length - 1]] : [];
+    } else vals = [...res.msg.matchAll(/<li>[^<]*=\s*([\d\s\u202f,]+)/g)].map((m) => m[1].replace(/[\s\u202f]/g, ''));
+    if (vals.length !== ins.length) return '';
+    // on vérifie sur une copie que ces valeurs sont bien acceptées
+    const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px';
+    document.body.appendChild(box); box.innerHTML = cur.q; if (cur.mount) cur.mount(box);
+    [...box.querySelectorAll('.ans')].forEach((i, j) => { i.value = vals[j]; });
+    const chk = cur.check(box); box.remove();
+    if (!chk || !chk.ok) return '';
+    ins.forEach((i, j) => { i.value = vals[j]; i.classList.add('right'); });
+    const last = ins[ins.length - 1], after = (last.nextSibling && last.nextSibling.nodeType === 3 ? last.nextSibling.textContent : '').trim().split(/\s/)[0];
+    const unit = /^(°|cm|m|€|mm|km)$/.test(after) ? (after === '°' ? '°' : ' ' + after) : '';
+    return vals[vals.length - 1] + unit;
+  } catch (e) { return ''; }
 }
 let projo = null;
 function routeProjo(spec) {
@@ -3477,12 +3592,17 @@ function routeProjo(spec) {
       <button type="button" class="btn pj-full" title="Plein écran (F)">⛶ Plein écran</button>
       <a class="btn" href="#/prof" title="Quitter">✕</a>
     </div>
-    <div class="ex-q pj-q"></div>
-    <div class="ex-fb pj-fb"></div>
-    <div class="ex-anim pj-anim"></div>
-    <div class="ex-actions pj-actions">
-      <button type="button" class="btn primary pj-reveal">👁 Afficher la réponse <kbd>R</kbd></button>
-      <button type="button" class="btn pj-next">Question suivante <kbd>→</kbd></button>
+    <div class="pj-layout">
+      <div class="pj-main"><div class="ex-q pj-q"></div></div>
+      <aside class="pj-side">
+        <div class="pj-answer" aria-live="polite"></div>
+        <div class="ex-fb pj-fb"></div>
+        <div class="ex-anim pj-anim"></div>
+        <div class="ex-actions pj-actions">
+          <button type="button" class="btn primary pj-reveal">👁 Afficher la réponse <kbd>R</kbd></button>
+          <button type="button" class="btn pj-next">Question suivante <kbd>→</kbd></button>
+        </div>
+      </aside>
     </div>`;
   const $ = (s) => stage.querySelector(s);
   let cur = null, n = 0, last = null, t0 = 0, tick = null, revealed = false;
@@ -3503,18 +3623,22 @@ function routeProjo(spec) {
     $('.pj-tag').textContent = GENS[last].label; $('.pj-count').textContent = `Question ${n}`;
     $('.pj-q').innerHTML = cur.q; if (cur.mount) cur.mount($('.pj-q'));
     $('.pj-fb').className = 'ex-fb pj-fb'; $('.pj-fb').innerHTML = ''; $('.pj-anim').innerHTML = '';
-    $('.pj-reveal').disabled = false;
+    $('.pj-answer').className = 'pj-answer wait'; $('.pj-answer').innerHTML = '<p class="pj-wait">À vous de chercher…</p>';
+    $('.pj-reveal').disabled = false; $('.pj-reveal').hidden = false;
     timer();
   }
   function reveal() {
     if (revealed) return; revealed = true;
     clearInterval(tick);
     const res = revealAnswer(cur, $('.pj-q'));
+    const short = projoShortAnswer(cur, $('.pj-q'), res);
     $('.pj-q').querySelectorAll('input').forEach((i) => { i.disabled = true; });
     $('.pj-q').closest('.page').classList.add('done');
-    if (res.msg) { $('.pj-fb').className = 'ex-fb pj-fb ok'; $('.pj-fb').innerHTML = '<strong>Correction :</strong> ' + res.msg; }
+    $('.pj-answer').className = 'pj-answer';
+    $('.pj-answer').innerHTML = short ? `<p class="pj-kicker">Réponse</p><p class="pj-big">${short}</p>` : res.anim ? '<p class="pj-kicker">Correction</p><p class="pj-mid">Regardez la construction :</p>' : (cur._correct !== undefined || cur._items) ? '<p class="pj-kicker">Réponse</p><p class="pj-mid">La bonne réponse est entourée en vert.</p>' : '';
+    if (res.msg) { $('.pj-fb').className = 'ex-fb pj-fb pj-expl'; $('.pj-fb').innerHTML = res.msg; }
     if (res.anim) makePlayer($('.pj-anim'), cur.anim()).play();
-    $('.pj-reveal').disabled = true;
+    $('.pj-reveal').hidden = true;
   }
   const nextQ = () => { $('.pj-q').closest('.page').classList.remove('done'); next(); };
   $('.pj-reveal').addEventListener('click', reveal);
@@ -3542,7 +3666,7 @@ const AUTO_N = 5, AUTO_WEAK = 3;
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const dayDiff = (a, b) => Math.round((new Date(b.replace(/-/g, '/')) - new Date(a.replace(/-/g, '/'))) / 86400000);
 function autoPlan() {
-  const quick = Object.keys(GENS).filter((k) => !GENS[k].slow);
+  const quick = Object.keys(GENS).filter((k) => !GENS[k].slow && !GENS[k].locked);
   const weak = shuffle(Object.keys(stats._weak || {}).filter((k) => quick.includes(k))).slice(0, AUTO_WEAK);
   const now = Date.now();
   const practiced = quick.filter((k) => stats[k]?.total && !weak.includes(k));
@@ -3631,9 +3755,10 @@ function route() {
   if (h === 'prof') { renderProfLock(); special('prof', '', 'Espace professeur'); return; }
   if (h.startsWith('projo')) { const ch = routeProjo(h.split('/')[1] || ''); special('projo', ch, 'Vidéoprojecteur'); return; }
   if (h === 'auto') { routeAuto(); special('auto', '', 'Automatismes du jour'); return; }
+  if (h.startsWith('r/')) { const ch = routeRetour(h.slice(2)); special('retour', ch, 'Mon contrôle'); return; }
   if (h === 'accueil') h = '';
   let [ch, p] = h.split('/');
-  if (!CHAPTERS.some((c) => c.id === ch)) { ch = ''; p = ''; }
+  if (!CHAPTERS.some((c) => c.id === ch && !c.locked)) { ch = ''; p = ''; }
   p = p || 'accueil';
   let page = document.querySelector(`.page[data-ch="${ch}"][data-p="${p}"]`);
   if (!page) { p = 'accueil'; page = document.querySelector(`.page[data-ch="${ch}"][data-p="accueil"]`); }
@@ -3659,8 +3784,8 @@ function route() {
    Démarrage
    ========================================================= */
 /** Prépare une question « mélangée » (contrôle blanc, mes erreurs, devoir) */
-function wrapGen(k, tag = true) {
-  const o = GENS[k].f();
+function wrapGen(k, tag = true, hard = false) {
+  const o = GENS[k].f(!!(hard && GENS[k].hard));
   o.key = k;
   o.label = GENS[k].label;
   if (tag) o.q = `<p class="tag">${GENS[k].label}</p>` + o.q;
@@ -3708,7 +3833,8 @@ document.addEventListener('DOMContentLoaded', () => {
       limit: 10, exam: true, ch,
       examKey: ch + ':controle',
       makeGen() {
-        const keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch);
+        let keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].locked);
+        if (!keys.length) keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch);
         const queue = shuffle(keys).slice(0, 10);
         while (queue.length < 10) queue.push(pick(keys));
         shuffle(queue);
@@ -3735,9 +3861,658 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('reset').addEventListener('click', () => {
-    if (confirm('Effacer toute ta progression, dans les quatre chapitres ?')) { stats = {}; persist(); route(); }
+    if (confirm('Effacer toute ta progression, dans tous les chapitres ?')) { stats = {}; persist(); route(); }
   });
 
   window.addEventListener('hashchange', route);
   route();
 });
+
+/* =========================================================
+   Contrôles sur papier, évalués par compétences
+   - le professeur coche des compétences (= types d'exercices du site) et colle sa liste d'élèves ;
+   - le site imprime une feuille par élève (bande prénom à détacher + code anonyme), un corrigé,
+     et un fichier texte pour la correction assistée par l'IA ;
+   - après correction, il colle les niveaux (TB, MS, MF, MI) et imprime des étiquettes QR ;
+   - le QR ouvre la page « Mon contrôle » (#/r/…) : corrigé de SON sujet, bilan, exercices de remédiation.
+   Rien n'est stocké sur un serveur : le sujet est recréé à partir d'une « graine ».
+   ========================================================= */
+const CTL_STORE = 'revisions6e-controles', CTL_AMEN = 'revisions6e-amenages';
+const LEVELS = ['TB', 'MS', 'MF', 'MI'];
+const LEVEL_TXT = { TB: 'Très bonne maîtrise', MS: 'Maîtrise satisfaisante', MF: 'Maîtrise fragile', MI: 'Maîtrise insuffisante' };
+const LV1 = { TB: 'T', MS: 'S', MF: 'F', MI: 'I' }, LV1R = { T: 'TB', S: 'MS', F: 'MF', I: 'MI' };
+
+/* ---------- Hasard reproductible ---------- */
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hash32(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function withSeed(seed, fn) { const orig = Math.random; Math.random = mulberry32(seed); try { return fn(); } finally { Math.random = orig; } }
+
+/* ---------- Durée : temps estimé par question (minutes, version standard ; une question ★ compte 1,5 fois) ----------
+   Estimations pour des 6e sur papier, à ajuster après quelques contrôles. Un nouveau type d'exercice peut
+   donner son temps dans GENS (t: 2) ; sinon : 6 min pour un tracé, 2 min pour le reste. */
+const CTL_T = {
+  'd-codage': 1.5, 'd-appartient': 2, 'd-noms': 2.5, 'd-position': 1.5, 'd-prop': 2, 'd-perp': 6, 'd-par': 7,
+  'n-rang': 1.5, 'n-combien': 2, 'n-tranches': 2, 'n-decomp': 2.5, 'n-zeros': 1.5, 'n-fracdec': 2, 'n-lettres': 2, 'n-formes': 2.5,
+  'c-notation': 1.5, 'c-ecrire': 1.5, 'c-milieu': 2, 'c-tracer': 4, 'c-med-prop': 1.5, 'c-med-trace': 7, 'c-voc': 1.5, 'c-rd': 1.5, 'c-disque': 1, 'c-trace-cercle': 4,
+  'e-lire': 2, 'e-placer': 2, 'e-comparer': 1.5, 'e-ranger': 3, 'e-intercaler': 2, 'e-encadrer': 2, 'e-arrondir': 2,
+};
+const ctlT = (k) => GENS[k]?.t ?? CTL_T[k] ?? (GENS[k]?.slow ? 6 : 2);
+const HARD_X = 1.5;
+
+/** Plan d'un contrôle (version standard) : n = questions par compétence, h = combien sont ★ (plus difficiles) */
+function ctlPlan(c) {
+  if (Array.isArray(c.n)) return { n: c.n.map(Number), h: (c.h || c.n.map(() => 0)).map(Number), a: Array.isArray(c.a) ? c.a.map(Number) : null };
+  return { n: c.k.map((k) => (GENS[k]?.slow ? 1 : Number(c.q) || 3)), h: c.k.map(() => 0) }; // anciens contrôles : q questions partout
+}
+/** Plan d'une copie : la version aménagée a une question de moins par compétence (sauf les tracés), parfois moins
+    pour tenir sur la page (plan.a), et pas de ★ */
+function ctlVer(plan, keys, ver) {
+  return {
+    n: plan.n.map((x, i) => (ver !== 'a' || GENS[keys[i]]?.slow ? x : plan.a ? plan.a[i] : Math.max(1, x - 1))),
+    h: plan.h.map((x, i) => (ver === 'a' || !GENS[keys[i]]?.hard ? 0 : Math.min(x, plan.n[i]))),
+  };
+}
+const ctlMinutes = (keys, p) => keys.reduce((s, k, i) => s + ctlT(k) * (p.n[i] + (HARD_X - 1) * (GENS[k]?.hard ? Math.min(p.h[i], p.n[i]) : 0)), 0);
+const planStr = (p) => p.n.map((x, i) => x + (p.h[i] ? 'h' + p.h[i] : '') + (p.a ? 'a' + p.a[i] : '')).join('-');
+const planParse = (str) => {
+  const parts = String(str || '').split('-').map((t) => t.match(/^(\d)(?:h(\d))?(?:a(\d))?$/));
+  if (!parts.every(Boolean)) return null;
+  return { n: parts.map((m) => Number(m[1])), h: parts.map((m) => Number(m[2] || 0)), a: parts.every((m) => m[3]) ? parts.map((m) => Number(m[3])) : null };
+};
+
+const ctlWide = (x) => GENS[x.k].slow || /bonne graduation/.test(x.o.q);
+/** Les questions d'une copie : toujours les mêmes pour le même contrôle et le même numéro d'élève.
+    Dans chaque compétence, les questions ★ sont les dernières. salt : autre tirage pour une copie qui ne tenait pas sur la page. */
+function ctlQuestions(id, n, ver, keys, plan, salt = 0) {
+  const p = ctlVer(plan, keys, ver);
+  // une graine par question : ajouter une question ou en rendre une ★ ne change pas les autres
+  const all = keys.flatMap((k, ci) => (GENS[k] ? Array.from({ length: p.n[ci] }, (_, m) => {
+    const hard = m >= p.n[ci] - p.h[ci];
+    return { k, ci, m, hard, o: withSeed(hash32(`${id}#${n}#${ci}#${m}${salt ? '#' + salt : ''}`), () => wrapGen(k, false, hard)) };
+  }) : []));
+  // en pleine largeur à la fin de la feuille : placer un point sur une demi-droite graduée, puis les tracés (grande figure) ; le reste sur deux colonnes au-dessus
+  const rank = (x) => (GENS[x.k].slow ? 2 : ctlWide(x) ? 1 : 0);
+  return [0, 1, 2].flatMap((r) => all.filter((x) => rank(x) === r));
+}
+const ctlSalt = (c, n) => Number(c.r?.[n]) || 0;
+const ctlCode = (id, n) => `${id}-${String(n).padStart(2, '0')}`;
+const newCtlId = () => { let s = ''; for (let i = 0; i < 3; i++) s += B32[Math.floor(Math.random() * 32)]; return s; };
+
+/** Niveau proposé à partir des réponses justes (1) / fausses (0) */
+function levelFromBits(bits) {
+  const n = bits.length, g = [...bits].filter((b) => b === '1').length;
+  if (!n) return '';
+  if (g === n) return 'TB';
+  const r = g / n;
+  return r >= 2 / 3 - 1e-9 ? 'MS' : r >= 1 / 3 - 1e-9 && g > 0 ? 'MF' : 'MI';
+}
+
+/* ---------- Mise en forme « papier » d'une question ---------- */
+function paperHTML(html) {
+  const d = document.createElement('div'); d.innerHTML = html;
+  d.querySelectorAll('input.ans').forEach((i) => { const sp = document.createElement('span'); sp.className = 'blank'; sp.textContent = ' '; i.replaceWith(sp); });
+  d.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((i) => { const sp = document.createElement('span'); sp.className = 'box'; sp.textContent = '☐'; i.replaceWith(sp); });
+  d.querySelectorAll('button').forEach((b) => { const sp = document.createElement('span'); sp.className = b.className + ' as-text'; sp.textContent = b.textContent; b.replaceWith(sp); });
+  d.querySelectorAll('.ord-out, .ord-reset').forEach((e) => e.remove());
+  d.querySelectorAll('a').forEach((a) => a.replaceWith(document.createTextNode(a.textContent)));
+  // choix longs : un par ligne
+  d.querySelectorAll('.choices').forEach((ch) => {
+    const t = [...ch.querySelectorAll('.choice')].map((c) => c.textContent.trim());
+    if (t.some((x) => x.length > 24)) ch.classList.add('long');
+    else if (!ch.querySelector('svg') && t.every((x) => x.length <= 8)) ch.classList.add('short'); // (AB), <, Oui… : plusieurs par ligne
+  });
+  // une ligne qui ne contient qu'une case (et un peu de texte) remonte à la fin de la consigne : gain de place
+  d.querySelectorAll('p').forEach((pp) => {
+    const prev = pp.previousElementSibling;
+    if (!prev || prev.tagName !== 'P' || !pp.querySelector('.blank') || pp.querySelector('svg, img, table') || pp.textContent.trim().length > 16) return;
+    prev.append(' ', ...pp.childNodes); pp.remove();
+  });
+  return d.innerHTML
+    .replace(/Clique sur les nombres dans l'ordre\./g, '')
+    .replace(/ : clique-les dans l'ordre\./g, '. Écris-les dans l\'ordre : <span class="blank long"></span>')
+    .replace(/Clique sur les <b>zéros inutiles<\/b> pour les barrer\./g, 'Barre les <b>zéros inutiles</b>.')
+    .replace(/Clique entre les chiffres pour placer les espaces, afin que le nombre soit facile à lire\./g, 'Recopie ce nombre en plaçant les espaces, pour qu\'il soit facile à lire : <span class="blank long"></span>')
+    .replace(/ : clique sur la bonne graduation\./g, ' sur la demi-droite graduée.')
+    .replace(/Clique sur l'opération/g, 'Entoure l\'opération');
+}
+/** Texte brut d'un morceau de HTML (fichier pour la correction assistée) ; strip = on retire tableaux et figures */
+function plain(html, strip = false) {
+  const d = document.createElement('div'); d.innerHTML = String(html || '');
+  d.querySelectorAll('.frac').forEach((f) => { const [a, b] = f.children; if (a && b) f.textContent = ` ${a.textContent}/${b.textContent} `; });
+  d.querySelectorAll(strip ? 'svg, table, .player, .nl' : 'svg').forEach((e) => e.remove());
+  d.querySelectorAll('u').forEach((u) => { u.textContent = `[${u.textContent}]`; });
+  d.querySelectorAll('.ordbtn').forEach((e) => e.append(' ; '));
+  d.querySelectorAll('td, th').forEach((e) => e.append(' | '));
+  d.querySelectorAll('p, div, li, label, tr, br, h3, h4').forEach((e) => e.after(' '));
+  return d.textContent.replace(/\s+/g, ' ').replace(/ ([.,;)])(?=\s|$)/g, '$1').trim();
+}
+const stripLinks = (html) => String(html || '').replace(/<a\b[^>]*>(.*?)<\/a>/g, '$1');
+
+/** Zone de travail invisible, pour monter les figures avant de les copier */
+function ctlWork() {
+  let w = document.getElementById('ctl-work');
+  if (!w) { w = document.createElement('div'); w.id = 'ctl-work'; w.setAttribute('aria-hidden', 'true'); document.body.appendChild(w); }
+  return w;
+}
+/** HTML papier d'une question (les tracés : figure de départ en vraie grandeur) */
+function questionPaper(o) {
+  if (!o.q.includes('class="board"')) return paperHTML(o.q);
+  const body = ctlWork(); body.innerHTML = o.q;
+  try { o.mount(body); } catch (e) { /* rien */ }
+  const svg = body.querySelector('.geo-svg'), fig = svg ? svg.cloneNode(true) : null;
+  if (fig) {
+    // Vraie grandeur (1 unité = 1 cm). On ne garde en hauteur que la bande utile : figure de départ + construction attendue + marge
+    let y0 = 0, h = 11;
+    try {
+      const boxes = [svg.querySelector('.g-objs'), svg.querySelector('.g-pts')].map((g) => g.getBBox()).filter((b) => b.width || b.height);
+      let lo = Math.min(...boxes.map((b) => b.y)), hi = Math.max(...boxes.map((b) => b.y + b.height));
+      const sc = o.anim?.(), P = sc?.pts || [];
+      if (P.length) { lo = Math.min(lo, ...P.map((p) => p.y)); hi = Math.max(hi, ...P.map((p) => p.y)); }
+      // tracés de droites (perpendiculaire, parallèle) : la droite traverse la feuille ; la zone utile est le cadre de l'animation
+      if (!isFinite(lo - hi) || hi - lo > 10) { if (sc?.box) { lo = sc.box[1]; hi = sc.box[3]; } }
+      lo = Math.max(0, lo - 0.9); hi = Math.min(11, hi + 0.9);
+      if (isFinite(lo) && isFinite(hi) && hi - lo <= 10) { h = Math.max(6, Math.ceil(hi - lo)); y0 = Math.min(11 - h, Math.max(0, Math.floor((lo + hi) / 2 - h / 2))); }
+    } catch (e) { /* figure entière */ }
+    fig.querySelector('.g-prev')?.remove(); fig.classList.add('paper-geo'); fig.removeAttribute('style');
+    if (h < 11) { fig.setAttribute('viewBox', `0 ${y0} 16 ${h}`); fig.style.height = h + 'cm'; }
+  }
+  const board = body.querySelector('.board'); board.innerHTML = '';
+  if (fig) board.appendChild(fig);
+  const html = paperHTML(body.innerHTML); body.innerHTML = '';
+  return html;
+}
+/** Correction d'une question (texte de la correction, et bonne réponse pour les QCM) */
+function questionAnswer(o) {
+  const body = ctlWork(); body.innerHTML = o.q;
+  try { o.mount?.(body); } catch (e) { /* rien */ }
+  let msg = '', good = '';
+  if (body.querySelector('.board')) msg = 'Construction : vérifier le tracé sur la copie.';
+  else {
+    try { const r = revealAnswer(o, body); msg = typeof r?.msg === 'string' ? r.msg : ''; } catch (e) { msg = ''; }
+    if (o._correct !== undefined) {
+      const order = [...o.q.matchAll(/data-o="(\d+)"/g)].map((m) => Number(m[1]));
+      good = `choix n° ${order.indexOf(o._correct) + 1} (dans l'ordre de la copie) : ${plain(o._opts[o._correct])}`;
+    }
+    if (o._items) {
+      const ok = o._items.map((it, j) => (it.ok ? `n° ${j + 1} (${plain(it.html)})` : '')).filter(Boolean);
+      good = ok.length ? 'cases à cocher : ' + ok.join(', ') : 'aucune case à cocher';
+    }
+  }
+  body.innerHTML = '';
+  return { msg, good };
+}
+
+/* ---------- Stockage des contrôles (sur cet appareil, et une copie dans Grist) ---------- */
+const ctlAll = () => { try { return JSON.parse(localStorage.getItem(CTL_STORE) || '[]'); } catch (e) { return []; } };
+function ctlSave(c) {
+  const all = ctlAll().filter((x) => x.id !== c.id); all.unshift(c);
+  try { localStorage.setItem(CTL_STORE, JSON.stringify(all.slice(0, 40))); } catch (e) { /* rien */ }
+}
+const ctlFind = (id) => ctlAll().find((c) => c.id === id);
+function ctlValid(c) { return c && /^[0-9A-Z]{3}$/.test(c.id) && Array.isArray(c.k) && Array.isArray(c.s) && c.k.every((k) => typeof k === 'string'); }
+/** Destination des résultats configurée dans l'Espace prof (pour les devoirs de remédiation) */
+function profDest() {
+  let url = '', g = null;
+  try { url = localStorage.getItem('revisions6e-form') || ''; g = JSON.parse(localStorage.getItem('revisions6e-grist') || 'null'); } catch (e) { /* rien */ }
+  const pf = parsePrefill(url);
+  if (pf && pf.entries.length === 6) return { seg: formToSeg(pf), send: (v) => sendToForm(pf, v) };
+  const pg = parseGristUrl(url);
+  if (pg && g && g.k === pg.k && g.v === pg.v) return { seg: gristToSeg(g), send: g.t ? (v) => gristSend(g, v) : null };
+  return null;
+}
+const amenGet = (classe) => { try { return (JSON.parse(localStorage.getItem(CTL_AMEN) || '{}'))[normName(classe || 'sans')] || []; } catch (e) { return []; } };
+function amenSet(classe, list) {
+  try { const all = JSON.parse(localStorage.getItem(CTL_AMEN) || '{}'); all[normName(classe || 'sans')] = list; localStorage.setItem(CTL_AMEN, JSON.stringify(all)); } catch (e) { /* rien */ }
+}
+
+/* ---------- Fenêtre d'impression ---------- */
+function printWindow(title, bodyHTML, extraCSS = '', after) {
+  const w = window.open('', '_blank');
+  if (!w) { alert('Ton navigateur a bloqué la fenêtre d\'impression. Autorise les fenêtres pop-up pour ce site, puis recommence.'); return null; }
+  const css = new URL('style.css?v=' + SITE_VERSION, location.href).href;
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${bodyHTML}</body></html>`);
+  w.document.close();
+  const go = () => { try { after?.(w); } catch (e) { /* rien */ } };
+  if (w.document.readyState === 'complete') setTimeout(go, 300); else w.addEventListener('load', go);
+  return w;
+}
+
+/* ---------- Sujets ---------- */
+function sheetHTML(c, i) {
+  const [name, ver] = c.s[i], n = i + 1, code = ctlCode(c.id, n);
+  const qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
+  const date = new Date(c.d).toLocaleDateString('fr-FR');
+  return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}">
+    <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
+    <div class="ctl-cut">✂ — — — à détacher (ou à replier) avant de rendre la copie — — —</div>
+    <div class="ctl-head">
+      <div class="ctl-code">${window.qrSVG ? qrSVG(code, 'M') : ''}<b>${code}</b></div>
+      <div class="ctl-title"><b>${esc(c.t)}</b><br><span class="small">Écris tes réponses dans les cases.</span></div>
+      <table class="ctl-grid"><tr><th>Compétence</th><th>TB</th><th>MS</th><th>MF</th><th>MI</th></tr>
+        ${c.k.map((k, ci) => `<tr><td>C${ci + 1} · ${esc(GENS[k]?.label || k)}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
+    </div>
+    <div class="ctl-qs">${qs.map((x, j) => {
+      const first = j === 0 || qs[j - 1].ci !== x.ci;
+      return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(GENS[x.k].label)}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && x.o.hints?.[0] ? `<p class="ctl-aide">💡 <b>Aide :</b> ${stripLinks(x.o.hints[0])}</p>` : ''}</section>`;
+    }).join('')}</div>
+  </div>`;
+}
+/** Codes des copies qui dépassent une page A4 (mesure hors écran, largeur imprimable 190 mm) */
+function ctlOverflow(c, only) {
+  const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  box.innerHTML = '<div style="height:100mm;width:1px"></div>'; document.body.appendChild(box);
+  const mm = box.firstElementChild.getBoundingClientRect().height / 100, over = [];
+  // 283 mm utiles ; on garde 6 mm de sécurité (l'impression répartit les colonnes un peu autrement que l'écran)
+  (only || c.s.map((_, i) => i)).forEach((i) => { box.innerHTML = sheetHTML(c, i); if (box.firstElementChild.getBoundingClientRect().height > 277 * mm) over.push(ctlCode(c.id, i + 1)); });
+  box.remove(); return over;
+}
+/** Plan automatique : on ajoute des questions (compétences les moins fournies d'abord) tant que la durée visée
+    n'est pas atteinte et que la page tient ; si la page est pleine avant, des questions deviennent ★ (plus difficiles).
+    La mise en page est testée sur quelques copies (3 standard + 1 aménagée), puis vérifiée sur toutes. */
+function ctlAutoPlan(c, target = 30) {
+  const K = c.k, am = [], st = [];
+  c.s.forEach(([, v], i) => (v === 'a' ? am : st).push(i));
+  const idx = st.length ? st.slice(0, 3) : am.slice(0, 1); // échantillon pour aller vite
+  const p = { n: K.map(() => 1), h: K.map(() => 0), a: null };
+  const T = () => ctlMinutes(K, p);
+  // Une copie qui déborde peut recevoir un autre tirage (d'autres nombres, une autre figure) : salts[numéro] = tirage
+  let salts = {};
+  const cfg = () => ({ ...c, n: p.n, h: p.h, a: p.a, r: salts });
+  const overIdx = (list) => ctlOverflow(cfg(), list).map((code) => parseInt(code.split('-')[1], 10) - 1);
+  const fixCopies = (list, tries = 8) => {
+    const bad = [];
+    for (const i of overIdx(list)) {
+      let ok = false;
+      for (let sl = 1; sl <= tries && !ok; sl++) { salts[i + 1] = sl; ok = !overIdx([i]).length; }
+      if (!ok) { delete salts[i + 1]; bad.push(i); }
+    }
+    return bad;
+  };
+  const fits = (list) => !fixCopies(list, 3).length;
+  const full = new Set(), hfull = new Set();
+  const startOk = fits(idx);
+  // 1. on ajoute des questions (compétences les moins fournies d'abord) tant que la durée n'est pas atteinte et que la page tient
+  for (let g = 0; g < 60 && startOk && T() < target - 1; g++) {
+    const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && !full.has(i) && p.n[i] < 6);
+    if (!cand.length) break;
+    const i = cand.reduce((a, b) => (p.n[b] < p.n[a] || (p.n[b] === p.n[a] && ctlT(K[b]) < ctlT(K[a])) ? b : a));
+    if (T() + ctlT(K[i]) > target + 2 && T() >= target - 3) break; // déjà assez près : on ne dépasse pas trop
+    p.n[i]++;
+    if (!fits(idx)) { p.n[i]--; full.add(i); }
+  }
+  // 2. page pleine avant la durée visée : des questions deviennent ★ (même place, plus de temps)
+  const upgrade = (list) => {
+    for (let g = 0; g < 60 && T() < target - 1; g++) {
+      const cand = K.map((_, i) => i).filter((i) => GENS[K[i]]?.hard && p.h[i] < p.n[i] && !hfull.has(i));
+      if (!cand.length) break;
+      const i = cand.reduce((a, b) => (p.h[b] / p.n[b] < p.h[a] / p.n[a] ? b : a));
+      p.h[i]++;
+      if (!fits(list)) { p.h[i]--; hfull.add(i); }
+    }
+  };
+  if (startOk) upgrade(idx);
+  // 3. toutes les copies standard : autres tirages si besoin ; sinon une question de moins pour tout le monde
+  for (let g = 0; g < 12 && st.length && fixCopies(st).length; g++) {
+    const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && p.n[i] > 1);
+    if (!cand.length) break;
+    const i = cand.reduce((a, b) => (p.n[b] > p.n[a] ? b : a));
+    p.n[i]--; p.h[i] = Math.min(p.h[i], p.n[i]); salts = {};
+  }
+  hfull.clear(); if (st.length) upgrade(st);
+  // 4. version aménagée : une question de moins par compétence ; si sa page déborde (police plus grande, aides), encore une de moins
+  let amOver = false;
+  if (am.length) {
+    p.a = K.map((k, i) => (GENS[k]?.slow ? 1 : Math.max(1, p.n[i] - 1)));
+    for (let g = 0; g < 20 && fixCopies(am).length; g++) {
+      const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && p.a[i] > 1);
+      if (!cand.length) { amOver = true; break; }
+      p.a[cand.reduce((a, b) => (p.a[b] > p.a[a] ? b : a))]--;
+      am.forEach((i) => delete salts[i + 1]);
+    }
+    if (p.a.every((x, i) => GENS[K[i]]?.slow || x === Math.max(1, p.n[i] - 1))) p.a = null; // règle habituelle : pas besoin de l'écrire
+  }
+  // on ne garde que les tirages utiles
+  Object.keys(salts).forEach((nn) => { const keep = salts[nn]; delete salts[nn]; if (overIdx([Number(nn) - 1]).length) salts[nn] = keep; });
+  p.r = salts;
+  if (st.length && overIdx(st).length) return { p, tooMany: true };
+  const t = T();
+  return { p, short: t < target - 3, long: t > target + 5, amOver };
+}
+const PRINT_CSS = `@page { size: A4; margin: 7mm 10mm; } body.print-doc { background: #fff; margin: 0; } .ctl-sheet { page-break-after: always; break-after: page; }`;
+function printSheets(c) {
+  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, sans mise à l'échelle (100 %).</span></p></div>`;
+  const body = bar + c.s.map((_, i) => sheetHTML(c, i)).join('');
+  printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, (w) => {
+    // Une copie = un recto : on signale les feuilles qui débordent
+    const probe = w.document.createElement('div'); probe.style.cssText = 'position:absolute;height:100mm;width:1px;visibility:hidden'; w.document.body.appendChild(probe);
+    const mm = probe.getBoundingClientRect().height / 100; probe.remove();
+    const over = [...w.document.querySelectorAll('.ctl-sheet')].filter((s) => s.getBoundingClientRect().height > 283 * mm).map((s) => s.dataset.code);
+    const el = w.document.getElementById('ctl-fit');
+    el.className = over.length ? 'warn-t' : 'ok-t';
+    el.textContent = over.length ? `⚠ ${over.length} copie(s) dépassent une page (${over.slice(0, 8).join(', ')}${over.length > 8 ? '…' : ''}) : enlève une compétence ou passe à moins de questions par compétence.` : `✔ ${c.s.length} copies, une page chacune.`;
+  });
+}
+
+/* ---------- Corrigé du professeur, et fichier pour la correction assistée ---------- */
+function printCorrige(c) {
+  const parts = c.s.map(([name, ver], i) => {
+    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
+    return `<section class="ctl-corr"><h3>${ctlCode(c.id, n)} — ${esc(name)}${ver === 'a' ? ' <span class="small muted">(aménagé)</span>' : ''}</h3><ol>${qs.map((x) => {
+      const a = questionAnswer(x.o);
+      let fig = '';
+      if (x.o.anim) { const h = ctlWork(); try { makePlayer(h, x.o.anim(), { atEnd: true }); fig = h.querySelector('svg')?.outerHTML || ''; } catch (e) { /* rien */ } h.innerHTML = ''; }
+      return `<li><span class="small muted">C${x.ci + 1}${x.hard ? ' ★' : ''}</span> ${a.good ? `<b>${esc(a.good)}</b> — ` : ''}${String(a.msg).replace(/<table[\s\S]*?<\/table>/g, '')}${fig ? `<div class="ctl-corr-fig">${fig}</div>` : ''}</li>`;
+    }).join('')}</ol></section>`;
+  }).join('');
+  printWindow(`Corrigé ${c.id}`, `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer le corrigé</button></p></div><h1>Corrigé — ${esc(c.t)}${c.c ? ` (${esc(c.c)})` : ''}</h1>${parts}`, '@page { size: A4; margin: 10mm; } .ctl-corr { break-inside: avoid; }');
+}
+function aiText(c) {
+  const L = [];
+  L.push(`CONTRÔLE ${c.id} — ${c.t} — ${c.c || ''} — ${new Date(c.d).toLocaleDateString('fr-FR')}`);
+  L.push('Compétences : ' + c.k.map((k, i) => `C${i + 1} = ${GENS[k]?.label || k}`).join(' ; '));
+  L.push('');
+  L.push('CONSIGNES POUR LA CORRECTION');
+  L.push('- Chaque copie porte un code (ex. ' + ctlCode(c.id, 1) + '). Les réponses sont écrites dans des cases ; les cases à cocher sont des ☐.');
+  L.push('- Les questions marquées ★ sont un peu plus difficiles ; elles comptent comme les autres.');
+  L.push('- Pour chaque question : 1 si la réponse est juste, 0 sinon. Les tracés se jugent sur la copie (instrument, précision à 1 mm près, codage).');
+  L.push('- Niveau par compétence : tout juste = TB ; au moins 2/3 = MS ; au moins 1/3 = MF ; sinon MI.');
+  L.push('  (2 questions : 2/2 = TB, 1/2 = MF, 0/2 = MI ; 1 question : juste = TB, faux = MI.) Le professeur peut ajuster.');
+  L.push('- RÉPONDRE avec une ligne par copie, exactement sous cette forme :');
+  const ps = ctlVer(ctlPlan(c), c.k, 's');
+  L.push(`  ${ctlCode(c.id, 1)} ${c.k.map((k, i) => `C${i + 1}=TB(${'1'.repeat(ps.n[i])})`).join(' ')}`);
+  L.push('  (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés)');
+  { const n1 = ps.n[0], b = n1 > 1 ? '1'.repeat(n1 - 1) + '0' : '0';
+    L.push(`  Ajouter « ? » après un niveau en cas de doute (ex. C1=${levelFromBits(b)}?(${b})), et une courte remarque après « // » si utile.`); }
+  L.push('');
+  c.s.forEach(([, ver], i) => {
+    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
+    L.push(`=== ${ctlCode(c.id, n)} (version ${ver === 'a' ? 'aménagée' : 'standard'}) ===`);
+    qs.forEach((x, j) => {
+      const a = questionAnswer(x.o);
+      L.push(`${j + 1}. [C${x.ci + 1}]${x.hard ? ' ★' : ''} Énoncé : ${plain(paperHTML(x.o.q))}${x.o.q.includes('<u') ? ' (chiffre souligné entre crochets)' : ''}`);
+      L.push(`   Attendu : ${a.good ? a.good + ' — ' : ''}${plain(a.msg, true)}`);
+    });
+    L.push('');
+  });
+  return L.join('\n');
+}
+function download(name, text, type = 'text/plain') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type + ';charset=utf-8' })); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- Résultats collés et étiquettes ---------- */
+/** Lit les lignes « CODE C1=TB(111) C2=MS?(110) … » (renvoyées par l'IA ou tapées à la main) */
+function parseCtlResults(text, c) {
+  const res = {};
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = line.toUpperCase().match(/\b([0-9A-Z]{3})\s*-\s*(\d{1,2})\b/);
+    if (!m || m[1] !== c.id) continue;
+    const n = Number(m[2]); if (n < 1 || n > c.s.length) continue;
+    const r = res[n] = res[n] || { lv: [], bits: [], doubt: [], note: '' };
+    const body = line.slice(line.toUpperCase().indexOf(m[0]) + m[0].length);
+    const [main, note] = body.split('//');
+    for (const x of main.toUpperCase().matchAll(/C\s*(\d+)\s*=\s*(TB|MS|MF|MI)?\s*(\?)?\s*(?:\(\s*([01\s]+)\s*\))?/g)) {
+      const ci = Number(x[1]) - 1; if (ci < 0 || ci >= c.k.length) continue;
+      const bits = (x[4] || '').replace(/\s/g, '');
+      r.bits[ci] = bits; r.lv[ci] = x[2] || levelFromBits(bits); r.doubt[ci] = !!x[3];
+    }
+    if (note) r.note = note.trim();
+  }
+  return res;
+}
+/** Lien de la page « Mon contrôle » d'un élève */
+function retourURL(c, n, levels, bits, dest) {
+  const ver = c.s[n - 1][1];
+  const plan = ctlPlan(c), pv = ctlVer(plan, c.k, ver);
+  const allBits = c.k.map((k, i) => { const b = bits[i] || ''; const want = pv.n[i]; return b.length === want ? b : '-'.repeat(want); }).join('');
+  const cl = encodeURIComponent(c.c || '').replace(/\./g, '%2E');
+  return siteURL() + `#/r/2.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
+}
+function printLabels(c, rows, skip, dest) {
+  const W = 63.5, H = 38.1, TOP = 15.15, LEFT = 7.21, GAP = 2.54, PER = 21;
+  const cells = [...Array(skip).fill(null), ...rows];
+  const pages = [];
+  for (let p = 0; p * PER < cells.length; p++) pages.push(cells.slice(p * PER, (p + 1) * PER));
+  const body = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer les étiquettes</button></p>
+    <p class="small">Planche A4 de 21 étiquettes (3 × 7, 63,5 × 38,1 mm, type L7160). Dans la fenêtre d'impression : <b>marges : aucune</b>, <b>échelle : 100 %</b>. Fais d'abord un essai sur une feuille blanche, posée sur la planche, à contre-jour.</p></div>`
+    + pages.map((pg) => `<div class="lbl-page">${pg.map((r, i) => {
+      const x = LEFT + (i % 3) * (W + GAP), y = TOP + Math.floor(i / 3) * H;
+      if (!r) return '';
+      const url = retourURL(c, r.n, r.lv, r.bits, dest);
+      return `<div class="lbl" style="left:${x}mm;top:${y}mm;width:${W}mm;height:${H}mm">${qrSVG(url, 'L')}<div class="lbl-txt"><b>${esc(r.name)}</b><span>${ctlCode(c.id, r.n)}</span><span class="lbl-lv">${r.lv.map((l, ci) => `C${ci + 1} ${l}`).join(' · ')}</span><span class="lbl-hint">📱 Scanne-moi : ton corrigé et tes exercices</span></div></div>`;
+    }).join('')}</div>`).join('');
+  printWindow(`Étiquettes ${c.id}`, body, `@page { size: A4; margin: 0; } body.print-doc { margin: 0; background: #fff; }`);
+}
+
+/* ---------- Espace professeur : la carte « Contrôle sur papier » ---------- */
+function setupControles() {
+  const after = document.getElementById('prof-list');
+  if (!after || document.getElementById('ctl-card')) return;
+  after.insertAdjacentHTML('afterend', `<div class="card" id="ctl-card">
+    <h2>📝 Contrôle sur papier, par compétences</h2>
+    <p class="small">Chaque compétence = un type d'exercice du site : <b>coche-les dans la liste ci-dessus</b>. Chaque élève reçoit son propre sujet (mêmes exercices que sur le site, nombres différents), avec son prénom sur une bande à détacher et un <b>code anonyme</b>.</p>
+    <p id="ctl-sel" class="small"></p>
+    <div class="prof-opts">
+      <span><label for="ctl-title"><b>Titre :</b></label> <input type="text" id="ctl-title" maxlength="60" placeholder="Contrôle — décimaux"></span>
+      <span><label for="ctl-classe"><b>Classe :</b></label> <select id="ctl-classe" class="cl-select"></select></span>
+      <span><label for="ctl-q"><b>Durée :</b></label> <select id="ctl-q"><option value="a30" selected>≈ 30 min (automatique)</option><option value="a20">≈ 20 min (automatique)</option><option value="1">1 question par compétence</option><option value="2">2 questions par compétence</option><option value="3">3 questions par compétence</option><option value="4">4 questions par compétence</option></select></span>
+    </div>
+    <p class="small muted">Automatique : le site choisit le nombre de questions par compétence pour arriver à la durée voulue, sur une seule page. Si la page est pleine avant, certaines questions deviennent <b>★ un peu plus difficiles</b> (même compétence). Un tracé compte pour 1 question. Version aménagée : une question de moins par compétence, pas de ★, police plus grande et une aide sous la première question de chaque compétence.</p>
+    <label for="ctl-names"><b>Élèves</b> (un prénom par ligne ; tu peux coller ta liste depuis Grist) :</label>
+    <textarea id="ctl-names" rows="5" placeholder="Léa M.&#10;Tom B.&#10;…"></textarea>
+    <div id="ctl-students"></div>
+    <div class="prof-row">
+      <button type="button" class="btn primary" id="ctl-make">🧮 Préparer le contrôle</button>
+      <button type="button" class="btn" id="ctl-corr" disabled>📄 Corrigé</button>
+      <button type="button" class="btn" id="ctl-ai" disabled>🤖 Fichier pour la correction assistée</button>
+    </div>
+    <p id="ctl-status" class="small"></p>
+    <div id="ctl-plan"></div>
+    <details class="howto small"><summary>Comment corriger avec l'IA</summary><ol class="steps-form">
+      <li>Avant de scanner, détache (ou replie) les bandes avec les prénoms : les copies ne portent plus que leur code.</li>
+      <li>Scanne la pile avec ton téléphone (un seul PDF) et envoie-le à Claude avec le <b>fichier pour la correction assistée</b>.</li>
+      <li>Claude répond une ligne par copie (<code>${'ABC'}-07 C1=TB(111) C2=MS(110)…</code>) : colle-la plus bas, vérifie, puis imprime les étiquettes.</li>
+    </ol><p>Les copies scannées sont anonymes. Fais valider cet usage par ton établissement.</p></details>
+    <h3>Après la correction : étiquettes QR</h3>
+    <div class="prof-opts">
+      <span><label for="ctl-pick"><b>Contrôle :</b></label> <select id="ctl-pick"></select></span>
+      <span><label for="ctl-skip"><b>Commencer à l'étiquette n°</b></label> <select id="ctl-skip">${Array.from({ length: 21 }, (_, i) => `<option value="${i}">${i + 1}</option>`).join('')}</select></span>
+    </div>
+    <label for="ctl-res"><b>Résultats</b> (colle la réponse de Claude, ou tape : <code>CODE C1=TB C2=MF…</code>) :</label>
+    <textarea id="ctl-res" rows="4"></textarea>
+    <div id="ctl-table"></div>
+    <details class="howto small"><summary>Ce contrôle a été créé sur un autre appareil</summary>
+      <p>Dans ta table Grist, retrouve la ligne dont le code est <b>CTRL-…</b>, copie la cellule « Détail » et colle-la ici :</p>
+      <textarea id="ctl-import" rows="2"></textarea> <button type="button" class="mini" id="ctl-import-go">Importer</button> <span id="ctl-import-st" class="small"></span>
+    </details>
+  </div>`);
+  const $ = (id) => document.getElementById(id);
+  const card = $('ctl-card');
+  const sel = () => [...document.querySelectorAll('#prof-list input[type=checkbox]:checked')].map((i) => i.value);
+  // classes : même liste que pour les devoirs
+  const fillClasses = () => {
+    let cl = []; try { cl = (localStorage.getItem('revisions6e-classes') || '').split('\n').map((x) => x.trim()).filter(Boolean); } catch (e) { /* rien */ }
+    const cur = $('ctl-classe').value || $('prof-classe')?.value || '';
+    $('ctl-classe').innerHTML = '<option value="">— classe —</option>' + cl.map((c) => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  };
+  fillClasses();
+  $('prof-classes-save')?.addEventListener('click', () => setTimeout(fillClasses, 0));
+  const loadNames = () => { let r = ''; try { r = localStorage.getItem(ROSTER_KEY($('ctl-classe').value)) || ''; } catch (e) { /* rien */ } if (r && !$('ctl-names').value.trim()) $('ctl-names').value = r; drawStudents(); };
+  $('ctl-classe').addEventListener('change', () => { $('ctl-names').value = ''; loadNames(); });
+  const names = () => [...new Set($('ctl-names').value.split(/\n+/).map((x) => x.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+  function drawStudents() {
+    const ns = names(), am = new Set(amenGet($('ctl-classe').value));
+    $('ctl-students').innerHTML = ns.length ? `<p class="small"><b>${ns.length} élève${ns.length > 1 ? 's' : ''}</b> — coche la version aménagée pour ceux qui en ont besoin (mémorisé pour cette classe) :</p><div class="ctl-studs">${ns.map((n) => `<label><input type="checkbox" data-n="${esc(n)}"${am.has(normName(n)) ? ' checked' : ''}> ${esc(n)}</label>`).join('')}</div>` : '';
+  }
+  $('ctl-names').addEventListener('change', drawStudents);
+  $('ctl-students').addEventListener('change', () => amenSet($('ctl-classe').value, [...$('ctl-students').querySelectorAll('input:checked')].map((i) => normName(i.dataset.n))));
+  const showSel = () => { const ks = sel(); $('ctl-sel').innerHTML = ks.length ? `Compétences : ${ks.map((k, i) => `<b>C${i + 1}</b> ${esc(GENS[k].label)}`).join(' · ')}` : '<span class="warn-t">Coche au moins une compétence dans la liste ci-dessus.</span>'; };
+  document.getElementById('prof-list').addEventListener('change', showSel); showSel();
+  loadNames();
+  let last = null;
+  const status = (cls, html) => { $('ctl-status').className = 'small ' + cls; $('ctl-status').innerHTML = html; };
+  function create(c) {
+    ctlSave(c); last = c;
+    printSheets(c);
+    $('ctl-corr').disabled = false; $('ctl-ai').disabled = false;
+    status('ok-t', `✔ Contrôle <b>${c.id}</b> créé (${c.s.length} copies, codes ${ctlCode(c.id, 1)} à ${ctlCode(c.id, c.s.length)}). Il est enregistré sur cet appareil.`);
+    const dest = profDest();
+    if (dest?.send) {
+      dest.send([`(contrôle ${c.id})`, 'CTRL-' + c.id, c.c, c.t, '', JSON.stringify(c)])
+        .then(() => status('ok-t', `✔ Contrôle <b>${c.id}</b> créé (${c.s.length} copies) et sauvegardé dans Grist (ligne CTRL-${c.id}).`))
+        .catch(() => { /* reste enregistré sur cet appareil */ });
+    }
+    fillPick(c.id);
+  }
+  // ---- préparation : plan (questions par compétence, ★), durée estimée, puis impression ----
+  let prep = null; // { c, p } : contrôle préparé (id, élèves, compétences) et son plan
+  const planBox = $('ctl-plan');
+  const invalidate = () => { if (prep) { prep = null; planBox.innerHTML = ''; status('', 'Liste ou compétences modifiées : clique à nouveau sur « Préparer le contrôle ».'); } };
+  ['ctl-names', 'ctl-students', 'ctl-classe', 'ctl-q', 'ctl-title'].forEach((id) => $(id).addEventListener('change', invalidate));
+  document.getElementById('prof-list').addEventListener('change', invalidate);
+  function drawPlan(msg = '') {
+    const { c, p } = prep, K = c.k;
+    const T = ctlMinutes(K, p), pa = ctlVer(p, K, 'a'), hasA = c.s.some(([, v]) => v === 'a');
+    const nq = (pp) => pp.n.reduce((a, b) => a + b, 0);
+    planBox.innerHTML = `<div class="ctl-plan"><table class="voc"><thead><tr><th>Compétence</th><th>Questions</th><th>dont ★ plus difficiles</th><th>≈ min</th>${hasA ? '<th>Version aménagée</th>' : ''}</tr></thead><tbody>${K.map((k, i) => {
+      const slow = GENS[k]?.slow, hard = GENS[k]?.hard;
+      return `<tr><td><b>C${i + 1}</b> ${esc(GENS[k]?.label || k)}</td>
+        <td>${slow ? '1 (tracé)' : `<button type="button" class="mini" data-a="n" data-d="-1" data-i="${i}" aria-label="Une question de moins">−</button> <b>${p.n[i]}</b> <button type="button" class="mini" data-a="n" data-d="1" data-i="${i}" aria-label="Une question de plus">+</button>`}</td>
+        <td>${hard ? `<button type="button" class="mini" data-a="h" data-d="-1" data-i="${i}" aria-label="Une question ★ de moins">−</button> <b>${p.h[i]}</b> <button type="button" class="mini" data-a="h" data-d="1" data-i="${i}" aria-label="Une question ★ de plus">+</button>` : '<span class="small muted">—</span>'}</td>
+        <td>${fmt(Math.round(ctlT(k) * (p.n[i] + (HARD_X - 1) * (hard ? p.h[i] : 0)) * 2) / 2)}</td>${hasA ? `<td>${pa.n[i]}</td>` : ''}</tr>`;
+    }).join('')}</tbody></table>
+      <p><b>Durée estimée : ≈ ${Math.round(T)} min</b> (${nq(p)} questions)${hasA ? ` · version aménagée : ${nq(pa)} questions, sans ★, avec des aides` : ''}. <span class="small muted">Temps estimés : à ajuster après un premier contrôle.</span></p>
+      ${msg ? `<p class="small">${msg}</p>` : ''}
+      <p><button type="button" class="btn primary" id="ctl-print">🖨️ Imprimer les sujets</button> <span class="small muted">${c.s.length} copies · contrôle ${c.id}</span></p></div>`;
+    planBox.querySelectorAll('button[data-a]').forEach((bt) => bt.addEventListener('click', () => {
+      const i = Number(bt.dataset.i), d = Number(bt.dataset.d);
+      if (bt.dataset.a === 'n') { p.n[i] = Math.min(6, Math.max(1, p.n[i] + d)); p.h[i] = Math.min(p.h[i], p.n[i]); p.a = null; }
+      else p.h[i] = Math.min(p.n[i], Math.max(0, p.h[i] + d));
+      drawPlan();
+    }));
+    $('ctl-print').addEventListener('click', () => {
+      const cc = { ...c, n: [...p.n], h: [...p.h], a: p.a ? [...p.a] : null, r: { ...(p.r || {}) } };
+      const over = ctlOverflow(cc);
+      if (!over.length) { create(cc); return; }
+      drawPlan(`<span class="warn-t">⚠ ${over.length} copie${over.length > 1 ? 's' : ''} sur ${cc.s.length} dépasse${over.length > 1 ? 'nt' : ''} une page (${over.slice(0, 6).join(', ')}${over.length > 6 ? '…' : ''}) : enlève une question (−), ou</span> <button type="button" class="mini" id="ctl-force">imprime quand même</button>`);
+      $('ctl-force').addEventListener('click', () => create(cc));
+    });
+  }
+  $('ctl-make').addEventListener('click', () => {
+    const ks = sel(), ns = names();
+    if (!ks.length) { status('ko-t', 'Coche au moins une compétence dans la liste ci-dessus.'); return; }
+    if (!ns.length) { status('ko-t', 'Colle la liste des élèves.'); $('ctl-names').focus(); return; }
+    const am = new Set(amenGet($('ctl-classe').value));
+    const c = { id: newCtlId(), t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: Date.now(), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
+    const mode = $('ctl-q').value;
+    status('', '🧮 Calcul du contrôle (mise en page de chaque copie)…'); planBox.innerHTML = '';
+    setTimeout(() => {
+      let p, msg = '';
+      if (mode.startsWith('a')) {
+        const r = ctlAutoPlan(c, Number(mode.slice(1)));
+        p = r.p;
+        if (r.tooMany) msg = '<span class="warn-t">⚠ Même avec une seule question par compétence, la page déborde : enlève une compétence.</span>';
+        else if (r.short) msg = `<span class="warn-t">La page est pleine à ≈ ${Math.round(ctlMinutes(c.k, p))} min.</span> Pour aller jusqu'à ${mode.slice(1)} min sans déborder : ajoute une compétence de tracé, ou une compétence qui a des questions ★.`;
+        else if (r.long) msg = '<span class="warn-t">Ces compétences demandent déjà plus de temps que prévu, même avec une seule question chacune.</span>';
+        if (r.amOver) msg += ' <span class="warn-t">La version aménagée dépasse une page même avec une question par compétence : enlève une compétence, ou imprime-la en recto-verso.</span>';
+      } else p = { n: ks.map((k) => (GENS[k]?.slow ? 1 : Number(mode))), h: ks.map(() => 0) };
+      prep = { c, p };
+      status('ok-t', `Contrôle ${c.id} préparé. Vérifie la durée, ajuste si besoin avec − et +, puis imprime.`);
+      drawPlan(msg);
+    }, 30);
+  });
+  $('ctl-corr').addEventListener('click', () => { if (last) printCorrige(last); });
+  $('ctl-ai').addEventListener('click', () => { if (last) download(`controle-${last.id}-correction.txt`, aiText(last)); });
+  // ---- étiquettes ----
+  function fillPick(id) {
+    const all = ctlAll();
+    $('ctl-pick').innerHTML = all.length ? all.map((c) => `<option value="${c.id}"${c.id === id ? ' selected' : ''}>${c.id} · ${esc(c.t)} · ${esc(c.c || '')} · ${new Date(c.d).toLocaleDateString('fr-FR')}</option>`).join('') : '<option value="">(aucun contrôle sur cet appareil)</option>';
+    drawTable();
+  }
+  let edits = {};
+  function drawTable() {
+    const c = ctlFind($('ctl-pick').value); const host = $('ctl-table');
+    if (!c) { host.innerHTML = ''; return; }
+    const res = parseCtlResults($('ctl-res').value, c);
+    const rows = c.s.map(([name, ver], i) => {
+      const n = i + 1, r = res[n] || { lv: [], bits: [], doubt: [] }, e = edits[c.id + n] || {};
+      return { n, name, ver, lv: c.k.map((_, ci) => e[ci] || r.lv[ci] || ''), bits: r.bits, doubt: r.doubt, note: r.note };
+    });
+    const done = rows.filter((r) => r.lv.every(Boolean));
+    host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(GENS[k]?.label || k)}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted">Cases orangées : Claude a un doute, vérifie la copie. Tu peux changer chaque niveau.</p>
+      <p><button type="button" class="btn primary" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button> <span class="small muted">Seuls les élèves dont toutes les compétences ont un niveau ont une étiquette.</span></p>`;
+    host.querySelectorAll('select').forEach((s) => s.addEventListener('change', () => { const k = c.id + s.dataset.n; edits[k] = edits[k] || {}; edits[k][s.dataset.ci] = s.value; drawTable(); }));
+    $('ctl-print-lbl')?.addEventListener('click', () => printLabels(c, done, Number($('ctl-skip').value), profDest()));
+    $('ctl-copy').addEventListener('click', async (ev) => {
+      const tsv = [['Élève', 'Code', ...c.k.map((k, i) => `C${i + 1} ${GENS[k]?.label || k}`)].join('\t'), ...rows.map((r) => [r.name, ctlCode(c.id, r.n), ...r.lv].join('\t'))].join('\n');
+      try { await navigator.clipboard.writeText(tsv); ev.target.textContent = '✔ Copié'; } catch (_) { ev.target.textContent = 'Copie impossible'; }
+    });
+  }
+  $('ctl-pick').addEventListener('change', () => { edits = {}; drawTable(); });
+  $('ctl-res').addEventListener('input', drawTable);
+  $('ctl-import-go').addEventListener('click', () => {
+    let c = null; try { c = JSON.parse($('ctl-import').value.trim()); } catch (e) { c = null; }
+    if (!ctlValid(c)) { $('ctl-import-st').className = 'small ko-t'; $('ctl-import-st').textContent = 'Je ne reconnais pas ce contenu : copie bien toute la cellule « Détail » de la ligne CTRL-….'; return; }
+    ctlSave(c); fillPick(c.id); $('ctl-import-st').className = 'small ok-t'; $('ctl-import-st').textContent = `✔ Contrôle ${c.id} importé.`;
+  });
+  fillPick(ctlAll()[0]?.id);
+}
+
+/* ---------- Page « Mon contrôle » : #/r/2.ID.n.ver.plan.clés.niveaux.réponses.classe[/g=…] (v1 : q au lieu du plan) ---------- */
+let retourSpec = null;
+function routeRetour(spec) {
+  const page = document.querySelector('.page[data-p="retour"]'), host = page.querySelector('.retour');
+  if (spec === retourSpec) return '';
+  retourSpec = spec;
+  const [main, ...segs] = spec.split('/');
+  const [v, id, nS, verS, qS, ksS, lvS, bitsS, clS] = main.split('.');
+  const ver = (verS || 's')[0], salt = parseInt((verS || '').slice(1), 10) || 0;
+  const keys = (ksS || '').split('+'), n = parseInt(nS, 10);
+  // lien v1 : q questions par compétence ; lien v2 : plan détaillé (ex. 3-4h1-1)
+  const plan = v === '1' ? ctlPlan({ k: keys, q: parseInt(qS, 10) }) : v === '2' ? planParse(qS) : null;
+  if (!plan || plan.n.length !== keys.length || !/^[0-9A-Z]{3}$/.test(id || '') || !n || !keys.length) {
+    host.innerHTML = '<h1>Lien illisible</h1><p class="lead">Ce QR code n\'a pas pu être lu en entier. Réessaie de le scanner, bien à plat et bien éclairé.</p><p><a class="btn" href="#/">Accueil du site</a></p>';
+    return '';
+  }
+  let classe = ''; try { classe = decodeURIComponent(clS || ''); } catch (e) { classe = ''; }
+  const extra = (classe ? '/c=' + encodeURIComponent(classe) : '') + segs.filter((s) => /^[fg]=/.test(s)).map((s) => '/' + s).join('');
+  const levels = keys.map((_, i) => LV1R[(lvS || '')[i]] || '');
+  const qs = ctlQuestions(id, n, ver === 'a' ? 'a' : 's', keys, plan, salt);
+  // réponses : une suite de 0/1 rangée par compétence (dans l'ordre des compétences)
+  const counts = ctlVer(plan, keys, ver === 'a' ? 'a' : 's').n, starts = counts.map((_, i) => counts.slice(0, i).reduce((a, b) => a + b, 0));
+  const bitOf = (x) => ((bitsS || '').length === qs.length ? bitsS[starts[x.ci] + x.m] || '-' : '-');
+  const tone = { TB: 'ok', MS: 'ok2', MF: 'mid', MI: 'ko' };
+  host.innerHTML = `<div class="hero"><p class="kicker">Mon contrôle · ${ctlCode(id, n)}</p><h1>Ton corrigé et tes exercices</h1>
+    <p class="lead">Regarde d'abord ton bilan, puis refais les exercices proposés : c'est comme ça qu'une compétence fragile devient acquise.</p></div>
+    <div class="card"><h2>Ton bilan</h2><ul class="ctl-bilan">${keys.map((k, i) => {
+      const l = levels[i], lab = GENS[k]?.label || 'Notion inconnue';
+      const link = GENS[k] ? `#/devoir/${k}/5${extra}` : '';
+      const act = !GENS[k] || !l ? '' : l === 'TB' ? '<span class="ok-t">✔ Bravo !</span>' : `<a class="btn${l === 'MS' ? '' : ' primary'}" href="${link}">${l === 'MS' ? '💪 Je m\'entraîne encore' : '🔁 Je refais ces exercices'}</a>`;
+      return `<li><span class="lv lv-${tone[l] || 'none'}">${l || '?'}</span> <b>${esc(lab)}</b> <span class="small muted">${l ? LEVEL_TXT[l] : ''}</span> ${act}</li>`;
+    }).join('')}</ul>
+    <p class="small muted">Les exercices s'ouvrent comme un devoir : écris ton prénom au début, ton professeur verra que tu les as faits.</p></div>
+    <div class="card"><h2>Le corrigé de ton sujet</h2><div class="ctl-ret"></div></div>`;
+  const list = host.querySelector('.ctl-ret');
+  qs.forEach((x, j) => {
+    const sec = document.createElement('section'); sec.className = 'ctl-rq';
+    const b = bitOf(x);
+    sec.innerHTML = `<h3><span class="qn">${j + 1}</span> <span class="small muted">${esc(GENS[x.k].label)}${x.hard ? ' · ★ plus difficile' : ''}</span> ${b === '1' ? '<span class="ok-t">✔ juste</span>' : b === '0' ? '<span class="ko-t">✘ à revoir</span>' : ''}</h3><div class="ex-q"></div><div class="ex-fb ok"></div><div class="ex-anim"></div>`;
+    list.appendChild(sec);
+    const qd = sec.querySelector('.ex-q'), fb = sec.querySelector('.ex-fb');
+    qd.innerHTML = x.o.q;
+    try { x.o.mount?.(qd); } catch (e) { /* rien */ }
+    let res = { msg: '' };
+    try { res = revealAnswer(x.o, qd) || res; } catch (e) { /* rien */ }
+    qd.querySelectorAll('input, button').forEach((i) => { i.disabled = true; });
+    if (qd.querySelector('.board')) {
+      fb.innerHTML = x.o.anim ? '<button type="button" class="btn">▶ Voir la construction</button>' : '';
+      fb.querySelector('button')?.addEventListener('click', () => { fb.innerHTML = ''; makePlayer(sec.querySelector('.ex-anim'), x.o.anim()).play(); });
+    } else fb.innerHTML = res.msg ? '<strong>Correction :</strong> ' + res.msg : '';
+    if (!fb.innerHTML) fb.remove();
+  });
+  return GENS[keys.find((k) => GENS[k])]?.ch || '';
+}

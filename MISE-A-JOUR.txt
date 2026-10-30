@@ -1,0 +1,15 @@
+MISE À JOUR 2026-10-29.1 : ta version du 28/10 (contrôles papier + QR) + chapitres 5, 6 et 7, Classeur
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer si le fichier existe déjà) :
+  index.html, script.js, style.css, bilan.html, qrcode.js,
+  chapitres-p2.js, chapitres-p2.css, ouverture.js,
+  classeur.html, documents.bin, pdf-lib.min.js
+
+Rien à supprimer. Ne change pas l'adresse du site.
+
+PROGRESSION DES ÉLÈVES : elle reste sur leur appareil (clé « revisions6e-v1 »).
+Cette mise à jour ne la lit qu'en ajout : les anciens résultats, contrôles blancs,
+« points à retravailler » et prénoms restent tels quels. Testé.
+
+OUVRIR UN CHAPITRE AUX ÉLÈVES : Espace prof > « Ce que voient les élèves »,
+cocher, télécharger ouverture.js, le déposer sur GitHub (remplacer).
