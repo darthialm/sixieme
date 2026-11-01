@@ -1,15 +1,14 @@
-MISE À JOUR 2026-10-29.1 : ta version du 28/10 (contrôles papier + QR) + chapitres 5, 6 et 7, Classeur
+MISE À JOUR 2026-11-01.1 : plan de classe, date, retour, suppression, widget « Mes devoirs »
 
-À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer si le fichier existe déjà) :
-  index.html, script.js, style.css, bilan.html, qrcode.js,
-  chapitres-p2.js, chapitres-p2.css, ouverture.js,
-  classeur.html, documents.bin, pdf-lib.min.js
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
+  index.html, script.js, style.css, bilan.html, README.md
 
-Rien à supprimer. Ne change pas l'adresse du site.
+Ne pas toucher aux autres fichiers (chapitres-p2.js, chapitres-p2.css, ouverture.js,
+classeur.html, documents.bin, pdf-lib.min.js, qrcode.js) : ils restent tels quels.
+Cette version part de celle en ligne (29/10, avec les chapitres 5, 6 et 7).
 
-PROGRESSION DES ÉLÈVES : elle reste sur leur appareil (clé « revisions6e-v1 »).
-Cette mise à jour ne la lit qu'en ajout : les anciens résultats, contrôles blancs,
-« points à retravailler » et prénoms restent tels quels. Testé.
+PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 »).
+TES CONTRÔLES DÉJÀ ENREGISTRÉS, LISTES ET PLANS : gardés.
 
-OUVRIR UN CHAPITRE AUX ÉLÈVES : Espace prof > « Ce que voient les élèves »,
-cocher, télécharger ouverture.js, le déposer sur GitHub (remplacer).
+Après le dépôt : recharger le site avec Ctrl + F5, puis recharger la page Grist
+qui contient le widget.

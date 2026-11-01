@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-10-29.1';
+const SITE_VERSION = '2026-11-01.1';
 
 /* =========================================================
    Outils
@@ -2937,6 +2937,8 @@ function renderChapterHome(ch) {
    ========================================================= */
 const siteURL = () => location.href.split('#')[0];
 const devoirHash = (keys, n, extra = '') => `#/devoir/${keys.join(',')}/${n}${extra}`;
+/** Nom du devoir tel qu'il arrive dans la colonne « Devoir » (le même pour les résultats et pour « devoir donné ») */
+const devoirLabel = (keys, rem = false) => (rem ? 'Remédiation — ' : '') + (keys.length === 1 ? GENS[keys[0]].label : `Révisions ciblées : ${keys.map((k) => GENS[k].label).join(', ')}`);
 
 /* ---------- Envoi automatique des résultats dans un formulaire Google ----------
    Le professeur colle le « lien prérempli » de son formulaire (6 questions, dans l'ordre :
@@ -3028,7 +3030,7 @@ function routeDevoir(spec) {
   const keys = (ks || '').split(',').filter((k) => GENS[k]);
   const n = clamp(parseInt(nS, 10) || 10, 1, 40);
   let classe = '', form = null;
-  const once = more.includes('u');
+  const once = more.includes('u'), rem = more.includes('r'); // r : remédiation proposée après un contrôle (étiquette QR)
   more.forEach((seg) => {
     if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 80); } catch (e) { classe = ''; } }
     if (seg.startsWith('f=')) { const f = segToForm(seg.slice(2)); if (f) form = { kind: 'google', ...f }; }
@@ -3048,7 +3050,7 @@ function routeDevoir(spec) {
   const canon = `${keys.join(',')}/${n}`;
   if (spec === devoirSpec) return { ch: chs[0] };
   devoirSpec = spec;
-  const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées';
+  const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées', dLabel = devoirLabel(keys, rem);
   head.innerHTML = `<p class="kicker">Devoir</p><h1>${title}</h1>
     <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai.${once ? ' <b>Seul ton premier essai compte</b> : tu pourras ensuite refaire le devoir pour t\'entraîner.' : ''} ${form && form.kind !== 'manual' ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' : form ? 'À la fin, tu recopieras ton <b>code</b> dans le formulaire de ton professeur (un lien te sera donné).' : 'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
     <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
@@ -3082,7 +3084,7 @@ function routeDevoir(spec) {
         rec.best = Math.max(rec.best || 0, good); rec.last = good; rec.at = d.getTime(); persist();
         const training = once && rec.tries > 1;
         if (form && !training) {
-          const values = [name, code, classe, keys.length === 1 ? title : `${title} : ${keys.map((k) => GENS[k].label).join(', ')}`, `${good}/${limit}`,
+          const values = [name, code, classe, dLabel, `${good}/${limit}`,
             `${helpedCount} avec aide · essai ${rec.tries} · terminé ${nowStr(d)}`];
           const planB = (el, why, cls = 'ko') => {
             el.className = 'rc-send ' + cls;
@@ -3183,7 +3185,7 @@ function routeDevoir(spec) {
     });
     const st = ex.querySelector('#paper-st');
     if (form && form.kind !== 'manual') {
-      const values = [name, `PAPIER-${n}`, classe, keys.length === 1 ? title : `${title} : ${keys.map((k) => GENS[k].label).join(', ')}`, 'sur papier', `déclaré ${nowStr(d)} · à vérifier sur la feuille`];
+      const values = [name, `PAPIER-${n}`, classe, dLabel, 'sur papier', `déclaré ${nowStr(d)} · à vérifier sur la feuille`];
       st.className = 'paper-st'; st.textContent = '📨 J\'informe ton professeur que tu fais ce devoir sur papier…';
       (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
         .then(() => { st.className = 'paper-st ok-t'; st.textContent = '✔ Ton professeur sait que tu fais ce devoir sur papier. N\'oublie pas de lui rendre ta feuille !'; })
@@ -3342,11 +3344,30 @@ function renderProf() {
     const all = e.target.closest('.prof-all');
     if (all) { const fs = all.closest('fieldset'), cbs = [...fs.querySelectorAll('input')], on = !cbs.every((c) => c.checked); cbs.forEach((c) => { c.checked = on; }); update(); return; }
     const one = e.target.closest('.prof-one');
-    if (one) { e.preventDefault(); copy(siteURL() + devoirHash([one.dataset.k], nSel.value, profExtra()), one); return; }
+    if (one) { e.preventDefault(); copy(siteURL() + devoirHash([one.dataset.k], nSel.value, profExtra()), one); noteGiven([one.dataset.k], nSel.value); return; }
     const cp = e.target.closest('.prof-copy');
     if (cp) copy(cp.dataset.url, cp);
   });
-  document.getElementById('prof-copy-link').addEventListener('click', (e) => { if (out.value) copy(out.value, e.currentTarget); });
+  /* Devoir donné : quand le lien est copié pour une classe, une ligne DONNE-n part dans Grist (formulaire en mode automatique).
+     Le widget « Mes devoirs » sait ainsi ce qui a été donné à chaque classe, et qui ne l'a pas encore fait, dès le premier jour. */
+  const givenSt = document.getElementById('prof-given');
+  const noteGiven = (keys, n) => {
+    const dest = typeof profDest === 'function' ? profDest() : null, raw = (clInp.value || '').trim();
+    if (!dest?.send || !fUse.checked || !raw || !keys.length) return;
+    let sent = {}; try { sent = JSON.parse(localStorage.getItem('revisions6e-donnes') || '{}'); } catch (e) { sent = {}; }
+    const d = new Date(), label = devoirLabel(keys), done = [];
+    raw.split(',').map((x) => x.trim()).filter(Boolean).forEach((c) => {
+      const k = `${normName(c)}|${label}|${n}`;
+      if (sent[k] && d.getTime() - sent[k] < 3 * 864e5) { done.push(c); return; } // déjà noté ces 3 derniers jours
+      sent[k] = d.getTime();
+      dest.send(['(devoir donné)', `DONNE-${n}`, c, label, '', `donné ${nowStr(d)} · t=${d.getTime()}`])
+        .then(() => { if (givenSt) { givenSt.className = 'small ok-t'; givenSt.textContent = `📌 Noté dans Grist : devoir donné à ${raw}.`; } })
+        .catch(() => { delete sent[k]; try { localStorage.setItem('revisions6e-donnes', JSON.stringify(sent)); } catch (e) { /* rien */ } });
+    });
+    try { localStorage.setItem('revisions6e-donnes', JSON.stringify(sent)); } catch (e) { /* rien */ }
+    if (givenSt && done.length) { givenSt.className = 'small muted'; givenSt.textContent = `📌 Déjà noté dans Grist pour ${done.join(', ')}.`; }
+  };
+  document.getElementById('prof-copy-link').addEventListener('click', (e) => { if (out.value) { copy(out.value, e.currentTarget); noteGiven(sel(), nSel.value); } });
   document.getElementById('prof-relock').addEventListener('click', () => { try { localStorage.removeItem(PROF_KEY); localStorage.removeItem('revisions6e-grist-key'); } catch (e) { /* rien */ } document.getElementById('gr-key').value = ''; document.getElementById('bilan-in').value = ''; document.getElementById('bilan-out').innerHTML = ''; renderProfLock(); });
   // Bilan des résultats (lignes copiées depuis Grist ou Google Sheets)
   setupBilan();
@@ -3895,6 +3916,9 @@ const CTL_T = {
   'n-rang': 1.5, 'n-combien': 2, 'n-tranches': 2, 'n-decomp': 2.5, 'n-zeros': 1.5, 'n-fracdec': 2, 'n-lettres': 2, 'n-formes': 2.5,
   'c-notation': 1.5, 'c-ecrire': 1.5, 'c-milieu': 2, 'c-tracer': 4, 'c-med-prop': 1.5, 'c-med-trace': 7, 'c-voc': 1.5, 'c-rd': 1.5, 'c-disque': 1, 'c-trace-cercle': 4,
   'e-lire': 2, 'e-placer': 2, 'e-comparer': 1.5, 'e-ranger': 3, 'e-intercaler': 2, 'e-encadrer': 2, 'e-arrondir': 2,
+  'o-voc': 1.5, 'o-gauche': 1.5, 'o-par': 1.5, 'o-par2': 2, 'o-add': 3, 'o-mul': 4, 'o-pb': 4,
+  'a-nom': 1.5, 'a-nature': 1, 'a-mesure': 2, 'a-construire': 4, 'a-calcul': 2.5, 'a-reco': 1.5, 'a-biss': 5,
+  't-voc': 1.5, 't-nature': 1.5, 't-3cotes': 6, 't-angles': 6, 't-iso': 6, 't-rect': 6, 't-180': 2, 't-natang': 2, 't-cercle': 7,
 };
 const ctlT = (k) => GENS[k]?.t ?? CTL_T[k] ?? (GENS[k]?.slow ? 6 : 2);
 const HARD_X = 1.5;
@@ -4071,7 +4095,9 @@ function printWindow(title, bodyHTML, extraCSS = '', after) {
   if (!w) { alert('Ton navigateur a bloqué la fenêtre d\'impression. Autorise les fenêtres pop-up pour ce site, puis recommence.'); return null; }
   const css = new URL('style.css?v=' + SITE_VERSION, location.href).href;
   w.document.open();
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${bodyHTML}</body></html>`);
+  // bouton « Revenir au site » : ferme cette fenêtre (ouverte par le site) ; sinon, recharge le site à cet endroit
+  const back = `<div class="no-print ctl-back"><button type="button" class="btn" onclick="window.close(); setTimeout(function () { location.href = '${siteURL()}#/prof'; }, 400);">← Revenir au site</button></div>`;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${back}${bodyHTML}</body></html>`);
   w.document.close();
   const go = () => { try { after?.(w); } catch (e) { /* rien */ } };
   if (w.document.readyState === 'complete') setTimeout(go, 300); else w.addEventListener('load', go);
@@ -4085,7 +4111,7 @@ function sheetHTML(c, i) {
   const date = new Date(c.d).toLocaleDateString('fr-FR');
   return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}">
     <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
-    <div class="ctl-cut">✂ — — — à détacher (ou à replier) avant de rendre la copie — — —</div>
+    <div class="ctl-cut"></div>
     <div class="ctl-head">
       <div class="ctl-code">${window.qrSVG ? qrSVG(code, 'M') : ''}<b>${code}</b></div>
       <div class="ctl-title"><b>${esc(c.t)}</b><br><span class="small">Écris tes réponses dans les cases.</span></div>
@@ -4179,10 +4205,49 @@ function ctlAutoPlan(c, target = 30) {
   const t = T();
   return { p, short: t < target - 3, long: t > target + 5, amOver };
 }
+/* ---------- Plan de classe : ordre de distribution des copies ----------
+   Disposition « 2 4 2 » = dans chaque rangée, une table de 2, une de 4, une de 2, séparées par des allées.
+   Chaque place est servie depuis l'allée la plus proche. On passe par les allées de gauche à droite, rangée par rangée
+   (du tableau vers le fond ; en boucle, la 2e allée se fait du fond vers le tableau). À chaque arrêt : côté gauche de la
+   salle, de la place la plus à gauche vers l'allée ; côté droit, de la place la plus à droite vers l'allée.
+   (En 2 4 2 : la table de 2 de gauche, puis les 2 places les plus proches dans la table de 4 ; ensuite l'autre côté.) */
+const SEAT_STORE = 'revisions6e-plans-classe';
+const seatAll = () => { try { return JSON.parse(localStorage.getItem(SEAT_STORE) || '{}'); } catch (e) { return {}; } };
+const seatGet = (classe) => ({ lay: '2 4 2', rows: 5, loop: false, rev: false, seats: {}, ...(seatAll()[normName(classe || 'sans')] || {}) });
+function seatSet(classe, p) { const all = seatAll(); all[normName(classe || 'sans')] = p; try { localStorage.setItem(SEAT_STORE, JSON.stringify(all)); } catch (e) { /* rien */ } }
+const layBlocks = (lay) => { const b = String(lay || '').split(/[^0-9]+/).map(Number).filter((x) => x > 0 && x <= 8).slice(0, 6); return b.length ? b : [2, 4, 2]; };
+/** Places (« rangée-table-place ») dans l'ordre de distribution */
+function seatOrder(p) {
+  const B = layBlocks(p.lay), R = Math.max(1, Math.min(12, Number(p.rows) || 1)), nb = B.length;
+  const x0 = B.map((_, b) => B.slice(0, b).reduce((a, v) => a + v, 0)), tot = B.reduce((a, v) => a + v, 0), mid = (tot - 1) / 2;
+  const out = [];
+  if (nb < 2) { for (let r = 0; r < R; r++) for (let s = 0; s < B[0]; s++) out.push(`${r}-0-${s}`); return out; }
+  const aisle = (b, s) => (b === 0 ? 0 : b === nb - 1 ? nb - 2 : (s + 1 <= B[b] - s ? b - 1 : b));
+  for (let j = 0; j < nb - 1; j++) {
+    const ltr = x0[j + 1] - 0.5 <= mid; // allée dans la moitié gauche : de gauche à droite ; sinon de droite à gauche
+    const here = [];
+    B.forEach((m, b) => { for (let s = 0; s < m; s++) if (aisle(b, s) === j) here.push({ b, s, x: x0[b] + s }); });
+    here.sort((u, v) => (ltr ? u.x - v.x : v.x - u.x));
+    const rows = [...Array(R).keys()]; if (p.loop && j % 2 === 1) rows.reverse();
+    rows.forEach((r) => here.forEach((t) => out.push(`${r}-${t.b}-${t.s}`)));
+  }
+  return out;
+}
+/** Ordre d'impression des copies d'un contrôle d'après le plan de sa classe (élèves hors plan à la fin) */
+function ctlPrintOrder(c) {
+  const p = seatGet(c.c), idx = new Map(c.s.map(([n], i) => [n, i])), order = [], seen = new Set();
+  for (const id of seatOrder(p)) { const i = idx.get(p.seats[id]); if (i !== undefined && !seen.has(i)) { order.push(i); seen.add(i); } }
+  const placed = order.length, rest = c.s.map((_, i) => i).filter((i) => !seen.has(i));
+  let all = [...order, ...rest];
+  if (p.rev) all = all.reverse();
+  return { order: all, placed, rest: rest.map((i) => c.s[i][0]), plan: placed > 0 };
+}
 const PRINT_CSS = `@page { size: A4; margin: 7mm 10mm; } body.print-doc { background: #fff; margin: 0; } .ctl-sheet { page-break-after: always; break-after: page; }`;
 function printSheets(c) {
-  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, sans mise à l'échelle (100 %).</span></p></div>`;
-  const body = bar + c.s.map((_, i) => sheetHTML(c, i)).join('');
+  const po = ctlPrintOrder(c);
+  const ord = po.plan ? `Ordre de distribution : plan de classe${c.c ? ' de la ' + esc(c.c) : ''} (${po.placed} copie${po.placed > 1 ? 's' : ''}${po.rest.length ? ` ; hors plan, à la fin : ${po.rest.map(esc).join(', ')}` : ''})${seatGet(c.c).rev ? ', en ordre inverse' : ''}.` : 'Ordre alphabétique (pas de plan de classe pour cette classe).';
+  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, sans mise à l'échelle (100 %).</span></p></div>`;
+  const body = bar + po.order.map((i) => sheetHTML(c, i)).join('');
   printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, (w) => {
     // Une copie = un recto : on signale les feuilles qui débordent
     const probe = w.document.createElement('div'); probe.style.cssText = 'position:absolute;height:100mm;width:1px;visibility:hidden'; w.document.body.appendChild(probe);
@@ -4298,19 +4363,21 @@ function setupControles() {
     <div class="prof-opts">
       <span><label for="ctl-title"><b>Titre :</b></label> <input type="text" id="ctl-title" maxlength="60" placeholder="Contrôle — décimaux"></span>
       <span><label for="ctl-classe"><b>Classe :</b></label> <select id="ctl-classe" class="cl-select"></select></span>
+      <span><label for="ctl-date"><b>Date du contrôle :</b></label> <input type="date" id="ctl-date"></span>
       <span><label for="ctl-q"><b>Durée :</b></label> <select id="ctl-q"><option value="a30" selected>≈ 30 min (automatique)</option><option value="a20">≈ 20 min (automatique)</option><option value="1">1 question par compétence</option><option value="2">2 questions par compétence</option><option value="3">3 questions par compétence</option><option value="4">4 questions par compétence</option></select></span>
     </div>
     <p class="small muted">Automatique : le site choisit le nombre de questions par compétence pour arriver à la durée voulue, sur une seule page. Si la page est pleine avant, certaines questions deviennent <b>★ un peu plus difficiles</b> (même compétence). Un tracé compte pour 1 question. Version aménagée : une question de moins par compétence, pas de ★, police plus grande et une aide sous la première question de chaque compétence.</p>
     <label for="ctl-names"><b>Élèves</b> (un prénom par ligne ; tu peux coller ta liste depuis Grist) :</label>
     <textarea id="ctl-names" rows="5" placeholder="Léa M.&#10;Tom B.&#10;…"></textarea>
     <div id="ctl-students"></div>
+    <details class="seat-box" id="seat-box"><summary><b>🪑 Plan de classe</b> <span class="small muted">— les copies sortent de l'imprimante dans l'ordre où tu les distribues</span></summary><div id="seat-ui"></div></details>
     <div class="prof-row">
       <button type="button" class="btn primary" id="ctl-make">🧮 Préparer le contrôle</button>
-      <button type="button" class="btn" id="ctl-corr" disabled>📄 Corrigé</button>
-      <button type="button" class="btn" id="ctl-ai" disabled>🤖 Fichier pour la correction assistée</button>
     </div>
     <p id="ctl-status" class="small"></p>
     <div id="ctl-plan"></div>
+    <h3>📁 Mes contrôles</h3>
+    <div id="ctl-list"></div>
     <details class="howto small"><summary>Comment corriger avec l'IA</summary><ol class="steps-form">
       <li>Avant de scanner, détache (ou replie) les bandes avec les prénoms : les copies ne portent plus que leur code.</li>
       <li>Scanne la pile avec ton téléphone (un seul PDF) et envoie-le à Claude avec le <b>fichier pour la correction assistée</b>.</li>
@@ -4351,13 +4418,84 @@ function setupControles() {
   $('ctl-students').addEventListener('change', () => amenSet($('ctl-classe').value, [...$('ctl-students').querySelectorAll('input:checked')].map((i) => normName(i.dataset.n))));
   const showSel = () => { const ks = sel(); $('ctl-sel').innerHTML = ks.length ? `Compétences : ${ks.map((k, i) => `<b>C${i + 1}</b> ${esc(GENS[k].label)}`).join(' · ')}` : '<span class="warn-t">Coche au moins une compétence dans la liste ci-dessus.</span>'; };
   document.getElementById('prof-list').addEventListener('change', showSel); showSel();
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const dateOf = (v) => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12).getTime() : Date.now(); };
+  const ymd = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  $('ctl-date').value = today();
+  // ---- plan de classe ----
+  function drawSeats() {
+    const cl = $('ctl-classe').value, p = seatGet(cl), ns = names(), B = layBlocks(p.lay), R = Math.max(1, Math.min(12, Number(p.rows) || 1));
+    const ord = seatOrder(p), num = new Map(ord.map((id, i) => [id, i + 1]));
+    const placed = new Set(Object.values(p.seats).filter((n) => ns.includes(n)));
+    const out = ns.filter((n) => !placed.has(n));
+    const seat = (r, b, s) => { const id = `${r}-${b}-${s}`, v = p.seats[id] || ''; return `<label class="seat${v && ns.includes(v) ? ' on' : ''}"><span class="seat-n">${num.get(id) || ''}</span><select data-id="${id}" aria-label="Rangée ${r + 1}, place ${s + 1} de la table ${b + 1}"><option value=""></option>${ns.map((n) => `<option${n === v ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>`; };
+    $('seat-ui').innerHTML = `<div class="prof-opts small">
+        <span><label for="seat-lay"><b>Tables par rangée</b> (places, de gauche à droite) :</label> <input id="seat-lay" size="9" value="${esc(p.lay)}" placeholder="2 4 2"></span>
+        <span><label for="seat-rows"><b>Rangées :</b></label> <input id="seat-rows" type="number" min="1" max="12" value="${R}" style="width:4em"></span>
+        <label><input type="checkbox" id="seat-loop"${p.loop ? ' checked' : ''}> allée suivante faite du fond vers le tableau</label>
+        <label><input type="checkbox" id="seat-rev"${p.rev ? ' checked' : ''}> imprimer en ordre inverse</label></div>
+      <div class="seat-wrap"><div class="seat-room"><div class="seat-board">Tableau</div>
+        ${[...Array(R).keys()].map((r) => `<div class="seat-row">${B.map((m, b) => `<div class="seat-table">${[...Array(m).keys()].map((s2) => seat(r, b, s2)).join('')}</div>`).join('<div class="seat-aisle"></div>')}</div>`).join('')}
+      </div></div>
+      <p class="small">Le petit numéro = ordre de distribution des copies. ${ns.length ? `<b>${placed.size}</b> élève${placed.size > 1 ? 's' : ''} placé${placed.size > 1 ? 's' : ''}${out.length ? ` · pas encore placé${out.length > 1 ? 's' : ''} (imprimé${out.length > 1 ? 's' : ''} à la fin) : ${out.map(esc).join(', ')}` : ''}` : 'Colle d\'abord la liste des élèves.'}</p>
+      <p><button type="button" class="mini" id="seat-fill">Placer les élèves non placés dans les places vides</button> <button type="button" class="mini" id="seat-clear">Vider le plan</button>
+      <span class="small muted">Plan mémorisé pour ${cl ? esc(cl) : 'cette classe'}, sur cet appareil.</span></p>`;
+    const save = () => { seatSet(cl, p); drawSeats(); };
+    $('seat-lay').addEventListener('change', (e) => { p.lay = layBlocks(e.target.value).join(' '); save(); });
+    $('seat-rows').addEventListener('change', (e) => { p.rows = Math.max(1, Math.min(12, parseInt(e.target.value, 10) || 1)); save(); });
+    $('seat-loop').addEventListener('change', (e) => { p.loop = e.target.checked; save(); });
+    $('seat-rev').addEventListener('change', (e) => { p.rev = e.target.checked; save(); });
+    $('seat-ui').querySelectorAll('select[data-id]').forEach((se) => se.addEventListener('change', () => {
+      const v = se.value; Object.keys(p.seats).forEach((k) => { if (p.seats[k] === v) delete p.seats[k]; });
+      if (v) p.seats[se.dataset.id] = v; else delete p.seats[se.dataset.id];
+      save();
+    }));
+    $('seat-fill').addEventListener('click', () => {
+      // places vides dans l'ordre des rangées (devant d'abord), de gauche à droite
+      const free = [];
+      for (let r = 0; r < R; r++) B.forEach((m, b) => { for (let s2 = 0; s2 < m; s2++) { const id = `${r}-${b}-${s2}`; if (!p.seats[id] || !ns.includes(p.seats[id])) free.push(id); } });
+      out.forEach((n, i) => { if (free[i]) p.seats[free[i]] = n; });
+      save();
+    });
+    $('seat-clear').addEventListener('click', () => { if (confirm('Vider le plan de classe ?')) { p.seats = {}; save(); } });
+  }
+  $('ctl-names').addEventListener('change', drawSeats);
+  $('ctl-classe').addEventListener('change', () => setTimeout(drawSeats, 0));
+  // ---- liste des contrôles enregistrés : réimprimer, corrigé, fichier IA, date, suppression ----
+  function drawList(hl) {
+    const all = ctlAll();
+    $('ctl-list').innerHTML = all.length ? `<div class="table-wrap"><table class="voc ctl-ltab"><thead><tr><th>Date</th><th>Contrôle</th><th>Copies</th><th></th></tr></thead><tbody>${all.map((c) => `<tr${c.id === hl ? ' class="hl"' : ''}><td><input type="date" data-date="${c.id}" value="${ymd(c.d)}" aria-label="Date du contrôle ${c.id}"></td>
+        <td><b>${esc(c.t)}</b><br><span class="small muted">${esc(c.c || 'sans classe')} · ${c.id} · ${c.k.length} compétence${c.k.length > 1 ? 's' : ''}</span></td><td>${c.s.length}</td>
+        <td class="ctl-acts"><button type="button" class="mini" data-act="print" data-id="${c.id}">🖨️ Sujets</button> <button type="button" class="mini" data-act="corr" data-id="${c.id}">📄 Corrigé</button> <button type="button" class="mini" data-act="ai" data-id="${c.id}">🤖 Fichier IA</button> <button type="button" class="mini" data-act="del" data-id="${c.id}" title="Supprimer ce contrôle">🗑</button></td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted">Changer la date ne change pas les questions : réimprime les sujets pour l'avoir à jour.</p>` : '<p class="small muted">Aucun contrôle enregistré sur cet appareil.</p>';
+  }
+  $('ctl-list').addEventListener('change', (e) => {
+    const id = e.target.dataset.date; if (!id) return;
+    const c = ctlFind(id); if (!c) return;
+    c.d = dateOf(e.target.value); ctlSave(c); fillPick($('ctl-pick').value || id);
+    status('ok-t', `✔ Date du contrôle ${c.id} : ${new Date(c.d).toLocaleDateString('fr-FR')}.`);
+  });
+  $('ctl-list').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const c = ctlFind(b.dataset.id); if (!c) return;
+    if (b.dataset.act === 'print') printSheets(c);
+    else if (b.dataset.act === 'corr') printCorrige(c);
+    else if (b.dataset.act === 'ai') download(`controle-${c.id}-correction.txt`, aiText(c));
+    else if (b.dataset.act === 'del') {
+      if (!confirm(`Supprimer le contrôle « ${c.t} » (${c.id}, ${c.s.length} copies) ?\nTu ne pourras plus imprimer ses corrigés ni ses étiquettes depuis cet appareil.`)) return;
+      try { localStorage.setItem(CTL_STORE, JSON.stringify(ctlAll().filter((x) => x.id !== c.id))); } catch (err) { /* rien */ }
+      if (last?.id === c.id) last = null;
+      fillPick(ctlAll()[0]?.id);
+      status('ok-t', `🗑 Contrôle ${c.id} supprimé de cet appareil.${profDest()?.send ? ` Sa ligne CTRL-${c.id} reste dans Grist : supprime-la là-bas si tu veux.` : ''}`);
+    }
+  });
   loadNames();
+  drawSeats();
   let last = null;
   const status = (cls, html) => { $('ctl-status').className = 'small ' + cls; $('ctl-status').innerHTML = html; };
   function create(c) {
     ctlSave(c); last = c;
     printSheets(c);
-    $('ctl-corr').disabled = false; $('ctl-ai').disabled = false;
     status('ok-t', `✔ Contrôle <b>${c.id}</b> créé (${c.s.length} copies, codes ${ctlCode(c.id, 1)} à ${ctlCode(c.id, c.s.length)}). Il est enregistré sur cet appareil.`);
     const dest = profDest();
     if (dest?.send) {
@@ -4394,7 +4532,7 @@ function setupControles() {
       drawPlan();
     }));
     $('ctl-print').addEventListener('click', () => {
-      const cc = { ...c, n: [...p.n], h: [...p.h], a: p.a ? [...p.a] : null, r: { ...(p.r || {}) } };
+      const cc = { ...c, d: dateOf($('ctl-date').value), n: [...p.n], h: [...p.h], a: p.a ? [...p.a] : null, r: { ...(p.r || {}) } };
       const over = ctlOverflow(cc);
       if (!over.length) { create(cc); return; }
       drawPlan(`<span class="warn-t">⚠ ${over.length} copie${over.length > 1 ? 's' : ''} sur ${cc.s.length} dépasse${over.length > 1 ? 'nt' : ''} une page (${over.slice(0, 6).join(', ')}${over.length > 6 ? '…' : ''}) : enlève une question (−), ou</span> <button type="button" class="mini" id="ctl-force">imprime quand même</button>`);
@@ -4406,7 +4544,7 @@ function setupControles() {
     if (!ks.length) { status('ko-t', 'Coche au moins une compétence dans la liste ci-dessus.'); return; }
     if (!ns.length) { status('ko-t', 'Colle la liste des élèves.'); $('ctl-names').focus(); return; }
     const am = new Set(amenGet($('ctl-classe').value));
-    const c = { id: newCtlId(), t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: Date.now(), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
+    const c = { id: newCtlId(), t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: dateOf($('ctl-date').value), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
     const mode = $('ctl-q').value;
     status('', '🧮 Calcul du contrôle (mise en page de chaque copie)…'); planBox.innerHTML = '';
     setTimeout(() => {
@@ -4424,12 +4562,11 @@ function setupControles() {
       drawPlan(msg);
     }, 30);
   });
-  $('ctl-corr').addEventListener('click', () => { if (last) printCorrige(last); });
-  $('ctl-ai').addEventListener('click', () => { if (last) download(`controle-${last.id}-correction.txt`, aiText(last)); });
   // ---- étiquettes ----
   function fillPick(id) {
     const all = ctlAll();
     $('ctl-pick').innerHTML = all.length ? all.map((c) => `<option value="${c.id}"${c.id === id ? ' selected' : ''}>${c.id} · ${esc(c.t)} · ${esc(c.c || '')} · ${new Date(c.d).toLocaleDateString('fr-FR')}</option>`).join('') : '<option value="">(aucun contrôle sur cet appareil)</option>';
+    drawList(id);
     drawTable();
   }
   let edits = {};
@@ -4490,7 +4627,7 @@ function routeRetour(spec) {
     <p class="lead">Regarde d'abord ton bilan, puis refais les exercices proposés : c'est comme ça qu'une compétence fragile devient acquise.</p></div>
     <div class="card"><h2>Ton bilan</h2><ul class="ctl-bilan">${keys.map((k, i) => {
       const l = levels[i], lab = GENS[k]?.label || 'Notion inconnue';
-      const link = GENS[k] ? `#/devoir/${k}/5${extra}` : '';
+      const link = GENS[k] ? `#/devoir/${k}/5/r${extra}` : ''; // r : remédiation (rangée à part dans le bilan Grist)
       const act = !GENS[k] || !l ? '' : l === 'TB' ? '<span class="ok-t">✔ Bravo !</span>' : `<a class="btn${l === 'MS' ? '' : ' primary'}" href="${link}">${l === 'MS' ? '💪 Je m\'entraîne encore' : '🔁 Je refais ces exercices'}</a>`;
       return `<li><span class="lv lv-${tone[l] || 'none'}">${l || '?'}</span> <b>${esc(lab)}</b> <span class="small muted">${l ? LEVEL_TXT[l] : ''}</span> ${act}</li>`;
     }).join('')}</ul>
