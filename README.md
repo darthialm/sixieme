@@ -96,7 +96,10 @@ Dans l'Espace professeur, carte **📝 Contrôle sur papier, par compétences** 
    - Tu peux aussi choisir « ≈ 20 min », ou un nombre fixe de questions par compétence.
 3. **Imprimer les sujets** : une feuille A4 par élève, en recto seul. Les nombres changent pour chaque élève, mais les questions ressemblent à celles du site. En haut de la feuille, une bande porte le prénom, à détacher. La copie ne garde que son **code** (ex. `K7P-04`) et une grille **TB / MS / MF / MI** par compétence. Les tracés sont imprimés en vraie grandeur.
    - Version aménagée : une question de moins par compétence (parfois deux, pour tenir sur la page), pas de ★, des caractères plus grands et une **aide** sous la première question de chaque compétence.
-   - À l'impression, choisis **100 %** (sans mise à l'échelle).
+   - Chaque copie est une page A4 entière : elle ne peut jamais passer sur une 2e page. Si une copie est un peu trop longue à l'impression (police différente), son texte est légèrement resserré. Au pire, l'outil le signale avant d'imprimer.
+   - Les demi-droites graduées restent dans les colonnes. « Complète avec <, > ou = » se fait en écrivant le signe dans une case. « Range » donne la liste des nombres, puis une ligne de cases séparées par < ou >.
+   - Chapitres 5 à 7 : un cadre quadrillé pour poser une opération, écrire les étapes ou faire les calculs d'un problème. Le rapporteur à lire est imprimé en grand.
+   - À l'impression : marges « aucune », échelle 100 %. Si l'adresse du site apparaît encore en bas de page, décoche « En-têtes et pieds de page ».
 4. **📁 Mes contrôles** : pour chaque contrôle enregistré :
    - **🖨️ Sujets** pour réimprimer ;
    - **📄 Corrigé** : les réponses de chaque copie, et la figure finale pour les constructions ;

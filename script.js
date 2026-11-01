@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-01.1';
+const SITE_VERSION = '2026-11-01.2';
 
 /* =========================================================
    Outils
@@ -3944,7 +3944,7 @@ const planParse = (str) => {
   return { n: parts.map((m) => Number(m[1])), h: parts.map((m) => Number(m[2] || 0)), a: parts.every((m) => m[3]) ? parts.map((m) => Number(m[3])) : null };
 };
 
-const ctlWide = (x) => GENS[x.k].slow || /bonne graduation/.test(x.o.q);
+const ctlWide = (x) => !!GENS[x.k].slow; // les demi-droites graduées restent dans les colonnes (place)
 /** Les questions d'une copie : toujours les mêmes pour le même contrôle et le même numéro d'élève.
     Dans chaque compétence, les questions ★ sont les dernières. salt : autre tirage pour une copie qui ne tenait pas sur la page. */
 function ctlQuestions(id, n, ver, keys, plan, salt = 0) {
@@ -3974,6 +3974,35 @@ function levelFromBits(bits) {
 /* ---------- Mise en forme « papier » d'une question ---------- */
 function paperHTML(html) {
   const d = document.createElement('div'); d.innerHTML = html;
+  // ranger : la liste des nombres, puis une ligne de cases séparées par < ou >
+  d.querySelectorAll('.ord').forEach((ord) => {
+    const items = [...ord.querySelectorAll('.ordbtn')].map((b) => b.dataset.txt || b.textContent.trim());
+    const sign = /décroissant/.test(d.textContent) ? ' &gt; ' : ' &lt; ';
+    const p = document.createElement('div');
+    p.innerHTML = `<p class="ord-list">${items.join(' ; ')}</p><p class="ord-ans">${items.map(() => '<span class="blank sm"></span>').join(sign)}</p>`;
+    ord.replaceWith(...p.childNodes);
+  });
+  // rapporteur à lire : figure plus grande, pour lire les graduations
+  if (/rapporteur/i.test(d.textContent)) d.querySelectorAll('svg.fig').forEach((f) => f.classList.add('fig-big'));
+  // « sur ton cahier » : sur la copie, un cadre quadrillé pour poser l'opération ou écrire les étapes
+  const cahier = [...d.querySelectorAll('p')].find((x) => /sur ton cahier/.test(x.textContent));
+  if (cahier) {
+    cahier.innerHTML = cahier.innerHTML.replace(/ sur ton cahier/g, ' dans le cadre');
+    const w = document.createElement('div'); w.className = /multiplication|Pose/.test(cahier.textContent) ? 'work tall' : 'work';
+    d.appendChild(w);
+  } else if (d.querySelector('.form-lines') && !d.querySelector('svg') && /\?/.test(d.querySelector('.statement')?.textContent || '')) {
+    // problème : un cadre pour les calculs, sous les réponses
+    const w = document.createElement('div'); w.className = 'work'; d.appendChild(w);
+  }
+  // demi-droites graduées : on retire le blanc au-dessus et au-dessous
+  d.querySelectorAll('svg.nl-svg').forEach((sv) => sv.setAttribute('viewBox', sv.querySelector('.pt-lbl') ? '0 10 720 102' : '0 14 720 98'));
+  // comparer (<, > ou =) : on écrit le signe dans une case, à la place de « … » ; pas de cases à cocher
+  d.querySelectorAll('.choices.signs').forEach((ch) => {
+    const big = [...d.querySelectorAll('p.big')].find((x) => x.innerHTML.includes('…'));
+    if (!big) return;
+    big.innerHTML = big.innerHTML.replace('…', '<span class="blank sign"></span>');
+    ch.remove();
+  });
   d.querySelectorAll('input.ans').forEach((i) => { const sp = document.createElement('span'); sp.className = 'blank'; sp.textContent = ' '; i.replaceWith(sp); });
   d.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((i) => { const sp = document.createElement('span'); sp.className = 'box'; sp.textContent = '☐'; i.replaceWith(sp); });
   d.querySelectorAll('button').forEach((b) => { const sp = document.createElement('span'); sp.className = b.className + ' as-text'; sp.textContent = b.textContent; b.replaceWith(sp); });
@@ -3988,12 +4017,12 @@ function paperHTML(html) {
   // une ligne qui ne contient qu'une case (et un peu de texte) remonte à la fin de la consigne : gain de place
   d.querySelectorAll('p').forEach((pp) => {
     const prev = pp.previousElementSibling;
-    if (!prev || prev.tagName !== 'P' || !pp.querySelector('.blank') || pp.querySelector('svg, img, table') || pp.textContent.trim().length > 16) return;
+    if (!prev || prev.tagName !== 'P' || pp.classList.contains('ord-ans') || !pp.querySelector('.blank') || pp.querySelector('svg, img, table') || pp.textContent.trim().length > 16) return;
     prev.append(' ', ...pp.childNodes); pp.remove();
   });
   return d.innerHTML
     .replace(/Clique sur les nombres dans l'ordre\./g, '')
-    .replace(/ : clique-les dans l'ordre\./g, '. Écris-les dans l\'ordre : <span class="blank long"></span>')
+    .replace(/ : clique-les dans l'ordre\./g, '.')
     .replace(/Clique sur les <b>zéros inutiles<\/b> pour les barrer\./g, 'Barre les <b>zéros inutiles</b>.')
     .replace(/Clique entre les chiffres pour placer les espaces, afin que le nombre soit facile à lire\./g, 'Recopie ce nombre en plaçant les espaces, pour qu\'il soit facile à lire : <span class="blank long"></span>')
     .replace(/ : clique sur la bonne graduation\./g, ' sur la demi-droite graduée.')
@@ -4055,7 +4084,7 @@ function questionAnswer(o) {
     try { const r = revealAnswer(o, body); msg = typeof r?.msg === 'string' ? r.msg : ''; } catch (e) { msg = ''; }
     if (o._correct !== undefined) {
       const order = [...o.q.matchAll(/data-o="(\d+)"/g)].map((m) => Number(m[1]));
-      good = `choix n° ${order.indexOf(o._correct) + 1} (dans l'ordre de la copie) : ${plain(o._opts[o._correct])}`;
+      good = /choices[^"]*signs/.test(o.q) ? `signe écrit dans la case : ${plain(o._opts[o._correct])}` : `choix n° ${order.indexOf(o._correct) + 1} (dans l'ordre de la copie) : ${plain(o._opts[o._correct])}`;
     }
     if (o._items) {
       const ok = o._items.map((it, j) => (it.ok ? `n° ${j + 1} (${plain(it.html)})` : '')).filter(Boolean);
@@ -4097,7 +4126,7 @@ function printWindow(title, bodyHTML, extraCSS = '', after) {
   w.document.open();
   // bouton « Revenir au site » : ferme cette fenêtre (ouverte par le site) ; sinon, recharge le site à cet endroit
   const back = `<div class="no-print ctl-back"><button type="button" class="btn" onclick="window.close(); setTimeout(function () { location.href = '${siteURL()}#/prof'; }, 400);">← Revenir au site</button></div>`;
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${back}${bodyHTML}</body></html>`);
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${back}${bodyHTML}</body></html>`);
   w.document.close();
   const go = () => { try { after?.(w); } catch (e) { /* rien */ } };
   if (w.document.readyState === 'complete') setTimeout(go, 300); else w.addEventListener('load', go);
@@ -4109,7 +4138,7 @@ function sheetHTML(c, i) {
   const [name, ver] = c.s[i], n = i + 1, code = ctlCode(c.id, n);
   const qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
   const date = new Date(c.d).toLocaleDateString('fr-FR');
-  return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}">
+  return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}"><div class="ctl-in">
     <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
     <div class="ctl-cut"></div>
     <div class="ctl-head">
@@ -4122,15 +4151,16 @@ function sheetHTML(c, i) {
       const first = j === 0 || qs[j - 1].ci !== x.ci;
       return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(GENS[x.k].label)}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && x.o.hints?.[0] ? `<p class="ctl-aide">💡 <b>Aide :</b> ${stripLinks(x.o.hints[0])}</p>` : ''}</section>`;
     }).join('')}</div>
-  </div>`;
+  </div></div>`;
 }
+const CTL_LIMIT = 275;
 /** Codes des copies qui dépassent une page A4 (mesure hors écran, largeur imprimable 190 mm) */
 function ctlOverflow(c, only) {
   const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
   box.innerHTML = '<div style="height:100mm;width:1px"></div>'; document.body.appendChild(box);
   const mm = box.firstElementChild.getBoundingClientRect().height / 100, over = [];
-  // 283 mm utiles ; on garde 6 mm de sécurité (l'impression répartit les colonnes un peu autrement que l'écran)
-  (only || c.s.map((_, i) => i)).forEach((i) => { box.innerHTML = sheetHTML(c, i); if (box.firstElementChild.getBoundingClientRect().height > 277 * mm) over.push(ctlCode(c.id, i + 1)); });
+  // une copie = une page A4 de 296 mm, marges intérieures 9 mm : 278 mm utiles ; on garde 3 mm de sécurité
+  (only || c.s.map((_, i) => i)).forEach((i) => { box.innerHTML = sheetHTML(c, i); if (box.querySelector('.ctl-in').getBoundingClientRect().height > CTL_LIMIT * mm) over.push(ctlCode(c.id, i + 1)); });
   box.remove(); return over;
 }
 /** Plan automatique : on ajoute des questions (compétences les moins fournies d'abord) tant que la durée visée
@@ -4242,20 +4272,36 @@ function ctlPrintOrder(c) {
   if (p.rev) all = all.reverse();
   return { order: all, placed, rest: rest.map((i) => c.s[i][0]), plan: placed > 0 };
 }
-const PRINT_CSS = `@page { size: A4; margin: 7mm 10mm; } body.print-doc { background: #fff; margin: 0; } .ctl-sheet { page-break-after: always; break-after: page; }`;
+// Marges de page à 0 : chaque copie est une boîte A4 qui ne peut pas déborder sur une 2e page,
+// et le navigateur n'a plus de place pour imprimer l'adresse du site en bas de page.
+const PRINT_CSS = `@page { size: A4; margin: 0; } body.print-doc { background: #fff; margin: 0; }`;
+/** Dans la fenêtre d'impression : une copie qui dépasserait (police différente…) est resserrée (taille du texte un peu réduite) */
+function fitSheets(doc) {
+  const bad = [];
+  doc.querySelectorAll('.ctl-sheet').forEach((sh) => {
+    const inn = sh.querySelector('.ctl-in'); if (!inn) return;
+    const room = () => sh.clientHeight - parseFloat(getComputedStyle(sh).paddingTop) - parseFloat(getComputedStyle(sh).paddingBottom);
+    const base = parseFloat(getComputedStyle(sh).fontSize);
+    for (let f = 1; inn.scrollHeight > room() + 0.5 && f > 0.84; f -= 0.03) { inn.style.fontSize = (base * (f - 0.03)) + 'px'; sh.dataset.fit = String(Math.round((f - 0.03) * 100)); }
+    if (inn.scrollHeight > room() + 0.5) bad.push(sh.dataset.code);
+  });
+  return bad;
+}
 function printSheets(c) {
   const po = ctlPrintOrder(c);
   const ord = po.plan ? `Ordre de distribution : plan de classe${c.c ? ' de la ' + esc(c.c) : ''} (${po.placed} copie${po.placed > 1 ? 's' : ''}${po.rest.length ? ` ; hors plan, à la fin : ${po.rest.map(esc).join(', ')}` : ''})${seatGet(c.c).rev ? ', en ordre inverse' : ''}.` : 'Ordre alphabétique (pas de plan de classe pour cette classe).';
-  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, sans mise à l'échelle (100 %).</span></p></div>`;
+  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, marges : aucune, échelle 100 %. Si l'adresse du site apparaît encore en bas, décoche « En-têtes et pieds de page » dans la fenêtre d'impression.</span></p></div>`;
   const body = bar + po.order.map((i) => sheetHTML(c, i)).join('');
-  printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, (w) => {
-    // Une copie = un recto : on signale les feuilles qui débordent
-    const probe = w.document.createElement('div'); probe.style.cssText = 'position:absolute;height:100mm;width:1px;visibility:hidden'; w.document.body.appendChild(probe);
-    const mm = probe.getBoundingClientRect().height / 100; probe.remove();
-    const over = [...w.document.querySelectorAll('.ctl-sheet')].filter((s) => s.getBoundingClientRect().height > 283 * mm).map((s) => s.dataset.code);
+  printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, async (w) => {
+    // Une copie = une page : on attend la police, puis on resserre les rares copies qui dépasseraient
+    const btn = w.document.getElementById('ctl-go'); if (btn) btn.disabled = true;
+    try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
+    const bad = fitSheets(w.document), tight = w.document.querySelectorAll('.ctl-sheet[data-fit]').length;
     const el = w.document.getElementById('ctl-fit');
-    el.className = over.length ? 'warn-t' : 'ok-t';
-    el.textContent = over.length ? `⚠ ${over.length} copie(s) dépassent une page (${over.slice(0, 8).join(', ')}${over.length > 8 ? '…' : ''}) : enlève une compétence ou passe à moins de questions par compétence.` : `✔ ${c.s.length} copies, une page chacune.`;
+    el.className = bad.length ? 'ko-t' : 'ok-t';
+    el.textContent = bad.length ? `⚠ ${bad.length} copie(s) ne tiennent pas sur une page (${bad.slice(0, 8).join(', ')}${bad.length > 8 ? '…' : ''}) : la fin serait coupée. Reviens au site et enlève une question.`
+      : `✔ ${c.s.length} copies, une page chacune${tight ? ` (${tight} copie${tight > 1 ? 's' : ''} un peu resserrée${tight > 1 ? 's' : ''})` : ''}.`;
+    if (btn) btn.disabled = false;
   });
 }
 

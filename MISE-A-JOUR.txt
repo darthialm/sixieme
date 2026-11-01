@@ -1,4 +1,4 @@
-MISE À JOUR 2026-11-01.1 : plan de classe, date, retour, suppression, widget « Mes devoirs »
+MISE À JOUR 2026-11-01.2 : contrôles papier sur une seule page, plan de classe, date, retour, suppression, widget « Mes devoirs »
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
   index.html, script.js, style.css, bilan.html, README.md

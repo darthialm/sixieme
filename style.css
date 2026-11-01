@@ -830,7 +830,7 @@ body.print-doc { color: #000; }
 .lbl-txt b { font-size: 10pt; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lbl-lv { font-size: 7pt; }
 .lbl-hint { font-size: 6.5pt; color: #333; }
-@media screen { .lbl-page { border: 1px solid #ccc; margin: 10px auto; background: #fff; } .ctl-sheet { width: 190mm; margin: 6mm auto 16mm; outline: 1px solid #ccc; outline-offset: 5mm; } }
+@media screen { .lbl-page { border: 1px solid #ccc; margin: 10px auto; background: #fff; } .ctl-sheet { margin: 6mm auto 10mm; box-shadow: 0 0 0 1px #ccc, 0 2px 10px rgba(0,0,0,.08); } }
 .ctl-qs { column-count: 2; column-gap: 7mm; column-rule: 1px dotted #bbb; }
 .ctl-qs .pq { break-inside: avoid; page-break-inside: avoid; }
 .ctl-wide .pq { break-inside: avoid; page-break-inside: avoid; }
@@ -864,7 +864,7 @@ body.print-doc { color: #000; }
 .ctl-sheet .choices.long { grid-template-columns: 1fr; }
 .ctl-sheet .nl { overflow: visible; margin: 1mm 0; }
 .ctl-sheet .nl-svg { min-width: 0; width: 100%; }
-.ctl-sheet .ctl-wide .nl-svg { width: 175mm; max-width: 100%; }
+.ctl-sheet .ctl-wide .nl-svg { width: 100%; }
 .ctl-sheet svg.fig { overflow: hidden; }
 .ctl-num { display: flex; flex-direction: column; align-items: center; flex: none; gap: .4mm; }
 .ctl-star { font-size: .9em; line-height: 1; }
@@ -895,3 +895,22 @@ body.print-doc { color: #000; }
 .ctl-ltab tr.hl td { background: var(--ok-soft, #e4f4e8); }
 .ctl-acts { white-space: nowrap; }
 @media print { .ctl-back { display: none !important; } }
+
+/* une copie = une page A4 (marges de page à 0 à l'impression) : la boîte ne peut pas déborder */
+.ctl-sheet { box-sizing: border-box; width: 210mm; height: 296mm; padding: 9mm 10mm; overflow: hidden; background: #fff; }
+@media print { body.print-doc .ctl-sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; } body.print-doc .ctl-sheet:last-child { break-after: auto; page-break-after: auto; } }
+.ctl-sheet .ord-list { font-weight: 700; margin: .5mm 0; }
+.ctl-sheet .ord-ans { line-height: 2.1; margin: .5mm 0; }
+.ctl-sheet .blank.sm { min-width: 3.4em; }
+.ctl-sheet .blank.sign { min-width: 2em; }
+.ctl-sheet .nl-svg .lbl { font-size: 27px; } .ctl-sheet .nl-svg .pt-lbl { font-size: 28px; }
+/* contrôles : tailles relatives à la copie (sinon elles ne suivent pas le resserrage) */
+.ctl-sheet .statement, .ctl-sheet .p2-steps { font-size: 1em; }
+.ctl-sheet .p2-pose { font-size: 1.05em; padding: 1mm 3mm; margin: 1mm 2mm 1mm 0; line-height: 1.35; }
+.ctl-sheet .ctl-qt svg.fig.fig-big { max-height: 62mm; }
+.ctl-sheet .work { height: 24mm; margin: 1mm 0; border: 1px solid #bbb; border-radius: 3px;
+  background-image: linear-gradient(#e2e2e2 1px, transparent 1px), linear-gradient(90deg, #e2e2e2 1px, transparent 1px); background-size: 5mm 5mm; }
+.ctl-sheet .work.tall { height: 34mm; }
+.ctl-sheet .form-lines { gap: 1.5mm; margin: 1mm 0; }
+.ctl-sheet .form-line { font-size: 1em; gap: 2mm; }
+.ctl-sheet .form-line small { font-size: .85em; }
