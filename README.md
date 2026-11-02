@@ -83,7 +83,8 @@ Dans l'Espace professeur, carte **📝 Contrôle sur papier, par compétences** 
      - le petit numéro sur chaque place montre l'ordre de distribution, et **les copies sortent de l'imprimante dans cet ordre** ;
      - en `2 4 2` : la table de 2 de gauche, puis les 2 places les plus proches dans la table de 4, rangée par rangée ; ensuite l'autre allée (table de 2 de droite, puis les 2 places les plus proches) ;
      - options : faire la 2e allée du fond vers le tableau, ou imprimer en ordre inverse (si ton imprimante empile les pages à l'envers) ;
-     - les élèves qui ne sont pas sur le plan sont imprimés à la fin. Le plan est gardé sur cet appareil.
+     - les élèves qui ne sont pas sur le plan sont imprimés à la fin ;
+     - le plan **et la liste des élèves** sont gardés pour chaque classe, sur cet appareil. En choisissant la classe, tout revient (la classe choisie la dernière fois est reprise à l'ouverture).
 2. **Préparer le contrôle**. Avec « ≈ 30 min (automatique) », réglage par défaut, le site fait tout seul :
    - il ajoute des questions, en commençant par les compétences qui en ont le moins, jusqu'à environ 30 minutes, tant que la page tient ;
    - si la page est pleine avant, certaines questions deviennent **★ un peu plus difficiles**. C'est la même compétence, avec un piège ou des nombres plus durs, par exemple un arrondi avec retenue (3,96 → 4,0) ;
@@ -96,9 +97,11 @@ Dans l'Espace professeur, carte **📝 Contrôle sur papier, par compétences** 
    - Tu peux aussi choisir « ≈ 20 min », ou un nombre fixe de questions par compétence.
 3. **Imprimer les sujets** : une feuille A4 par élève, en recto seul. Les nombres changent pour chaque élève, mais les questions ressemblent à celles du site. En haut de la feuille, une bande porte le prénom, à détacher. La copie ne garde que son **code** (ex. `K7P-04`) et une grille **TB / MS / MF / MI** par compétence. Les tracés sont imprimés en vraie grandeur.
    - Version aménagée : une question de moins par compétence (parfois deux, pour tenir sur la page), pas de ★, des caractères plus grands et une **aide** sous la première question de chaque compétence.
-   - Chaque copie est une page A4 entière : elle ne peut jamais passer sur une 2e page. Si une copie est un peu trop longue à l'impression (police différente), son texte est légèrement resserré. Au pire, l'outil le signale avant d'imprimer.
+   - Chaque copie tient dans une page : elle ne peut jamais passer sur une 2e page. Les deux colonnes sont construites par le site (et non par le navigateur), donc elles s'impriment pareil partout.
+   - Avec Chrome ou Edge, la copie occupe toute la page. Avec Safari ou Firefox, qui ajoutent parfois leurs propres marges, la copie est un peu plus petite pour tenir dans la zone imprimable (un peu moins de questions, ou plus de ★).
+   - Si une copie est un peu trop longue à l'impression (police différente), son texte est légèrement resserré. Au pire, l'outil le signale avant d'imprimer.
    - Les demi-droites graduées restent dans les colonnes. « Complète avec <, > ou = » se fait en écrivant le signe dans une case. « Range » donne la liste des nombres, puis une ligne de cases séparées par < ou >.
-   - Chapitres 5 à 7 : un cadre quadrillé pour poser une opération, écrire les étapes ou faire les calculs d'un problème. Le rapporteur à lire est imprimé en grand.
+   - Chapitres 5 à 7 : un cadre quadrillé pour écrire les étapes ou faire les calculs d'un problème. Les opérations à trous et la virgule à placer s'impriment telles quelles. Le rapporteur à lire est imprimé en grand.
    - À l'impression : marges « aucune », échelle 100 %. Si l'adresse du site apparaît encore en bas de page, décoche « En-têtes et pieds de page ».
 4. **📁 Mes contrôles** : pour chaque contrôle enregistré :
    - **🖨️ Sujets** pour réimprimer ;

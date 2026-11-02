@@ -124,3 +124,47 @@ body.projo-mode main { padding-top: 8px; padding-bottom: 8px; }
 @media (max-width: 900px) { .pj-layout { grid-template-columns: 1fr; } .pj-side { position: static; } }
 .projo-stage .choice.is-good { border: 3px solid var(--ok); background: var(--ok-soft); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 25%, transparent); }
 .projo-stage .choice.is-good::after { content: "✔"; color: var(--ok); font-weight: 700; font-size: 1.4rem; margin-left: 6px; }
+
+/* ---------- Le puzzle des trous (addition, soustraction posées) ---------- */
+.p2-grid { display: inline-flex; flex-direction: column; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 1.35rem; line-height: 1.25; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 10px; padding: 6px 14px 8px; margin: 8px 0; }
+.p2-grid .g-row { display: flex; align-items: center; }
+.p2-grid .g-c { width: 1.45em; height: 1.55em; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+.p2-grid .g-op { color: var(--accent); font-weight: 700; justify-content: flex-start; }
+.p2-grid .g-comma { width: .55em; text-align: center; font-weight: 700; }
+.p2-grid .g-C { font-size: .62em; color: var(--accent); min-height: 1.4em; }
+.p2-grid .g-C .g-c { width: calc(1.45em / .62); height: 1.6em; }
+.p2-grid .g-C .g-comma { width: calc(.55em / .62); }
+.p2-grid .g-R { border-top: 2px solid var(--ink); margin-top: 2px; padding-top: 2px; }
+.p2-grid input.dig { width: 1.3em; height: 1.35em; padding: 0; text-align: center; font: inherit; font-weight: 700; border: 2px solid var(--accent); border-radius: 6px; background: #fff; }
+.p2-grid .g-C input.dig { font-size: 1.3em; width: 1.2em; height: 1.2em; }
+.p2-grid input.dig.right { border-color: var(--ok); background: var(--ok-soft, #e4f4e8); }
+.p2-grid input.dig.wrong { border-color: var(--ko); background: var(--ko-soft, #fdeceb); }
+.p2-grid .g-ans { background: var(--ok-soft, #e4f4e8); color: var(--ok); font-weight: 700; }
+.p2-grid .g-hl { background: #fff3c4; }
+.p2-grid .p2-z { color: #e8590c; }
+
+/* ---------- La course à la virgule (multiplication) ---------- */
+.p2-vline { align-items: center; }
+.p2-vline .vd { display: inline-block; }
+.p2-vline .vgap { position: relative; width: .7em; height: 1.5em; border: 0; padding: 0; margin: 0 1px; background: transparent; border-radius: 5px; cursor: pointer; vertical-align: bottom; }
+.p2-vline .vgap::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: var(--line); }
+.p2-vline .vgap:hover { background: var(--accent-soft); }
+.p2-vline .vgap.on::after, .p2-vline .vgap.good::after { content: ","; width: auto; height: auto; background: none; bottom: -2px; margin-left: -.15em; font-weight: 800; font-size: 1.15em; color: var(--accent); }
+.p2-vline .vgap.good::after { color: var(--ok); }
+.p2-vline .vgap.bad::after { color: var(--ko); }
+
+/* ---------- Vidéos (chargées au clic) ---------- */
+.yt { margin: 8px 0; }
+.yt-frame { position: relative; width: 100%; max-width: 640px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000; }
+.yt-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.hint-box .yt { margin: 6px 0 0; }
+.yt-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+
+/* ---------- Sur la copie (contrôle papier) ---------- */
+.ctl-sheet .p2-grid { font-size: 1.15em; padding: 1mm 3mm 1.5mm; margin: 1mm 0; border-color: #999; }
+.ctl-sheet .p2-grid .blank { min-width: 0; width: 1.2em; height: 1.3em; margin: 0; border-width: 1.5px; }
+.ctl-sheet .p2-grid .g-C .blank { width: 1.1em; height: 1.1em; }
+.ctl-sheet .p2-grid .p2-z { color: #000; }
+.ctl-sheet .p2-vline .vgap { display: inline-block; width: .55em; }
+.ctl-sheet .p2-vline .vgap::after { background: #888; }
+.ctl-sheet .yt { display: none; }

@@ -230,79 +230,226 @@ function poseMulHTML(a, b) {
 /** un décimal « joli » : m entier avec k chiffres après la virgule, dernier chiffre non nul */
 function randDv(k, lo, hi) { for (;;) { const m = rand(lo * P10(k), hi * P10(k)); if (k === 0 || m % 10) return dv(m, k); } }
 
-/* ---------- 5. Poser une addition, une soustraction ---------- */
-function genOpPoseAdd() {
+/* ---------- Vidéos des calculs posés (chargées seulement au clic : rien n'est demandé à YouTube avant) ---------- */
+const OP_VIDEOS = { add: ['ytLe8aUq2ZM', 'poser une addition'], sub: ['CFKUxlh6R9s', 'poser une soustraction'], mul: ['4YQi_icWTTI', 'poser une multiplication'] };
+const videoBox = (k) => `<div class="yt" data-yt="${OP_VIDEOS[k][0]}"><button type="button" class="btn yt-play">▶ Vidéo : ${OP_VIDEOS[k][1]}</button></div>`;
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.yt-play'); if (!b) return;
+  const box = b.closest('.yt'), id = box?.dataset.yt; if (!id || !/^[\w-]{11}$/.test(id)) return;
+  box.innerHTML = `<div class="yt-frame"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1" title="${esc(b.textContent.replace(/^▶\s*/, ''))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+});
+
+/* ---------- 5. Poser une addition, une soustraction ----------
+   a) Quelle opération est bien posée ? (QCM)
+   b) Le puzzle des trous : l'opération est posée et juste, mais il manque des pièces (un chiffre d'un terme,
+      un chiffre du résultat, une retenue, un zéro « fantôme » après la virgule). L'élève doit faire marcher
+      l'algorithme colonne par colonne, parfois à l'envers. Au plus un chiffre manquant par colonne : une seule solution. */
+const digIn = (label) => `<input class="ans num dig" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="${label}">`;
+function opPuzzle(a, b, op, hard) {
+  const K = Math.max(a.k, b.k), A = dPad(a, K), B = dPad(b, K), R = op === '+' ? A.m + B.m : A.m - B.m;
+  const S = { A: String(A.m).padStart(K + 1, '0'), B: String(B.m).padStart(K + 1, '0'), R: String(R).padStart(K + 1, '0') };
+  const W = Math.max(S.A.length, S.B.length, S.R.length);
+  const dig = (row, c) => (c < S[row].length ? Number(S[row][S[row].length - 1 - c]) : null);
+  // retenues (addition) ou retenues de la soustraction, colonne par colonne depuis la droite
+  const cin = [0];
+  for (let c = 0; c < W; c++) { const x = dig('A', c) || 0, y = dig('B', c) || 0; cin[c + 1] = op === '+' ? (x + y + cin[c] >= 10 ? 1 : 0) : (x - y - cin[c] < 0 ? 1 : 0); }
+  const pad = { A: K - a.k, B: K - b.k };
+  const holes = new Map(), used = new Set();
+  const put = (row, c, kind) => { holes.set(`${row}:${c}`, kind); if (row !== 'C') used.add(c); };
+  // 1. un zéro « fantôme » (le terme qui a moins de chiffres après la virgule)
+  const ghosts = ['A', 'B'].flatMap((row) => [...Array(pad[row]).keys()].map((c) => [row, c]));
+  if (ghosts.length) { const [row, c] = pick(ghosts); put(row, c, 'ghost'); }
+  // 2. un (ou deux) chiffres des termes, dans des colonnes où le résultat a un chiffre
+  const opnd = () => shuffle(['A', 'B'].flatMap((row) => [...Array(W).keys()].filter((c) => !used.has(c) && c >= pad[row] && dig(row, c) !== null && c < S.R.length).map((c) => [row, c])));
+  for (let n = hard ? 2 : 1; n > 0; n--) { const o = opnd()[0]; if (o) put(o[0], o[1], 'opnd'); }
+  // 3. des chiffres du résultat
+  const target = (hard ? 6 : 4) - (op === '+' ? 1 : 0);
+  for (const c of shuffle([...Array(S.R.length).keys()])) { if ([...holes.keys()].filter((k) => !k.startsWith('C')).length >= target) break; if (!used.has(c)) put('R', c, 'res'); }
+  // 4. addition : une case de retenue (au-dessus d'une colonne), qui vaut 1 ou 0
+  if (op === '+') { const cs = [...Array(W).keys()].filter((c) => c >= 1 && (dig('A', c) !== null || dig('B', c) !== null)); const c = pick(cs.filter((x) => cin[x]).length && Math.random() < 0.7 ? cs.filter((x) => cin[x]) : cs); if (c !== undefined) put('C', c, 'carry'); }
+  return { K, W, S, dig, cin, pad, holes, R };
+}
+/** HTML de la grille. full : on montre tout (correction), les trous sont surlignés. */
+function puzzleHTML(P, op, full = false) {
+  const { K, W, dig, cin, pad, holes } = P;
+  const cols = [...Array(W).keys()].reverse(), H = [];
+  let idx = 0;
+  const cell = (row, c) => {
+    const key = `${row}:${c}`, kind = holes.get(key);
+    const v = row === 'C' ? (c >= 1 && c < W ? cin[c] : null) : dig(row, c);
+    if (kind && !full) { H.push({ row, c, kind, v: row === 'C' ? cin[c] : v }); return `<span class="g-c g-in" data-c="${c}">${digIn(row === 'C' ? 'retenue' : 'chiffre manquant')}</span>`; }
+    let t = row === 'C' ? (v ? '1' : '') : v === null ? '' : String(v);
+    if (kind && full && row === 'C') t = String(v || 0);
+    const ghost = full && (row === 'A' || row === 'B') && c < pad[row]; // zéros ajoutés : en couleur dans la correction seulement
+    return `<span class="g-c${kind && full ? ' g-ans' : ''}${ghost ? ' p2-z' : ''}" data-c="${c}">${t}</span>`;
+  };
+  const line = (row, sign) => {
+    let h = `<span class="g-c g-op">${sign}</span>`;
+    cols.forEach((c) => { h += cell(row, c); if (K && c === K) h += `<span class="g-comma">${row === 'C' ? '' : ','}</span>`; });
+    return `<div class="g-row g-${row}">${h}</div>`;
+  };
+  const html = `<div class="p2-grid">${op === '+' ? line('C', '') : ''}${line('A', '')}${line('B', op)}${line('R', '')}</div>`;
+  idx = H.length;
+  return { html, H };
+}
+function genOpPoseAdd(hard = false) {
   const op = pick(['+', '−']);
   let a, b;
   for (;;) {
     const ka = rand(0, 2), kb = rand(1, 2);
-    a = randDv(ka, op === '−' ? 30 : 10, op === '−' ? 95 : 80); b = randDv(kb, 5, op === '−' ? 60 : 70);
+    a = randDv(ka, op === '−' ? 30 : 10, op === '−' ? (hard ? 950 : 95) : (hard ? 800 : 80)); b = randDv(kb, 5, op === '−' ? 60 : 70);
     if (ka === kb) continue;
     if (op === '−' && a.m / P10(a.k) <= b.m / P10(b.k) + 3) continue;
     break;
   }
   const K = Math.max(a.k, b.k), A = dPad(a, K), B = dPad(b, K);
   const res = (op === '+' ? A.m + B.m : A.m - B.m) / P10(K);
-  // erreur classique : chiffres alignés à droite (virgules décalées)
-  const sh = Math.abs(a.k - b.k);
-  const wrongAl = a.k < b.k ? opCalc(a.m * P10(sh) / P10(b.k), op, b.m / P10(b.k)) : opCalc(a.m / P10(a.k), op, b.m * P10(sh) / P10(a.k));
   const expr = `${dNice(a)} ${op} ${dNice(b)}`;
-  if (Math.random() < 0.3) {
+  const vid = op === '+' ? 'add' : 'sub';
+  if (!hard && Math.random() < 0.3) {
     // QCM : quelle opération est bien posée ?
     const good = poseAddHTML(a, b, op, false, true);
     const right = `<div class="p2-pose p2-right"><div><span class="p2-op"></span>${dStr(a)}</div><div><span class="p2-op">${op}</span>${dStr(b)}</div><div class="p2-res">&nbsp;</div></div>`;
     const left = `<div class="p2-pose p2-left"><div><span class="p2-op"></span>${dStr(a)}</div><div><span class="p2-op">${op}</span>${dStr(b)}</div><div class="p2-res">&nbsp;</div></div>`;
     const o = mcq(`<p class="statement">On veut calculer <b>${expr}</b>. Quelle opération est bien posée ?</p>`, [good, right, left], 0,
       'On aligne les <b>virgules</b> les unes sous les autres (donc les unités sous les unités, les dixièmes sous les dixièmes…), et on complète avec des zéros.', { cls: 'p2-poses' });
-    return withRemed(withHints(o, [`Relis « Poser une addition et une soustraction » dans ${ficheLink('operations')}.`, 'Outil : regarde les virgules. Sont-elles les unes sous les autres ?']),
+    return withRemed(withHints(o, [`Relis « Les calculs posés » dans ${ficheLink('operations')}. Qu'est-ce qu'on aligne ?`, 'Exemple : 47,6 + 28,35 → on écrit 47,60 au-dessus de 28,35, virgule sous virgule.', `Outil : regarde les virgules. Sont-elles les unes sous les autres ? ${videoBox(vid)}`]),
       () => 'Regarde les virgules : sont-elles alignées ? Les unités doivent être sous les unités.');
   }
+  // puzzle des trous
+  const P = opPuzzle(a, b, op, hard), { html, H } = puzzleHTML(P, op);
+  const hasCarry = H.some((h) => h.kind === 'carry');
+  const col = (r, c) => { r.querySelectorAll('.g-hl').forEach((x) => x.classList.remove('g-hl')); r.querySelectorAll(`.p2-grid .g-c[data-c="${c}"]`).forEach((x) => x.classList.add('g-hl')); };
   return {
-    hints: [`Relis « Poser une addition et une soustraction » dans ${ficheLink('operations')}. Qu'est-ce qu'on aligne ?`, `Exemple : 47,6 + 28,35 → on écrit 47,60 sous forme posée, virgule sous virgule.`, { html: 'Outil : voici l\'opération bien posée, à toi de calculer.', act: (r) => r.insertAdjacentHTML('beforeend', `<div class="hint-fig">${poseAddHTML(a, b, op, false)}</div>`) }],
+    hints: [
+      `Travaille <b>colonne par colonne, en partant de la droite</b>, comme quand tu poses l'opération. Dans la colonne où il manque un chiffre, quel calcul fais-tu ? Relis « Les calculs posés » dans ${ficheLink('operations')}.`,
+      op === '+' ? 'Exemple : dans une colonne, ? + 7 donne un nombre qui finit par 2 : ? = 5, car 5 + 7 = 12 (on écrit 2 et on retient 1).'
+        : 'Exemple : dans une colonne, ? − 6 = 3 : on fait l\'opération à l\'envers, ? = 3 + 6 = 9. Et pour 4 − ? = 7, on retient : 14 − ? = 7, donc ? = 7.',
+      `Outil : les zéros ajoutés après la virgule sont en orange, et les virgules sont alignées. Revois la méthode en vidéo : ${videoBox(vid)}`,
+    ],
     remediate(r) {
-      const x = val(r); if (!x || eq(x.value, res)) return null;
-      if (eq(x.value, wrongAl)) return 'Tu as aligné les derniers chiffres. Il faut aligner les <b>virgules</b> (unités sous unités), et compléter avec des zéros.';
-      if ([0.01, 0.1, 1, 10].some((d) => eq(Math.abs(x.value - res), d))) return 'Ton calcul est presque juste : vérifie les <b>retenues</b>, colonne par colonne en partant de la droite.';
-      return null;
+      const vs = H.map((_, i) => val(r, i)); if (vs.some((v) => !v)) return null;
+      const i = H.findIndex((h, j) => !eq(vs[j].value, h.v)); if (i < 0) return null;
+      const h = H[i], u = vs[i].value, c = h.c, x = P.dig('A', c) || 0, y = P.dig('B', c) || 0, ci = P.cin[c];
+      col(r, c);
+      if (h.kind === 'ghost') return `Une case est sous un chiffre après la virgule qui n'existe pas dans le nombre : on complète avec un <b>zéro</b>, pour avoir autant de chiffres après la virgule. Écrire un zéro à la fin d'un décimal ne change pas sa valeur.`;
+      if (h.kind === 'carry') return 'Case de retenue : regarde la colonne juste à droite. ' + (op === '+' ? 'Sa somme (avec sa propre retenue) dépasse-t-elle 9 ? Si oui, on retient 1, sinon 0.' : '');
+      if (h.kind === 'res') {
+        if (op === '+' && ci && eq(u, (x + y) % 10)) return 'Dans la colonne surlignée, tu as oublié la <b>retenue</b> qui vient de la colonne de droite.';
+        if (op === '−' && ci && eq(u, (x - y + 10) % 10)) return 'Dans la colonne surlignée, tu as oublié la <b>retenue</b> : dans la colonne de droite, le chiffre du haut était trop petit.';
+        return op === '+' ? 'Refais la colonne surlignée : chiffre du haut + chiffre du bas + la retenue éventuelle. Si ça dépasse 9, on écrit le chiffre des unités.' : 'Refais la colonne surlignée : chiffre du haut − chiffre du bas. Si le chiffre du haut est trop petit, on ajoute 10 en haut et on retient 1 pour la colonne suivante.';
+      }
+      // chiffre d'un terme
+      if (op === '+') return ci ? 'Dans la colonne surlignée, cherche le chiffre qui, ajouté à l\'autre chiffre <b>et à la retenue</b>, donne un nombre qui se termine par le chiffre du résultat.' : 'Dans la colonne surlignée, cherche le chiffre qui, ajouté à l\'autre chiffre, donne un nombre qui se termine par le chiffre du résultat.';
+      return h.row === 'A' ? 'Chiffre du haut manquant : fais l\'opération à l\'envers, chiffre du haut = résultat + chiffre du bas (+ la retenue éventuelle).' : 'Chiffre du bas manquant : chiffre du haut − résultat (en pensant à la retenue).';
     },
-    q: `<p class="statement">Pose l'opération sur ton cahier, puis écris le résultat.</p><p class="big">${expr} = ${inp('num', 'Résultat')}</p>`,
-    check(r) { const x = val(r); if (!x) return null; const ok = eq(x.value, res); markInput(r, 0, ok); return { ok, msg: `Virgules alignées, zéros ajoutés : ${expr} = <b>${fmt(res)}</b>.${poseAddHTML(a, b, op)}` }; },
+    _holes: H.map((h) => h.v), // (tests)
+    q: `<p class="statement">L'opération <b>${expr}</b> est bien posée et juste, mais il manque des chiffres. Complète les cases.</p>${html}${hasCarry ? '<p class="small muted">Case de retenue (en petit, en haut) : écris 1 s\'il y a une retenue, 0 sinon.</p>' : ''}`,
+    check(r) {
+      const vs = H.map((_, i) => val(r, i)); if (vs.some((v) => !v)) return null;
+      let ok = true;
+      H.forEach((h, i) => { const g = eq(vs[i].value, h.v); markInput(r, i, g); ok = ok && g; });
+      return { ok, msg: `${expr} = <b>${fmt(res)}</b>. Les chiffres à trouver sont surlignés :${puzzleHTML(P, op, true).html}` };
+    },
   };
 }
 
-/* ---------- 6. Poser une multiplication ---------- */
-function genOpPoseMul() {
+/* ---------- 6. Poser une multiplication : la course à la virgule ----------
+   a) Le calcul sans virgule est fait : l'élève place la virgule dans le résultat (clic entre deux chiffres).
+   b) Puissances de 10 : on connaît 237 × 46 = 10 902, on en déduit 2,37 × 4,6, 23,7 × 46…
+   c) Combien de chiffres après la virgule dans le produit ? (QCM)   d) Ordre de grandeur (QCM). */
+function mulRawHTML(a, b, gaps = true) {
+  const M1 = a.m, M2 = b.m, digs = String(M2).split('').reverse().map(Number);
+  const lines = digs.length > 1 ? digs.map((d, i) => M1 * d * P10(i)) : [];
+  const P = String(M1 * M2);
+  let h = `<div class="p2-pose"><div><span class="p2-op"></span>${dStr(a)}</div><div><span class="p2-op">×</span>${dStr(b)}</div>`;
+  h += lines.map((l, i) => `<div class="${i === 0 ? 'p2-res' : ''}"><span class="p2-op">${i ? '+' : ''}</span>${l}</div>`).join('');
+  h += `<div class="p2-res p2-vline">${gaps ? [...P].map((d, i) => `<span class="vd">${d}</span>${i < P.length - 1 ? `<button type="button" class="gap vgap" data-g="${i + 1}" aria-label="Virgule après le chiffre ${i + 1}"></button>` : ''}`).join('') : P}</div></div>`;
+  return h;
+}
+function genOpPoseMul(hard = false) {
   let a, b;
-  const kind = rand(0, 2);
-  if (kind === 0) { a = randDv(1, 2, 60); b = dv(rand(2, 9), 0); }
-  else if (kind === 1) { a = randDv(2, 1, 9); b = randDv(1, 1, 9); }
-  else { a = randDv(1, 2, 40); b = randDv(1, 1, 6); }
-  const K = a.k + b.k, P = a.m * b.m, res = P / P10(K);
-  const expr = `${dNice(a)} × ${dNice(b)}`;
-  const v = Math.random();
-  if (v < 0.22) {
+  const pickPair = () => {
+    const kind = rand(0, 2);
+    if (kind === 0) { a = randDv(1, 2, 60); b = dv(rand(2, 9), 0); }
+    else if (kind === 1) { a = randDv(2, 1, 9); b = randDv(1, 1, 9); }
+    else { a = randDv(1, 2, 40); b = randDv(1, 1, 6); }
+  };
+  pickPair();
+  const v = hard ? pick([0, 1]) : Math.random() < 0.45 ? 0 : Math.random() < 0.55 ? 1 : Math.random() < 0.5 ? 2 : 3;
+  if (v === 0) {
+    // ★ : le produit sans virgule se termine par 0 (2,5 × 0,4 → 100 → 1,00 = 1)
+    for (let t = 0; t < 400; t++) { const P0 = String(a.m * b.m), K0 = a.k + b.k; if (K0 >= 1 && P0.length > K0 && (!hard || (P0.endsWith('0') && K0 >= 2))) break; if (hard) { a = dv(rand(2, 30) * 10 + 5, 1); b = dv(rand(1, 9) * 2, pick([1, 2])); } else pickPair(); }
+    const P = String(a.m * b.m), K = a.k + b.k, L = P.length, res = a.m * b.m / P10(K), expr = `${dNice(a)} × ${dNice(b)}`;
+    const good = L - K;
+    return {
+      hints: [
+        `Relis « Les calculs posés » dans ${ficheLink('operations')} : dans une multiplication, s'occupe-t-on des virgules pendant le calcul ? Comment les retrouve-t-on à la fin ?`,
+        'Exemple : 36,4 × 2,5 → 364 × 25 = 9100. Il y a 1 chiffre après la virgule dans 36,4 et 1 dans 2,5 : 1 + 1 = 2. On compte 2 chiffres en partant de la droite : 91,00 = 91.',
+        `Outil : compte les chiffres après la virgule dans chaque facteur, et additionne. Revois la méthode en vidéo : ${videoBox('mul')}`,
+      ],
+      q: `<p class="statement">On a posé <b>${expr}</b> sans s'occuper des virgules. Clique entre deux chiffres du résultat pour placer la virgule.</p>${mulRawHTML(a, b)}`,
+      mount(r) {
+        r.querySelectorAll('.vgap').forEach((g) => g.addEventListener('click', () => {
+          r.dataset.g = g.dataset.g; r.querySelectorAll('.vgap').forEach((x) => x.classList.toggle('on', x === g));
+        }));
+      },
+      remediate(r) {
+        if (r.dataset.g === undefined) return null;
+        const g = Number(r.dataset.g); if (g === good) return null;
+        if (g === K && K !== good) return 'On compte les chiffres après la virgule en partant de la <b>droite</b> du résultat, pas de la gauche.';
+        if ((a.k && g === L - a.k) || (b.k && g === L - b.k)) return 'Tu n\'as compté les chiffres après la virgule que dans <b>un seul</b> facteur. Compte-les dans les deux, puis additionne.';
+        return `Compte les chiffres après la virgule dans ${dStr(a)}, puis dans ${dStr(b)}, et additionne : c'est le nombre de chiffres après la virgule du produit.`;
+      },
+      check(r) {
+        if (r.dataset.g === undefined) return null;
+        const ok = Number(r.dataset.g) === good;
+        r.querySelector(`.vgap[data-g="${good}"]`)?.classList.add('good');
+        const wrongG = r.querySelector('.vgap.on:not(.good)'); if (wrongG) wrongG.classList.add('bad');
+        const z = /0$/.test(decStr(a.m * b.m, K, false)) ? ` = <b>${fmt(res)}</b>` : '';
+        return { ok, msg: `${dStr(a)} a ${a.k} chiffre${a.k > 1 ? 's' : ''} après la virgule, ${dStr(b)} en a ${b.k} : ${a.k} + ${b.k} = ${K}. On compte ${K} chiffre${K > 1 ? 's' : ''} en partant de la droite : ${expr} = <b>${decStr(a.m * b.m, K, false)}</b>${z}.` };
+      },
+    };
+  }
+  if (v === 1) {
+    // puissances de 10 : on connaît le calcul sans virgule, on en déduit trois produits
+    let m1, m2; do { m1 = rand(12, hard ? 989 : 389); m2 = rand(3, 48); } while (m1 % 10 === 0 || m2 % 10 === 0);
+    const P = m1 * m2;
+    const ks = shuffle(hard ? [[2, 1], [1, 2], [2, 2], [3, 1], [0, 3], [1, 3]] : [[1, 0], [0, 1], [1, 1], [2, 0], [2, 1], [1, 2]]).slice(0, 3);
+    const items = ks.map(([k1, k2]) => ({ e: `${decStr(m1, k1)} × ${decStr(m2, k2)}`, x: P / P10(k1 + k2), k: k1 + k2 }));
+    return {
+      hints: [
+        `Le calcul est déjà fait sans virgule. Dans chaque ligne, combien de chiffres après la virgule ont les facteurs ? Relis « Les calculs posés » dans ${ficheLink('operations')}.`,
+        'Exemple : on sait que 36 × 25 = 900. Alors 3,6 × 2,5 : 1 + 1 = 2 chiffres après la virgule → 9,00 = 9 ; et 3,6 × 25 → 1 chiffre → 90,0 = 90.',
+        `Outil : le produit a autant de chiffres après la virgule que les deux facteurs réunis. ${videoBox('mul')}`,
+      ],
+      q: `<p class="statement">Sans reposer d'opération : on sait que <b>${groupInt(String(m1))} × ${m2} = ${groupInt(String(P))}</b>. Complète.</p><div class="form-lines">${items.map((it, i) => `<div class="form-line">${it.e} = ${inp('num', 'Produit ' + (i + 1))}</div>`).join('')}</div>`,
+      remediate(r) {
+        const vs = items.map((_, i) => val(r, i)); if (vs.some((x) => !x)) return null;
+        const i = items.findIndex((it, j) => !eq(vs[j].value, it.x)); if (i < 0) return null;
+        if ([10, 100, 1000, 0.1, 0.01, 0.001].some((f) => eq(vs[i].value, items[i].x * f))) return `Ligne ${i + 1} : les chiffres sont bons, mais la <b>virgule</b> est mal placée. Compte les chiffres après la virgule dans les deux facteurs (${items[i].e}).`;
+        return `Ligne ${i + 1} : les chiffres du produit sont ceux de ${groupInt(String(P))} ; il ne reste qu'à placer la virgule.`;
+      },
+      check(r) {
+        const vs = items.map((_, i) => val(r, i)); if (vs.some((x) => !x)) return null;
+        let ok = true;
+        items.forEach((it, i) => { const g = eq(vs[i].value, it.x); markInput(r, i, g); ok = ok && g; });
+        return { ok, msg: `<ul>${items.map((it) => `<li>${it.e} : ${it.k} chiffre${it.k > 1 ? 's' : ''} après la virgule → ${decStr(P, it.k, false)}${/0$/.test(decStr(P, it.k, false)) && it.k ? ` = ${fmt(it.x)}` : ''} = <b>${fmt(it.x)}</b></li>`).join('')}</ul>` };
+      },
+    };
+  }
+  const K = a.k + b.k, P = a.m * b.m, res = P / P10(K), expr = `${dNice(a)} × ${dNice(b)}`;
+  if (v === 2) {
     const o = mcq(`<p class="statement">On pose <b>${dStr(a)} × ${dStr(b)}</b> sans les virgules : on trouve ${groupInt(String(P))}.<br>Combien de chiffres après la virgule doit avoir le produit ?</p>`, ['0', '1', '2', '3'], K,
       `${dStr(a)} a ${a.k} chiffre${a.k > 1 ? 's' : ''} après la virgule, ${dStr(b)} en a ${b.k} : ${a.k} + ${b.k} = <b>${K}</b>. Donc ${expr} = ${decStr(P, K, false)} = <b>${fmt(res)}</b>.`, { keepOrder: true });
-    return withRemed(withHints(o, [`Relis « Poser une multiplication » dans ${ficheLink('operations')}.`, 'Outil : compte les chiffres après la virgule dans chaque facteur, puis additionne.']),
+    return withRemed(withHints(o, [`Relis « Les calculs posés » dans ${ficheLink('operations')}.`, 'Exemple : 1,25 × 3,4 → 2 + 1 = 3 chiffres après la virgule.', `Outil : compte les chiffres après la virgule dans chaque facteur, puis additionne. ${videoBox('mul')}`]),
       () => 'Compte les chiffres après la virgule dans <b>les deux</b> facteurs, puis ajoute-les.');
   }
-  if (v < 0.4) {
-    const est = Math.round(a.m / P10(a.k)) * Math.max(1, Math.round(b.m / P10(b.k)));
-    const opts = [res, res * 10, res / 10, res * 100].map((x) => fmt(Math.round(x * 1e6) / 1e6));
-    const o = mcq(`<p class="statement">Sans poser l'opération, quel est le bon résultat de <b>${expr}</b> ?</p><p class="hint">Aide-toi d'un ordre de grandeur.</p>`, opts, 0,
-      `Ordre de grandeur : ${expr} ≈ ${fmt(Math.round(a.m / P10(a.k)))} × ${fmt(Math.max(1, Math.round(b.m / P10(b.k))))} = ${fmt(est)}. Le seul résultat proche est <b>${fmt(res)}</b>.`);
-    return withRemed(withHints(o, ['Outil : arrondis chaque facteur à l\'unité, puis multiplie de tête.']), () => `Arrondis : ${dNice(a)} ≈ ${fmt(Math.round(a.m / P10(a.k)))}. Le résultat doit être proche de ${fmt(est)}.`);
-  }
-  return {
-    hints: [`Relis « Poser une multiplication » dans ${ficheLink('operations')} : s'occupe-t-on des virgules pendant le calcul ?`, 'Exemple : 36,4 × 2,5 → 364 × 25 = 9 100 ; 1 + 1 = 2 chiffres après la virgule → 91,00 = 91.', `Outil : calcule ${groupInt(String(a.m))} × ${b.m}, puis place la virgule.`],
-    remediate(r) {
-      const x = val(r); if (!x || eq(x.value, res)) return null;
-      for (const f of [10, 100, 1000, 0.1, 0.01]) if (eq(x.value, res * f)) return `Les chiffres sont justes, mais la <b>virgule</b> est mal placée : ${dStr(a)} a ${a.k} chiffre${a.k > 1 ? 's' : ''} après la virgule et ${dStr(b)} en a ${b.k}. Le produit doit en avoir ${K}.`;
-      return null;
-    },
-    q: `<p class="statement">Pose la multiplication sur ton cahier, puis écris le résultat.</p><p class="big">${expr} = ${inp('num', 'Résultat')}</p>`,
-    check(r) { const x = val(r); if (!x) return null; const ok = eq(x.value, res); markInput(r, 0, ok); return { ok, msg: `On calcule ${groupInt(String(a.m))} × ${b.m} = ${groupInt(String(P))}, puis ${a.k} + ${b.k} = ${K} chiffre${K > 1 ? 's' : ''} après la virgule : ${expr} = <b>${fmt(res)}</b>.${poseMulHTML(a, b)}` }; },
-  };
+  const est = Math.round(a.m / P10(a.k)) * Math.max(1, Math.round(b.m / P10(b.k)));
+  const opts = [res, res * 10, res / 10, res * 100].map((x) => fmt(Math.round(x * 1e6) / 1e6));
+  const o = mcq(`<p class="statement">Sans poser l'opération, quel est le bon résultat de <b>${expr}</b> ?</p><p class="hint">Aide-toi d'un ordre de grandeur.</p>`, opts, 0,
+    `Ordre de grandeur : ${expr} ≈ ${fmt(Math.round(a.m / P10(a.k)))} × ${fmt(Math.max(1, Math.round(b.m / P10(b.k))))} = ${fmt(est)}. Le seul résultat proche est <b>${fmt(res)}</b>.`);
+  return withRemed(withHints(o, ['Arrondis chaque facteur à l\'unité : quel calcul simple obtiens-tu ?', 'Exemple : 4,8 × 3,1 ≈ 5 × 3 = 15 : le résultat est proche de 15.', 'Outil : arrondis chaque facteur à l\'unité, puis multiplie de tête.']), () => `Arrondis : ${dNice(a)} ≈ ${fmt(Math.round(a.m / P10(a.k)))}. Le résultat doit être proche de ${fmt(est)}.`);
 }
 
 /* ---------- 7. Problèmes ---------- */
@@ -1072,8 +1219,8 @@ Object.assign(GENS, {
   'o-gauche': { ch: 'operations', f: genOpGauche, label: 'Calculer de gauche à droite' },
   'o-par': { ch: 'operations', f: genOpPar, label: 'Calculer avec des parenthèses' },
   'o-par2': { ch: 'operations', f: genOpPar2, label: 'Parenthèses « doubles »' },
-  'o-add': { ch: 'operations', f: genOpPoseAdd, label: 'Poser une addition, une soustraction' },
-  'o-mul': { ch: 'operations', f: genOpPoseMul, label: 'Poser une multiplication' },
+  'o-add': { ch: 'operations', f: genOpPoseAdd, label: 'Poser une addition, une soustraction', hard: true, t: 3 },
+  'o-mul': { ch: 'operations', f: genOpPoseMul, label: 'Poser une multiplication', hard: true, t: 2.5 },
   'o-pb': { ch: 'operations', f: genOpProbleme, label: 'Résoudre un problème' },
   // Chapitre 6 — Angles
   'a-nom': { ch: 'angles', f: genAngNom, label: 'Nommer un angle' },

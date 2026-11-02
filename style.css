@@ -831,7 +831,9 @@ body.print-doc { color: #000; }
 .lbl-lv { font-size: 7pt; }
 .lbl-hint { font-size: 6.5pt; color: #333; }
 @media screen { .lbl-page { border: 1px solid #ccc; margin: 10px auto; background: #fff; } .ctl-sheet { margin: 6mm auto 10mm; box-shadow: 0 0 0 1px #ccc, 0 2px 10px rgba(0,0,0,.08); } }
-.ctl-qs { column-count: 2; column-gap: 7mm; column-rule: 1px dotted #bbb; }
+.ctl-cols { display: flex; align-items: flex-start; gap: 0; }
+.ctl-col { flex: 1 1 0; min-width: 0; }
+.ctl-col + .ctl-col { border-left: 1px dotted #bbb; padding-left: 3.5mm; margin-left: 3.5mm; }
 .ctl-qs .pq { break-inside: avoid; page-break-inside: avoid; }
 .ctl-wide .pq { break-inside: avoid; page-break-inside: avoid; }
 .ctl-sheet .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(40mm, 1fr)); gap: .6mm 3mm; margin: .5mm 0; }
@@ -898,6 +900,9 @@ body.print-doc { color: #000; }
 
 /* une copie = une page A4 (marges de page à 0 à l'impression) : la boîte ne peut pas déborder */
 .ctl-sheet { box-sizing: border-box; width: 210mm; height: 296mm; padding: 9mm 10mm; overflow: hidden; background: #fff; }
+/* Safari, Firefox… : copie plus petite que la zone imprimable, quelles que soient leurs marges */
+.pm-safe .ctl-sheet { width: 176mm; height: 262mm; padding: 0; }
+@media screen { .pm-safe .ctl-sheet { outline: 12mm solid #fff; margin: 18mm auto 22mm; } }
 @media print { body.print-doc .ctl-sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; } body.print-doc .ctl-sheet:last-child { break-after: auto; page-break-after: auto; } }
 .ctl-sheet .ord-list { font-weight: 700; margin: .5mm 0; }
 .ctl-sheet .ord-ans { line-height: 2.1; margin: .5mm 0; }

@@ -1,14 +1,13 @@
-MISE À JOUR 2026-11-01.2 : contrôles papier sur une seule page, plan de classe, date, retour, suppression, widget « Mes devoirs »
+MISE À JOUR 2026-11-02.1 : opérations posées (puzzle des trous, course à la virgule, vidéos),
+plan de classe gardé, impression des contrôles fiable (colonnes et une page)
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
-  index.html, script.js, style.css, bilan.html, README.md
+  index.html, script.js, style.css, chapitres-p2.js, chapitres-p2.css, README.md
 
-Ne pas toucher aux autres fichiers (chapitres-p2.js, chapitres-p2.css, ouverture.js,
-classeur.html, documents.bin, pdf-lib.min.js, qrcode.js) : ils restent tels quels.
-Cette version part de celle en ligne (29/10, avec les chapitres 5, 6 et 7).
+Ne pas toucher aux autres fichiers (bilan.html, ouverture.js, classeur.html, documents.bin,
+pdf-lib.min.js, qrcode.js).
 
-PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 »).
-TES CONTRÔLES DÉJÀ ENREGISTRÉS, LISTES ET PLANS : gardés.
+PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 », mêmes clés d'exercices o-add et o-mul).
+TES CONTRÔLES, LISTES ET PLANS DE CLASSE : gardés.
 
-Après le dépôt : recharger le site avec Ctrl + F5, puis recharger la page Grist
-qui contient le widget.
+Après le dépôt : recharger le site avec Ctrl + F5.

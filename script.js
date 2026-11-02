@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-01.2';
+const SITE_VERSION = '2026-11-02.1';
 
 /* =========================================================
    Outils
@@ -4026,13 +4026,14 @@ function paperHTML(html) {
     .replace(/Clique sur les <b>zéros inutiles<\/b> pour les barrer\./g, 'Barre les <b>zéros inutiles</b>.')
     .replace(/Clique entre les chiffres pour placer les espaces, afin que le nombre soit facile à lire\./g, 'Recopie ce nombre en plaçant les espaces, pour qu\'il soit facile à lire : <span class="blank long"></span>')
     .replace(/ : clique sur la bonne graduation\./g, ' sur la demi-droite graduée.')
-    .replace(/Clique sur l'opération/g, 'Entoure l\'opération');
+    .replace(/Clique sur l'opération/g, 'Entoure l\'opération')
+    .replace(/Clique entre deux chiffres du résultat pour placer la virgule\./g, 'Écris la virgule au bon endroit dans le résultat.');
 }
 /** Texte brut d'un morceau de HTML (fichier pour la correction assistée) ; strip = on retire tableaux et figures */
 function plain(html, strip = false) {
   const d = document.createElement('div'); d.innerHTML = String(html || '');
   d.querySelectorAll('.frac').forEach((f) => { const [a, b] = f.children; if (a && b) f.textContent = ` ${a.textContent}/${b.textContent} `; });
-  d.querySelectorAll(strip ? 'svg, table, .player, .nl' : 'svg').forEach((e) => e.remove());
+  d.querySelectorAll(strip ? 'svg, table, .player, .nl, .p2-grid' : 'svg').forEach((e) => e.remove());
   d.querySelectorAll('u').forEach((u) => { u.textContent = `[${u.textContent}]`; });
   d.querySelectorAll('.ordbtn').forEach((e) => e.append(' ; '));
   d.querySelectorAll('td, th').forEach((e) => e.append(' | '));
@@ -4086,6 +4087,7 @@ function questionAnswer(o) {
       const order = [...o.q.matchAll(/data-o="(\d+)"/g)].map((m) => Number(m[1]));
       good = /choices[^"]*signs/.test(o.q) ? `signe écrit dans la case : ${plain(o._opts[o._correct])}` : `choix n° ${order.indexOf(o._correct) + 1} (dans l'ordre de la copie) : ${plain(o._opts[o._correct])}`;
     }
+    if (o._holes) good = `cases à compléter, dans l'ordre de lecture (de haut en bas, de gauche à droite ; la case de retenue est en haut) : ${o._holes.join(' ; ')}`;
     if (o._items) {
       const ok = o._items.map((it, j) => (it.ok ? `n° ${j + 1} (${plain(it.html)})` : '')).filter(Boolean);
       good = ok.length ? 'cases à cocher : ' + ok.join(', ') : 'aucune case à cocher';
@@ -4147,20 +4149,45 @@ function sheetHTML(c, i) {
       <table class="ctl-grid"><tr><th>Compétence</th><th>TB</th><th>MS</th><th>MF</th><th>MI</th></tr>
         ${c.k.map((k, ci) => `<tr><td>C${ci + 1} · ${esc(GENS[k]?.label || k)}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
     </div>
-    <div class="ctl-qs">${qs.map((x, j) => {
+    <div class="ctl-qs ctl-cols"><div class="ctl-col">${qs.map((x, j) => {
       const first = j === 0 || qs[j - 1].ci !== x.ci;
-      return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(GENS[x.k].label)}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && x.o.hints?.[0] ? `<p class="ctl-aide">💡 <b>Aide :</b> ${stripLinks(x.o.hints[0])}</p>` : ''}</section>`;
-    }).join('')}</div>
+      return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-col"></div></div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(GENS[x.k].label)}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && x.o.hints?.[0] ? `<p class="ctl-aide">💡 <b>Aide :</b> ${stripLinks(x.o.hints[0])}</p>` : ''}</section>`;
+    }).join('')}${qs.some(ctlWide) ? '' : '</div><div class="ctl-col"></div>'}</div>
   </div></div>`;
 }
-const CTL_LIMIT = 275;
+/* Mise en page à l'impression.
+   Chrome / Edge : marges de page à 0 (pas d'adresse imprimée), copie = page A4 entière avec marges intérieures.
+   Safari, Firefox… (qui imposent parfois leurs propres marges) : copie un peu plus petite, qui tient dans la zone imprimable. */
+const CTL_BLINK = typeof navigator !== 'undefined' && !!(navigator.userAgentData || /(Chrome|Chromium|Edg)\//.test(navigator.userAgent)) && !/Firefox|CriOS|FxiOS/.test(navigator.userAgent);
+const CTL_MODE = CTL_BLINK ? 'pm-full' : 'pm-safe';
+const CTL_LIMIT = CTL_BLINK ? 275 : 258;
+/** Deux colonnes construites à la main (les colonnes CSS ne s'impriment pas pareil partout) :
+    toutes les questions sont d'abord dans la colonne de gauche ; on coupe la liste là où les deux colonnes sont le plus égales. */
+function balanceSheet(sheet) {
+  sheet.querySelectorAll('.ctl-cols').forEach((cols) => {
+    const [L, R] = cols.querySelectorAll(':scope > .ctl-col'); if (!L || !R) return;
+    while (R.firstChild) L.appendChild(R.firstChild);
+    const qs = [...L.children], h = qs.map((q) => q.getBoundingClientRect().height);
+    const tot = h.reduce((a, b) => a + b, 0);
+    let best = qs.length, bestMax = tot, acc = 0;
+    for (let k = 1; k < qs.length; k++) { acc += h[k - 1]; const m = Math.max(acc, tot - acc); if (m < bestMax - 0.5) { bestMax = m; best = k; } }
+    qs.slice(best).forEach((q) => R.appendChild(q));
+  });
+}
+/** Copies mises en page (colonnes équilibrées), rendues hors écran dans cette page */
+function renderSheets(c, idx) {
+  const box = document.createElement('div'); box.className = CTL_MODE; box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  document.body.appendChild(box);
+  const out = idx.map((i) => { box.innerHTML = sheetHTML(c, i); balanceSheet(box.firstElementChild); return box.innerHTML; });
+  box.remove(); return out;
+}
 /** Codes des copies qui dépassent une page A4 (mesure hors écran, largeur imprimable 190 mm) */
 function ctlOverflow(c, only) {
-  const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  const box = document.createElement('div'); box.className = CTL_MODE; box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
   box.innerHTML = '<div style="height:100mm;width:1px"></div>'; document.body.appendChild(box);
   const mm = box.firstElementChild.getBoundingClientRect().height / 100, over = [];
   // une copie = une page A4 de 296 mm, marges intérieures 9 mm : 278 mm utiles ; on garde 3 mm de sécurité
-  (only || c.s.map((_, i) => i)).forEach((i) => { box.innerHTML = sheetHTML(c, i); if (box.querySelector('.ctl-in').getBoundingClientRect().height > CTL_LIMIT * mm) over.push(ctlCode(c.id, i + 1)); });
+  (only || c.s.map((_, i) => i)).forEach((i) => { box.innerHTML = sheetHTML(c, i); balanceSheet(box.firstElementChild); if (box.querySelector('.ctl-in').getBoundingClientRect().height > CTL_LIMIT * mm) over.push(ctlCode(c.id, i + 1)); });
   box.remove(); return over;
 }
 /** Plan automatique : on ajoute des questions (compétences les moins fournies d'abord) tant que la durée visée
@@ -4274,7 +4301,7 @@ function ctlPrintOrder(c) {
 }
 // Marges de page à 0 : chaque copie est une boîte A4 qui ne peut pas déborder sur une 2e page,
 // et le navigateur n'a plus de place pour imprimer l'adresse du site en bas de page.
-const PRINT_CSS = `@page { size: A4; margin: 0; } body.print-doc { background: #fff; margin: 0; }`;
+const PRINT_CSS = CTL_BLINK ? '@page { size: A4; margin: 0; } body.print-doc { background: #fff; margin: 0; }' : '@page { size: A4; margin: 15mm 17mm; } body.print-doc { background: #fff; margin: 0; }';
 /** Dans la fenêtre d'impression : une copie qui dépasserait (police différente…) est resserrée (taille du texte un peu réduite) */
 function fitSheets(doc) {
   const bad = [];
@@ -4291,7 +4318,7 @@ function printSheets(c) {
   const po = ctlPrintOrder(c);
   const ord = po.plan ? `Ordre de distribution : plan de classe${c.c ? ' de la ' + esc(c.c) : ''} (${po.placed} copie${po.placed > 1 ? 's' : ''}${po.rest.length ? ` ; hors plan, à la fin : ${po.rest.map(esc).join(', ')}` : ''})${seatGet(c.c).rev ? ', en ordre inverse' : ''}.` : 'Ordre alphabétique (pas de plan de classe pour cette classe).';
   const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, marges : aucune, échelle 100 %. Si l'adresse du site apparaît encore en bas, décoche « En-têtes et pieds de page » dans la fenêtre d'impression.</span></p></div>`;
-  const body = bar + po.order.map((i) => sheetHTML(c, i)).join('');
+  const body = bar + `<div class="${CTL_MODE}">` + renderSheets(c, po.order).join('') + '</div>';
   printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, async (w) => {
     // Une copie = une page : on attend la police, puis on resserre les rares copies qui dépasseraient
     const btn = w.document.getElementById('ctl-go'); if (btn) btn.disabled = true;
@@ -4448,13 +4475,23 @@ function setupControles() {
   // classes : même liste que pour les devoirs
   const fillClasses = () => {
     let cl = []; try { cl = (localStorage.getItem('revisions6e-classes') || '').split('\n').map((x) => x.trim()).filter(Boolean); } catch (e) { /* rien */ }
-    const cur = $('ctl-classe').value || $('prof-classe')?.value || '';
+    let mem = ''; try { mem = localStorage.getItem('revisions6e-ctl-classe') || ''; } catch (e) { /* rien */ }
+    const cur = $('ctl-classe').value || mem || $('prof-classe')?.value || '';
     $('ctl-classe').innerHTML = '<option value="">— classe —</option>' + cl.map((c) => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('');
   };
   fillClasses();
   $('prof-classes-save')?.addEventListener('click', () => setTimeout(fillClasses, 0));
-  const loadNames = () => { let r = ''; try { r = localStorage.getItem(ROSTER_KEY($('ctl-classe').value)) || ''; } catch (e) { /* rien */ } if (r && !$('ctl-names').value.trim()) $('ctl-names').value = r; drawStudents(); };
-  $('ctl-classe').addEventListener('change', () => { $('ctl-names').value = ''; loadNames(); });
+  /* Liste des élèves : mémorisée par classe (sur cet appareil). Si elle manque, on la reprend du plan de classe. */
+  const loadNames = () => {
+    const cl = $('ctl-classe').value;
+    let r = ''; try { r = localStorage.getItem(ROSTER_KEY(cl)) || ''; } catch (e) { /* rien */ }
+    if (!r.trim()) r = [...new Set(Object.values(seatGet(cl).seats || {}))].sort((a, b) => a.localeCompare(b, 'fr')).join('\n');
+    if (r.trim() && !$('ctl-names').value.trim()) $('ctl-names').value = r;
+    drawStudents();
+  };
+  const saveNames = () => { const cl = $('ctl-classe').value; if (!cl) return; try { localStorage.setItem(ROSTER_KEY(cl), $('ctl-names').value.trim()); } catch (e) { /* rien */ } };
+  $('ctl-classe').addEventListener('change', () => { try { localStorage.setItem('revisions6e-ctl-classe', $('ctl-classe').value); } catch (e) { /* rien */ } $('ctl-names').value = ''; loadNames(); });
+  $('ctl-names').addEventListener('change', saveNames);
   const names = () => [...new Set($('ctl-names').value.split(/\n+/).map((x) => x.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
   function drawStudents() {
     const ns = names(), am = new Set(amenGet($('ctl-classe').value));
