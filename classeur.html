@@ -232,11 +232,11 @@ const POINTS=[
  {n:4,t:"Relations entre angles",b:"S10",p:"S11"},
  {n:5,t:"Construire un triangle",b:"S14",p:"S15"},
  {n:6,t:"Règle des 180°",b:"S17",p:"S18"}];
-// position du « Nom : » sur chaque parcours (points PDF, origine en bas à gauche)
-const NOM={R:{x:92,y:751},E:{x:92,y:753.5},D:{x:92,y:753.5}};
+// position du « Nom : » sur chaque parcours (demi-page A4, en points PDF, origine en bas à gauche)
+const NOM={R:{x:133,y:364},E:{x:133,y:366},D:{x:133,y:366}};
 const LIEN="{{LIEN}}";
 /* Notions du site travaillées à chaque séance (pour le lien du devoir et les questions flash au vidéoprojecteur) */
-const NOTIONS={S1:["o-voc"],S2:["o-gauche","o-par"],S3:["o-par2","o-add"],S4:["o-voc","o-gauche","o-par","o-par2","o-add","o-mul","o-pb"],
+const NOTIONS={S1:["o-voc"],S2:["o-gauche","o-par","o-par2"],S3:["o-add"],S4:["o-voc","o-gauche","o-par","o-par2","o-add","o-mul","o-pb"],
  S5:["a-nom"],S6:["a-nom","a-nature"],S7:["a-mesure"],S8:["a-mesure","a-nature"],S9:["a-construire"],S10:["a-reco","a-calcul"],
  S11:["a-nom","a-nature","a-mesure","a-construire","a-reco","a-calcul","a-biss"],S12:["a-nom","a-nature","a-mesure","a-reco","a-calcul"],
  S13:["t-voc","t-3cotes"],S14:["t-angles"],S15:["t-nature","t-iso"],S16:["t-rect"],S17:["t-180"],S18:["t-natang"],
@@ -245,10 +245,10 @@ const NB_Q={S4:15,S11:15,S19:15};
 const SEANCES=[
  {id:"S1",chap:"Opérations",k:"Opérations · séance 1",t:"Le vocabulaire des opérations",cours:"Partie 1, méthode comprise",docs:["coursO","coursOp","actO","actOc"],act:"Qui suis-je ? (cartes à découper)",
   dev:"<p><b>Apprendre la partie 1 du cours : le vocabulaire des opérations.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Utiliser le vocabulaire des opérations », puis vérifier avec la correction.</p><p><b>Apporter : ciseaux et colle.</b></p>"},
- {id:"S2",chap:"Opérations",k:"Opérations · séance 2",t:"Calculer de gauche à droite, avec parenthèses",cours:"Partie 2, règles 1 et 2 avec leurs méthodes",docs:["coursO","coursOp","actO","actOc","billets","billetsC"],act:"Horloge 1-2-3-4",billet:1,
-  dev:"<p><b>Apprendre les règles 1 et 2 du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Calculer une expression avec des parenthèses ».</p><p><b>Apporter : ardoise et feutre, ciseaux et colle.</b></p>"},
- {id:"S3",chap:"Opérations",k:"Opérations · séance 3",t:"Parenthèses doubles, addition et soustraction posées",cours:"Règle 3, puis partie 3.1",docs:["coursO","coursOp","projO","actO","actOc","parcO","billets","billetsC"],act:"Le compte est bon (écrans), horloges",parcours:1,billet:2,
-  dev:"<p><b>Apprendre la règle 3 et la partie 3.1 du cours (poser une addition, une soustraction).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Poser une addition et une soustraction ».</p><p><b>Apporter : ardoise et feutre.</b></p>"},
+ {id:"S2",chap:"Opérations",k:"Opérations · séance 2",t:"Calculer de gauche à droite, avec parenthèses, parenthèses doubles",cours:"Partie 2, règles 1, 2 et 3 avec leurs méthodes",docs:["coursO","coursOp","actO","actOc","billets","billetsC"],act:"Horloges folles (1)",billet:1,
+  dev:"<p><b>Apprendre les règles 1, 2 et 3 du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Calculer une expression avec des parenthèses ».</p><p><b>Apporter : ardoise et feutre, ciseaux et colle.</b></p>"},
+ {id:"S3",chap:"Opérations",k:"Opérations · séance 3",t:"Addition et soustraction posées",cours:"Partie 3.1 (les opérations posées)",docs:["coursO","coursOp","projO","actO","actOc","parcO","billets","billetsC"],act:"Le compte est bon (écrans), horloges folles (2)",parcours:1,billet:2,
+  dev:"<p><b>Apprendre la partie 3.1 du cours (poser une addition, une soustraction).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Poser une addition et une soustraction ».</p><p><b>Apporter : ardoise et feutre.</b></p>"},
  {id:"S4",chap:"Opérations",k:"Opérations · séance 4",t:"La multiplication posée",cours:"Partie 3.2, fin du cours",docs:["coursO","coursOp","actO","actOc","projO","parcO","multcur"],act:"Ticket de caisse, Les élèves corrigent le prof (écrans)",parcours:2,
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p><p><b>Apporter : de quoi écrire.</b></p>"},
  {id:"S5",chap:"Opérations",k:"Évaluation Opérations, puis Angles · séance 1",t:"Évaluation Opérations (45 min) · Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["evalO","evalOc","coursA","coursAp","actA","actAc"],act:"Découverte « le plus grand angle »",eval:true,
@@ -291,23 +291,23 @@ const EXEMPLE=["Adam B.","Alice M.","Amir K.","Chloé D.","Emma L.","Enzo R.","I
 const BL=(m,t,y,min)=>({m,t,y:y||"r",min:min==null?(y==="e"?10:m):min});
 const BLOCS={
  S1:[BL(10,"Questions flash : tables de multiplication"),BL(20,"Activité « Qui suis-je ? » en binôme"),BL(20,"Cours : tableau du vocabulaire, méthode « Utiliser le vocabulaire »"),BL(20,"Cahier d'activités","e"),BL(20,"Suite du cahier d'activités, bilan","e")],
- S2:[BL(10,"Questions flash : vocabulaire des opérations"),BL(20,"Débat : deux résultats pour 20 − 5 + 3"),BL(20,"Cours : règles 1 et 2, méthodes"),BL(20,"Cahier d'activités","e"),BL(15,"Horloge 1-2-3-4 en binôme (début)","e"),BL(5,"Billet de sortie n°1","b")],
- S3:[BL(10,"Le compte est bon (à projeter)"),BL(20,"Cours : règle 3 et sa méthode ; fin de l'horloge 1-2-3-4"),BL(20,"Cours : partie 3.1, poser une addition et une soustraction"),BL(35,"Parcours point 1 et mini re-test","p"),BL(5,"Billet de sortie n°2","b")],
- S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 et mini re-test ; ticket de caisse pour ceux qui ont fini","p")],
+ S2:[BL(10,"Questions flash : vocabulaire des opérations"),BL(15,"Débat : deux résultats pour 20 − 5 + 3"),BL(30,"Cours : règles 1, 2 et 3, méthodes"),BL(10,"Cahier d'activités","e"),BL(20,"Horloges folles (1) en binôme","e"),BL(5,"Billet de sortie n°1","b")],
+ S3:[BL(10,"Le compte est bon (à projeter)"),BL(20,"Horloges folles (2) : l'horloge décimale, en binôme"),BL(20,"Cours : partie 3.1, poser une addition et une soustraction"),BL(35,"Parcours point 1","p"),BL(5,"Billet de sortie n°2","b")],
+ S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 ; ticket de caisse pour ceux qui ont fini","p")],
  S5:[BL(45,"Évaluation Opérations","v"),BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
  S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(20,"Cahier d'activités","e"),BL(20,"Repérer des angles dans la classe ; donner la chasse photo, bilan","e")],
  S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°3","b")],
- S8:[BL(10,"L'estimathon (à projeter)"),BL(20,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : mesures des angles particuliers, méthode KLM"),BL(40,"Parcours point 3 et mini re-test ; permis rapporteur pour ceux qui ont fini","p")],
+ S8:[BL(10,"L'estimathon (à projeter)"),BL(20,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : mesures des angles particuliers, méthode KLM"),BL(40,"Parcours point 3 ; permis rapporteur pour ceux qui ont fini","p")],
  S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(20,"Cahier d'activités","e"),BL(40,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
  S10:[BL(10,"Questions flash : compléments à 90 et à 180"),BL(20,"Découverte : deux droites sécantes, mesurer les 4 angles"),BL(20,"Cours : tableau des relations, propriété, méthode « Reconnaître »"),BL(20,"Cours : méthode « Angles opposés par le sommet »"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°4","b")],
- S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 et mini re-test ; chasse au trésor pour ceux qui ont fini","p")],
+ S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 ; chasse au trésor pour ceux qui ont fini","p")],
  S12:[BL(45,"Révisions : cahier d'activités, méthodes du cours","e",20),BL(45,"Évaluation Angles","v")],
  S13:[BL(10,"Questions flash : angles (mesurer, nommer)"),BL(20,"Recherche en binôme : triangle de côtés 6 ; 3,5 et 5 cm"),BL(20,"Cours : définition, vocabulaire, rappel, méthode"),BL(20,"Cahier d'activités","e"),BL(20,"Défi : un triangle 3, 4, 8 cm est-il possible ? Bilan","e")],
  S14:[BL(10,"Questions flash : construire un angle"),BL(20,"Cours : méthode « deux côtés et l'angle compris »"),BL(20,"Cours : méthode « un côté et deux angles »"),BL(20,"Cahier d'activités","e"),BL(15,"Dictée de construction en binôme","e"),BL(5,"Billet de sortie n°5","b")],
- S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Parcours point 5 et mini re-test ; carte au trésor pour ceux qui ont fini","p")],
+ S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Parcours point 5 ; carte au trésor pour ceux qui ont fini","p")],
  S16:[BL(10,"Questions flash : tracer une perpendiculaire"),BL(20,"Cours : définition, méthode « côtés de l'angle droit »"),BL(20,"Cours : méthode « avec l'hypoténuse »"),BL(20,"Cahier d'activités","e"),BL(20,"Figures à décrire, bilan","e")],
  S17:[BL(10,"Questions flash : compléments à 180"),BL(20,"Pliage d'un triangle découpé"),BL(20,"Cours : la règle des 180°, méthode rédigée"),BL(20,"Cahier d'activités","e"),BL(15,"Débat : un triangle peut-il avoir deux angles droits ?","e"),BL(5,"Billet de sortie n°6","b")],
- S18:[BL(10,"Questions flash : calcul du troisième angle"),BL(20,"Mesurer les angles des triangles particuliers déjà construits"),BL(20,"Cours : propriétés, méthode"),BL(40,"Parcours point 6 et mini re-test ; Qui est-ce ? pour ceux qui ont fini","p")],
+ S18:[BL(10,"Questions flash : calcul du troisième angle"),BL(20,"Mesurer les angles des triangles particuliers déjà construits"),BL(20,"Cours : propriétés, méthode"),BL(40,"Parcours point 6 ; Qui est-ce ? pour ceux qui ont fini","p")],
  S19:[BL(10,"Questions flash : rappel de la médiatrice"),BL(20,"Problème : un point à égale distance de trois villages"),BL(20,"Cours : cercle circonscrit, définition, propriété, méthode"),BL(20,"Exercices du cahier d'activités","e"),BL(20,"Révisions du chapitre","e")],
  S20:[BL(45,"Évaluation Triangles","v"),BL(45,"Remédiation à partir des évaluations","e",0)],
 };
@@ -541,6 +541,7 @@ function renderCreneaux(c){
           </div>
           <div class="box"><h3>Documents</h3><div class="docs">${docs.map(docBtn).join("")||`<span class="hint">—</span>`}</div></div>
         </div>
+        ${contenuBox(contenuHtml(x.pieces.filter(p=>!p.marge)),"ctc-"+x.id,`data-copyctc="${i}"`)}
         ${dv.html?`<div class="box"><h3>Devoirs à donner en fin de créneau</h3>
           <div class="devoir" id="devc-${x.id}">${dv.html}</div>
           <div class="row"><button class="btn primary small" data-copyc="${i}">Copier les devoirs</button></div>
@@ -575,6 +576,7 @@ function renderEdt(c){
 let data={classes:[],liens:{}};
 let ui={cls:null,tab:"seances",point:1,mode:"groupe",manage:false,confirmDel:false,open:null,openC:null,vue:"creneaux"};
 try{Object.assign(ui,JSON.parse(localStorage.getItem("revisions6e-classeur-ui")||"{}"));ui.manage=false;ui.confirmDel=false}catch(e){}
+ui.mode="groupe";
 let timer=null,busy=false;
 const STORE_KEY="revisions6e-classeur";
 const pdfCache={};
@@ -643,6 +645,28 @@ function lienBox(s,idp){
   const auto=autoLink(cur(),s.id),own=(data.liens||{})[s.id]||"",l=own||auto;
   return `<div class="linkrow">${l?`<span>Lien du devoir${own?" (le tien)":` (${(NB_Q[s.id]||10)} questions sur le site)`} :</span> <a class="btn small" href="${esc(l)}" target="_blank" rel="noopener">Essayer</a> <button class="btn small" data-copylink="${esc(l)}">Copier le lien seul</button>`:"<span>Pas d'exercices du site pour cette séance.</span>"}</div>
   <details><summary class="hint">Utiliser un autre lien</summary><input type="url" id="${idp}-${s.id}" data-lien="${s.id}" placeholder="Colle ici un autre lien (laisse vide pour le lien automatique)" value="${esc(own)}" style="margin-top:6px"></details>`;
+}
+/* contenu de séance à coller dans le cahier de textes (École Directe) : pieces = morceaux {sid,i,suite,coupe} */
+function ctLigne(b){
+  if(b.y==="b")return "Billet de sortie";
+  if(b.y==="p")return "Exercices différenciés selon le billet de sortie";
+  if(/^Bilan/.test(b.t))return "";
+  return b.t.replace(/\s*\(à projeter\)/g,"").replace(/[,.] bilan\s*$/i,"");
+}
+function contenuHtml(pieces){
+  const out=[];let last="";
+  pieces.forEach(p=>{
+    const l=ctLigne(BLOCS[p.sid][p.i]);if(!l)return;
+    const s=SEANCES.find(q=>q.id===p.sid),lab=labPiece(p.sid,p.i),tete=lab+(s.eval||p.sid==="S5"?"":" : "+s.t);
+    if(tete!==last){out.push(`<p><b>${esc(tete)}</b></p>`);last=tete}
+    out.push(`<p>- ${esc(l)}${p.suite?" (suite)":""}${p.coupe?" (début)":""}</p>`);
+  });
+  return out.join("");
+}
+function contenuBox(html,id,attr){
+  return html?`<div class="box"><h3>Contenu de séance (École Directe)</h3>
+    <div class="devoir" id="${id}">${html}</div>
+    <div class="row"><button class="btn primary small" ${attr}>Copier le contenu de séance</button></div></div>`:"";
 }
 function nextSeance(c){return SEANCES.find(s=>!seanceFaite(c,s.id))||null}
 /* tous les documents sont dans un seul fichier chiffré : documents.bin (à côté de index.html) */
@@ -725,12 +749,19 @@ async function genererParcours(p,win){
     const out=await PDFDocument.create();
     const font=await out.embedFont(StandardFonts.HelveticaBold);
     const src={};
-    for(const g of ["R","E","D"]){if(liste.some(x=>x.g===g))src[g]=await PDFDocument.load(await getBytes("docs/parcours/P"+p+g+".pdf"))}
-    for(const x of liste){
-      const [pg]=await out.copyPages(src[x.g],[0]);
-      out.addPage(pg);
-      pg.drawText(nomPDF(font,x.e.nom),{x:NOM[x.g].x,y:NOM[x.g].y,size:13,font,color:rgb(0,0,0)});
-      pg.drawText(String(x.i+1),{x:560,y:826,size:9,font,color:rgb(0.45,0.45,0.45)});
+    for(const g of ["R","E","D"]){if(liste.some(x=>x.g===g))[src[g]]=await out.embedPdf(await getBytes("docs/parcours/P"+p+g+".pdf"))}
+    // deux parcours par feuille A4, à couper au milieu
+    const W=595.28,H=841.89,gris=rgb(0.45,0.45,0.45);
+    for(let k=0;k<liste.length;k+=2){
+      const pg=out.addPage([W,H]);
+      [liste[k],liste[k+1]].forEach((x,j)=>{
+        if(!x)return;
+        const y0=j===0?H/2:0;
+        pg.drawPage(src[x.g],{x:0,y:y0});
+        pg.drawText(nomPDF(font,x.e.nom),{x:NOM[x.g].x,y:y0+NOM[x.g].y,size:11,font,color:rgb(0,0,0)});
+        pg.drawText(String(x.i+1),{x:572,y:y0+H/2-8,size:7,font,color:gris});
+      });
+      pg.drawLine({start:{x:0,y:H/2},end:{x:W,y:H/2},thickness:0.5,color:gris,dashArray:[4,4]});
     }
     out.setTitle("Parcours point "+p+" – "+c.nom);
     const bytes=await out.save();
@@ -744,6 +775,7 @@ async function copierDevoirs(id,btn){
   return copierHtml(devoirHtml(s),btn,"dev-"+id);
 }
 async function copierHtml(html,btn,elId){
+  const label=btn.textContent;
   const tmp=document.createElement("div");tmp.innerHTML=html;
   const plain=[...tmp.querySelectorAll("p")].map(p=>p.textContent).join("\n");
   let ok=false;
@@ -753,7 +785,7 @@ async function copierHtml(html,btn,elId){
     }
   }catch(e){}
   if(!ok){try{await navigator.clipboard.writeText(plain);ok=true}catch(e){}}
-  if(ok){btn.textContent="Copié ✓";setTimeout(()=>{btn.textContent="Copier les devoirs"},1600)}
+  if(ok){btn.textContent="Copié ✓";setTimeout(()=>{btn.textContent=label},1600)}
   else{
     const el=document.getElementById(elId);
     const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);
@@ -856,6 +888,7 @@ function renderSeances(c){
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}</div></div>
           </div>
           <div class="box"><h3>Déroulé (1h30)</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
+          ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i}))),"ct-"+s.id,`data-copyct="${s.id}"`)}
           ${s.dev?`<div class="box"><h3>Devoirs à donner en fin de séance</h3>
             <div class="devoir" id="dev-${s.id}">${devoirHtml(s)}</div>
             <div class="row"><button class="btn primary small" data-copy="${s.id}">Copier les devoirs</button></div>
@@ -875,10 +908,6 @@ function renderGroupes(c){
   <div class="panel">
     <div class="row" style="justify-content:space-between">
       <h2>Point ${p.n} · ${esc(p.t)} · billet en fin de ${p.b}, parcours en ${p.p}</h2>
-      <div class="seg" role="group" aria-label="Ce que fait un toucher">
-        <button data-mode="groupe" aria-pressed="${ui.mode==="groupe"}">Billet : groupe</button>
-        <button data-mode="retest" aria-pressed="${ui.mode==="retest"}">Re-test réussi ✓</button>
-      </div>
     </div>
     <div class="summary">
       <div class="count c-R"><b>${k.R}</b><span>Je reprends</span></div>
@@ -886,11 +915,9 @@ function renderGroupes(c){
       <div class="count c-D"><b>${k.D}</b><span>Je relève un défi</span></div>
       <div class="count c-0"><b>${k["0"]}</b><span>sans groupe (absents ?)</span></div>
     </div>
-    <p class="hint">${ui.mode==="groupe"
-      ?`Billet de la ${p.b} : touche une case pour passer de vide à R, E, D, puis vide. 0 ou 1 juste = R, 2 justes = E, 3 justes = D.`
-      :`Fin de la ${p.p} : touche la case d'un élève qui a réussi son mini re-test (3 justes). ${k.ok} élève${k.ok>1?"s":""} ✓ sur ce point.`}</p>
-    <div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${k.R+k.E+k.D} pages, avec les prénoms)`}</button>
-    <span class="hint">Le PDF s'ouvre dans un nouvel onglet : imprime-le depuis là.</span></div>
+    <p class="hint">Billet de la ${p.b} : touche une case pour passer de vide à R, E, D, puis vide. 0 ou 1 juste = R, 2 justes = E, 3 justes = D.</p>
+    <div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${k.R+k.E+k.D} parcours sur ${Math.ceil((k.R+k.E+k.D)/2)} feuilles, avec les prénoms)`}</button>
+    <span class="hint">Deux parcours par feuille, à couper au milieu. Le PDF s'ouvre dans un nouvel onglet : imprime-le depuis là.</span></div>
     ${sans.length&&(k.R+k.E+k.D)?`<p class="warn">Sans groupe, donc sans parcours dans le PDF : ${sans.map(x=>esc(x.e.nom)).join(", ")}.</p>`:""}
   </div>
 
@@ -898,16 +925,16 @@ function renderGroupes(c){
     <thead><tr><th class="name" scope="col">${c.eleves.length} élève${c.eleves.length>1?"s":""}, ordre du plan</th>
     ${POINTS.map(x=>`<th scope="col"><button class="colhead" data-point="${x.n}" aria-pressed="${x.n===p.n}"><span class="n">${x.n}</span><span class="t">${esc(x.t)}</span><span class="s">billet ${x.b} · parcours ${x.p}</span></button></th>`).join("")}</tr></thead>
     <tbody>${c.eleves.map((e,i)=>`<tr><td class="name"><small>${i+1}</small>${esc(e.nom)}</td>${POINTS.map(x=>{
-       const v=(c.g[e.id]||{})[x.n]||"";const ok=(c.ok[e.id]||{})[x.n];
-       return `<td class="${x.n===p.n?"sel":""}"><button class="cell ${v}" data-e="${e.id}" data-p="${x.n}" aria-label="${esc(e.nom)}, point ${x.n} : ${v?G[v]:"pas de groupe"}${ok?", re-test réussi":""}">${v||"·"}${ok?'<span class="tick">✓</span>':""}</button></td>`}).join("")}</tr>`).join("")}</tbody>
+       const v=(c.g[e.id]||{})[x.n]||"";
+       return `<td class="${x.n===p.n?"sel":""}"><button class="cell ${v}" data-e="${e.id}" data-p="${x.n}" aria-label="${esc(e.nom)}, point ${x.n} : ${v?G[v]:"pas de groupe"}">${v||"·"}</button></td>`}).join("")}</tr>`).join("")}</tbody>
     <tfoot><tr><td class="name">À imprimer</td>${POINTS.map(x=>{const q=counts(c,x.n);return `<td class="${x.n===p.n?"sel":""}"><b class="R">R ${q.R}</b><br><b class="E">E ${q.E}</b><br><b class="D">D ${q.D}</b></td>`}).join("")}</tr></tfoot>
   </table></div>
-  <div class="legend"><span><i class="c-R">R</i>Je reprends</span><span><i class="c-E">E</i>Je m'entraîne</span><span><i class="c-D">D</i>Je relève un défi</span><span><i class="c-0">·</i>pas encore de groupe</span><span><i style="color:var(--ok)">✓</i>re-test réussi</span></div>
+  <div class="legend"><span><i class="c-R">R</i>Je reprends</span><span><i class="c-E">E</i>Je m'entraîne</span><span><i class="c-D">D</i>Je relève un défi</span><span><i class="c-0">·</i>pas encore de groupe</span></div>
 
   <div class="panel">
     <h2>Ordre de distribution du point ${p.n}</h2>
     <p class="hint">Le PDF suit l'ordre du plan de classe. Le numéro de chaque élève est aussi écrit en petit dans le coin de sa feuille.</p>
-    ${ordre.some(x=>x.g)?`<ol class="ordre">${ordre.filter(x=>x.g).map(x=>`<li value="${x.i+1}">${esc(x.e.nom)}<span class="g c-${x.g}">${x.g}</span>${(c.ok[x.e.id]||{})[p.n]?" ✓":""}</li>`).join("")}</ol>`:`<p class="hint">Aucun groupe noté pour ce point.</p>`}
+    ${ordre.some(x=>x.g)?`<ol class="ordre">${ordre.filter(x=>x.g).map(x=>`<li value="${x.i+1}">${esc(x.e.nom)}<span class="g c-${x.g}">${x.g}</span></li>`).join("")}</ol>`:`<p class="hint">Aucun groupe noté pour ce point.</p>`}
   </div>
   </div>`;
 }
@@ -939,6 +966,8 @@ document.addEventListener("click",ev=>{
   if(t.dataset.pdoc){const k=t.dataset.pdoc,w=openWin();getBytes("docs/parcours/P"+k+".pdf").then(b=>save("Parcours_point"+k[0]+"_"+({R:"Je_reprends",E:"Je_m_entraine",D:"Je_releve_un_defi"})[k[1]]+".pdf",b,w)).catch(e=>{if(w)w.close();setStatus(docErr(e,"ce parcours"))});return}
   if(t.dataset.copylink){const v=t.dataset.copylink;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>{t.textContent="Copié ✓";setTimeout(()=>{t.textContent="Copier le lien seul"},1500)}).catch(()=>{prompt("Copie ce lien :",v)});return}
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}
+  if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i}))),t,"ct-"+sid);return}
+  if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ctc-"+x.id);return}
   if(t.dataset.copyc){const c=cur(),i=+t.dataset.copyc,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"devc-"+P.cr[i].id);return}
   if(t.dataset.vue){ui.vue=t.dataset.vue;saveUi();render();return}
   if(t.dataset.cst!==undefined){const c=cur(),id=t.dataset.c,v=t.dataset.cst;

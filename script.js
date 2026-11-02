@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-02.2';
+const SITE_VERSION = '2026-11-02.3';
 
 /* =========================================================
    Outils
@@ -3813,16 +3813,24 @@ function wrapGen(k, tag = true, hard = false) {
   return o;
 }
 
-/** Entraînement : une question sur 3 est ★, pour que l'élève rencontre aussi les cas difficiles avant le contrôle */
-const HARD_EVERY = 3;
+/** Entraînement : une série finie et progressive (d'abord les bases, puis les ★), au lieu d'un compteur sans fin */
+const TRAIN_EASY = 4, TRAIN_HARD = 2, TRAIN_SLOW = 3;
+const trainLen = (k) => (GENS[k].slow ? TRAIN_SLOW : TRAIN_EASY + (GENS[k].hard ? TRAIN_HARD : 0));
 function trainGen(k) {
   let n = 0;
   return () => {
-    const hard = !!GENS[k].hard && ++n % HARD_EVERY === 0;
+    const hard = !!GENS[k].hard && ++n > TRAIN_EASY;
     const o = GENS[k].f(hard);
     if (hard) o.q = '<p class="tag">★ Question plus difficile</p>' + o.q;
     return o;
   };
+}
+function trainSummary(k, { good, limit, helpedCount }) {
+  const ch = GENS[k].ch, missed = limit - good;
+  const msg = !missed ? `Tu as tout vu sur ce point${helpedCount ? '' : ', et sans aide'} : pas besoin d'aller plus loin. Passe à la suite !`
+    : `Il reste ${missed} question${missed > 1 ? 's' : ''} à retravailler : ${missed > 1 ? 'elles t\'attendent' : 'elle t\'attend'} dans « Mes erreurs ».`;
+  return `<div class="result"><p class="note">${good} / ${limit}</p><p><b>Série terminée.</b> ${msg}</p>{{LIST}}
+    <p>${missed ? `<a class="btn primary" href="#/${ch}/erreurs">Retravailler mes erreurs →</a> ` : ''}<a class="btn${missed ? '' : ' primary'}" href="#/${ch}/controle">Faire le contrôle blanc →</a></p></div>`;
 }
 
 /** Contrôle blanc : chaque compétence une fois, les autres questions dans les compétences rapides en ★, et au moins 40 % de ★ */
@@ -3873,7 +3881,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Exercices d'entraînement
   document.querySelectorAll('.exercise[data-gen]').forEach((el) => {
     const id = el.dataset.gen;
-    makeExercise(el, trainGen(id), { key: id });
+    makeExercise(el, null, {
+      key: id, limit: trainLen(id),
+      makeGen: () => trainGen(id),
+      summary: (r) => trainSummary(id, r),
+      restartLabel: 'Refaire une autre série',
+    });
   });
 
   // Contrôles blancs : voir examPlan
