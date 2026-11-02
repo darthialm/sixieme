@@ -233,11 +233,20 @@ function randDv(k, lo, hi) { for (;;) { const m = rand(lo * P10(k), hi * P10(k))
 /* ---------- Vidéos des calculs posés (chargées seulement au clic : rien n'est demandé à YouTube avant) ---------- */
 const OP_VIDEOS = { add: ['ytLe8aUq2ZM', 'poser une addition'], sub: ['CFKUxlh6R9s', 'poser une soustraction'], mul: ['4YQi_icWTTI', 'poser une multiplication'] };
 const videoBox = (k) => `<div class="yt" data-yt="${OP_VIDEOS[k][0]}"><button type="button" class="btn yt-play">▶ Vidéo : ${OP_VIDEOS[k][1]}</button></div>`;
+/** Referme les vidéos ouvertes : une iframe masquée (changement de page) continuerait à jouer, on l'entendrait sans la voir */
+function closeVideos() {
+  document.querySelectorAll('.yt.yt-open').forEach((box) => { box.classList.remove('yt-open'); box.innerHTML = box._btn || ''; });
+}
 document.addEventListener('click', (e) => {
+  if (e.target.closest('.yt-close')) { closeVideos(); return; }
   const b = e.target.closest('.yt-play'); if (!b) return;
   const box = b.closest('.yt'), id = box?.dataset.yt; if (!id || !/^[\w-]{11}$/.test(id)) return;
-  box.innerHTML = `<div class="yt-frame"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1" title="${esc(b.textContent.replace(/^▶\s*/, ''))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  closeVideos();
+  box._btn = box.innerHTML;
+  box.classList.add('yt-open');
+  box.innerHTML = `<div class="yt-frame"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1" title="${esc(b.textContent.replace(/^▶\s*/, ''))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><button type="button" class="btn yt-close">✕ Fermer la vidéo</button>`;
 });
+window.addEventListener('hashchange', closeVideos);
 
 /* ---------- 5. Poser une addition, une soustraction ----------
    a) Quelle opération est bien posée ? (QCM)

@@ -1,13 +1,15 @@
-MISE À JOUR 2026-11-02.1 : opérations posées (puzzle des trous, course à la virgule, vidéos),
-plan de classe gardé, impression des contrôles fiable (colonnes et une page)
+MISE À JOUR 2026-11-02.2 : vidéos visibles dans le site, contrôles blancs de 15 questions,
+questions ★ plus difficiles dans tous les chapitres et à l'entraînement
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
   index.html, script.js, style.css, chapitres-p2.js, chapitres-p2.css, README.md
+  et le NOUVEAU fichier : questions-difficiles.js
 
 Ne pas toucher aux autres fichiers (bilan.html, ouverture.js, classeur.html, documents.bin,
 pdf-lib.min.js, qrcode.js).
 
-PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 », mêmes clés d'exercices o-add et o-mul).
+PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 », mêmes clés d'exercices).
 TES CONTRÔLES, LISTES ET PLANS DE CLASSE : gardés.
+SUJETS DÉJÀ IMPRIMÉS ET ÉTIQUETTES QR : inchangés (les tirages existants sont identiques, vérifié).
 
 Après le dépôt : recharger le site avec Ctrl + F5.

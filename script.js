@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-02.1';
+const SITE_VERSION = '2026-11-02.2';
 
 /* =========================================================
    Outils
@@ -3809,8 +3809,37 @@ function wrapGen(k, tag = true, hard = false) {
   const o = GENS[k].f(!!(hard && GENS[k].hard));
   o.key = k;
   o.label = GENS[k].label;
-  if (tag) o.q = `<p class="tag">${GENS[k].label}</p>` + o.q;
+  if (tag) o.q = `<p class="tag">${hard && GENS[k].hard ? '★ ' : ''}${GENS[k].label}</p>` + o.q;
   return o;
+}
+
+/** Entraînement : une question sur 3 est ★, pour que l'élève rencontre aussi les cas difficiles avant le contrôle */
+const HARD_EVERY = 3;
+function trainGen(k) {
+  let n = 0;
+  return () => {
+    const hard = !!GENS[k].hard && ++n % HARD_EVERY === 0;
+    const o = GENS[k].f(hard);
+    if (hard) o.q = '<p class="tag">★ Question plus difficile</p>' + o.q;
+    return o;
+  };
+}
+
+/** Contrôle blanc : chaque compétence une fois, les autres questions dans les compétences rapides en ★, et au moins 40 % de ★ */
+const EXAM_N = 15, EXAM_HARD = 0.4;
+function examPlan(keys) {
+  const canHard = (k) => !!GENS[k].hard;
+  const plan = shuffle([...keys]).slice(0, EXAM_N).map((k) => ({ k, hard: false }));
+  const fast = keys.filter((k) => !GENS[k].slow), hardFast = fast.filter(canHard);
+  let bag = shuffle([...(hardFast.length ? hardFast : fast.length ? fast : keys)]);
+  while (plan.length < EXAM_N) {
+    if (!bag.length) bag = shuffle([...(fast.length ? fast : keys)]);
+    const k = bag.shift();
+    plan.push({ k, hard: canHard(k) });
+  }
+  const missing = Math.ceil(EXAM_N * EXAM_HARD) - plan.filter((x) => x.hard).length;
+  if (missing > 0) shuffle(plan.filter((x) => !x.hard && canHard(x.k))).slice(0, missing).forEach((x) => { x.hard = true; });
+  return shuffle(plan);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3844,22 +3873,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Exercices d'entraînement
   document.querySelectorAll('.exercise[data-gen]').forEach((el) => {
     const id = el.dataset.gen;
-    makeExercise(el, GENS[id].f, { key: id });
+    makeExercise(el, trainGen(id), { key: id });
   });
 
-  // Contrôles blancs : chaque compétence au moins une fois, complété au hasard jusqu'à 10
+  // Contrôles blancs : voir examPlan
   document.querySelectorAll('.exercise[data-exam]').forEach((el) => {
     const ch = el.dataset.exam;
     makeExercise(el, null, {
-      limit: 10, exam: true, ch,
+      limit: EXAM_N, exam: true, ch,
       examKey: ch + ':controle',
       makeGen() {
         let keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].locked);
         if (!keys.length) keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch);
-        const queue = shuffle(keys).slice(0, 10);
-        while (queue.length < 10) queue.push(pick(keys));
-        shuffle(queue);
-        return () => wrapGen(queue.shift() || pick(keys));
+        const queue = examPlan(keys);
+        return () => { const x = queue.shift(); return x ? wrapGen(x.k, true, x.hard) : wrapGen(pick(keys)); };
       },
     });
   });

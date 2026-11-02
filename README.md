@@ -9,7 +9,7 @@ Site de révision tout-en-un pour les élèves de 6e. Au début, l'élève chois
 | **3. Distance et cercle** | Notations [AB], [AB), AB, milieu, unités de longueur, médiatrice (construction animée au compas), vocabulaire du cercle, cercle et disque | Notations, bien écrire, milieu, **tracer** une demi-droite et un milieu, propriété et réciproque de la médiatrice, **tracer** la médiatrice, vocabulaire du cercle, rayon / diamètre, cercle et disque, **tracer** un cercle |
 | **4. Nombres décimaux (partie 2)** | Demi-droite graduée (méthodes 1 et 2), comparer, ranger, intercaler, encadrer, arrondir (règle du chiffre suivant) | Lire une abscisse (pas de 1, 0,1, 0,01, 10), placer un point, comparer, ranger (clic dans l'ordre), intercaler, encadrer, arrondir |
 
-Chaque chapitre a aussi un **contrôle blanc** de 10 questions noté sur 20 (avec un bouton « Passer » si l'élève bloque).
+Chaque chapitre a aussi un **contrôle blanc** de 15 questions noté sur 20 (avec un bouton « Passer » si l'élève bloque) : chaque compétence y figure au moins une fois, et au moins 40 % des questions sont ★ plus difficiles quand le chapitre en propose assez. À l'entraînement, une question sur 3 est ★ : l'élève rencontre ainsi les cas difficiles avant le contrôle.
 Les exercices changent à chaque fois et sont corrigés immédiatement, avec la méthode.
 La progression est enregistrée dans le navigateur de l'élève (aucun compte, aucune donnée envoyée). Elle est séparée de celle du site de 5e, même si les deux sites sont sur le même compte GitHub.
 
@@ -165,3 +165,5 @@ Le site vérifie les directions à 2° près, les longueurs et les rayons à 1 m
 - **Les exercices** sont dans `script.js` (une fonction par type) et sont déclarés dans l'objet `GENS`, avec leur clé (celle qui sert dans les liens de devoir).
 - **Ajouter un chapitre** : ajouter des sections `data-ch="nouveau"` dans `index.html`, une entrée dans `CHAPTERS` et ses exercices dans `GENS` (`ch: 'nouveau'`). Le contrôle blanc, la progression et l'espace professeur suivent automatiquement.
 - **Contrôles papier** : un nouveau type d'exercice peut indiquer son temps estimé, en minutes (`t: 2` dans `GENS`). Il peut aussi avoir une version ★ : `hard: true` dans `GENS`, et la fonction reçoit alors `hard` en paramètre. Sinon, un tracé compte pour 6 minutes et une autre question pour 2 minutes.
+- **Questions ★ et sujets déjà imprimés** : les sujets papier et les pages des étiquettes QR sont recalculés à partir d'une graine. Modifier une fonction d'exercice changerait donc les sujets déjà distribués. Les versions ★ ajoutées ensuite sont dans `questions-difficiles.js`, sans toucher aux fonctions d'origine. Pour ajouter des questions à un type déjà utilisé sur papier, crée plutôt un nouveau type d'exercice.
+- **Réglages** : nombre de questions du contrôle blanc et part de ★ dans `EXAM_N` et `EXAM_HARD`, fréquence des ★ à l'entraînement dans `HARD_EVERY` (`script.js`).
