@@ -940,5 +940,9 @@ body.print-doc { color: #000; }
 .tr-sheet .paper-geo .grid { stroke: #cfcfcf; }
 .tr-corr-sheet { font-size: 10.5pt; }
 .tr-corr-sheet .ctl-corr-fig svg { width: 100%; max-width: 8.5cm; height: auto; display: block; margin-top: 1mm; }
-@media print { .tr-corr { break-before: page; page-break-before: always; } body.no-corr .tr-corr { display: none; } }
+@media print {
+  .tr-corr { break-before: page; page-break-before: always; } body.no-corr .tr-corr { display: none; }
+  /* pas de hauteur imposée : si le navigateur ajoute ses marges, la feuille ne déborde pas sur une page vide */
+  body.print-doc .tr-sheet { width: auto; height: auto; overflow: visible; }
+}
 @media screen { body.no-corr .tr-corr { display: none; } }
