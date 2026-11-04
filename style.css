@@ -919,3 +919,26 @@ body.print-doc { color: #000; }
 .ctl-sheet .form-lines { gap: 1.5mm; margin: 1mm 0; }
 .ctl-sheet .form-line { font-size: 1em; gap: 2mm; }
 .ctl-sheet .form-line small { font-size: .85em; }
+
+/* Entraînement sur papier (bouton « PDF » des exercices) */
+.ex-bar:has(.ex-paper) { justify-content: flex-start; flex-wrap: wrap; }
+.ex-bar:has(.ex-paper) .ex-count { margin-right: auto; }
+.tr-sheet { font-size: 12pt; }
+.tr-sheet .choices.pics.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tr-sheet .choices.pics.wide .choice > span:last-child { flex: 1; min-width: 0; }
+.tr-sheet .choices.pics.wide .choice svg { width: 100%; max-width: 100%; max-height: none; height: auto; }
+.tr-sheet .ctl-wide svg.fig { max-height: 36mm; }
+.tr-head { align-items: center; margin-bottom: 3mm; }
+.tr-name { line-height: 1.9; white-space: nowrap; }
+.tr-line { display: inline-block; width: 42mm; border-bottom: 1px solid #000; }
+.tr-sheet .ctl-q { padding: 2.5mm 0; border-bottom: 1px dashed #999; }
+.tr-sheet .ctl-q:last-child { border-bottom: 0; }
+.tr-sheet .ctl-qt svg.fig { max-height: 46mm; }
+.tr-sheet .ctl-qt svg.fig.fig-big { max-height: 64mm; }
+.tr-corr-sheet .ctl-qt svg.fig { max-height: 62mm; }
+.tr-sheet .paper-geo { break-inside: avoid; margin-top: 1.5mm; }
+.tr-sheet .paper-geo .grid { stroke: #cfcfcf; }
+.tr-corr-sheet { font-size: 10.5pt; }
+.tr-corr-sheet .ctl-corr-fig svg { width: 100%; max-width: 8.5cm; height: auto; display: block; margin-top: 1mm; }
+@media print { .tr-corr { break-before: page; page-break-before: always; } body.no-corr .tr-corr { display: none; } }
+@media screen { body.no-corr .tr-corr { display: none; } }

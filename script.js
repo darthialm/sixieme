@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-02.3';
+const SITE_VERSION = '2026-11-04.3';
 
 /* =========================================================
    Outils
@@ -1539,6 +1539,7 @@ function genZeros(hard = false) {
     decmid: `Ce zéro est avant un autre chiffre de la partie décimale : si on l'enlève, le nombre change (0,05 n'est pas 0,5).`,
   };
   return {
+    _forme: t,
     hints: [
       `Où peut-on enlever des zéros sans changer la valeur du nombre ? Relis la « Règle des zéros inutiles » dans ${ficheLink('decimaux1')}.`,
       'Exemple : 0402,0800 = 402,08. Les zéros tout au début de la partie entière et tout à la fin de la partie décimale sont inutiles. Le 0 de 402 et le 0 de ,08 sont utiles.',
@@ -2261,6 +2262,7 @@ function genLireHL(hard = false) {
       : type === 'diz' ? 'Exemple : entre 300 et 400, il y a 10 graduations, donc chacune vaut 10. Le point situé 4 graduations après 300 a pour abscisse 340.'
         : 'Exemple (fiche) : B est situé au milieu entre 14 et 15, donc son abscisse est 14,5.';
   return {
+    _forme: type,
     hints: [
       `Regarde deux nombres écrits sous la demi-droite. Combien de graduations y a-t-il entre eux ? Combien vaut alors <b>une</b> graduation ? Relis la Méthode 1 dans ${ficheLink('decimaux2')}.`,
       ex,
@@ -2301,6 +2303,7 @@ function genPlacerHL(hard = false) {
   const j0 = prevLab(c, i), j1 = nextLab(c, i);
   const isFr = disp !== fmt(x);
   return {
+    _forme: type + (isFr ? '-fraction' : ''),
     hints: [
       `${isFr ? `Écris d'abord ${disp} en écriture décimale. ` : ''}Puis cherche les deux nombres écrits qui l'entourent : combien vaut une graduation ?`,
       type === 'diz' ? 'Exemple : pour placer 360 entre 300 et 400 (10 graduations de 10), on compte 6 graduations après 300.' : `Exemple (fiche) : B(41 + ${F(9, 10)}) : 41 + ${F(9, 10)} = 41,9 ; C(${F(433, 10)}) : ${F(433, 10)} = 43,3.`,
@@ -2361,7 +2364,7 @@ function genComparer(hard = false) {
   const [px, py] = padZeros([x, y]);
   const expl = x.I !== y.I ? `Les parties entières sont différentes : ${x.I} ${SIGN[x.I < y.I ? -1 : 1]} ${y.I}, donc <b>${x.s} ${SIGN[c]} ${y.s}</b>.`
     : `Les parties entières sont égales (${x.I}). On écrit les deux nombres avec autant de chiffres après la virgule : ${px} et ${py}. Donc <b>${x.s} ${SIGN[c]} ${y.s}</b>.`;
-  return withRemed(withHints(mcq(`<p>Complète avec &lt;, &gt; ou =.</p><p class="big">${x.s} … ${y.s}</p>`, opts, correct, expl, { keepOrder: true, cls: 'signs' }),
+  const cmpQ = withRemed(withHints(mcq(`<p>Complète avec &lt;, &gt; ou =.</p><p class="big">${x.s} … ${y.s}</p>`, opts, correct, expl, { keepOrder: true, cls: 'signs' }),
     [`Compare d'abord les parties entières. Si elles sont égales, que faut-il faire ? Relis la Méthode 3 dans ${ficheLink('decimaux2')}.`,
       'Exemple (fiche) : 14,52 et 14,6. Parties entières égales. On ajoute un zéro inutile : 14,6 = 14,60. Comme 52 &lt; 60, 14,52 &lt; 14,6.',
       `Outil — les deux nombres avec le même nombre de décimales :<p class="big">${px} … ${py}</p>`]),
@@ -2375,6 +2378,8 @@ function genComparer(hard = false) {
     if (ch === -c && c !== 0) return 'Attention au sens du signe : la pointe est du côté du plus <b>petit</b> nombre (&lt; se lit « est inférieur à »).';
     return 'Compare d\'abord les parties entières, puis les chiffres des dixièmes, des centièmes…';
   });
+  cmpQ._forme = t;
+  return cmpQ;
 }
 
 /* ---------- 4. Ranger ---------- */
@@ -2431,6 +2436,7 @@ function genIntercaler(hard = false) {
   if (b.d && /0$/.test(b.d)) b = D(b.I, b.d.replace(/0+$/, ''));
   const [pa, pb] = padZeros([a, b]);
   return {
+    _forme: t,
     hints: [
       `Y a-t-il vraiment un nombre entre ${a.s} et ${b.s} ? Relis la Méthode 5 dans ${ficheLink('decimaux2')}.`,
       'Exemple (fiche) : entre 7,83 et 7,84, on écrit 7,830 et 7,840. On peut choisir 7,835 : 7,83 &lt; 7,835 &lt; 7,84.',
@@ -3805,22 +3811,89 @@ function route() {
    Démarrage
    ========================================================= */
 /** Prépare une question « mélangée » (contrôle blanc, mes erreurs, devoir) */
-function wrapGen(k, tag = true, hard = false) {
-  const o = GENS[k].f(!!(hard && GENS[k].hard));
+function wrapGen(k, tag = true, hard = false, prog = true) {
+  const useHard = !!(hard && (prog ? ctlHard(k, 2) : GENS[k].hard));
+  const o = prog ? progDraw(k, useHard) : GENS[k].f(useHard);
   o.key = k;
   o.label = GENS[k].label;
-  if (tag) o.q = `<p class="tag">${hard && GENS[k].hard ? '★ ' : ''}${GENS[k].label}</p>` + o.q;
+  if (tag) o.q = `<p class="tag">${useHard ? '★ ' : ''}${GENS[k].label}</p>` + o.q;
   return o;
 }
 
-/** Entraînement : une série finie et progressive (d'abord les bases, puis les ★), au lieu d'un compteur sans fin */
-const TRAIN_EASY = 4, TRAIN_HARD = 2, TRAIN_SLOW = 3;
+/** Ce qui n'est pas dans la fiche du chapitre ne sort plus, nulle part sur le site.
+    Seule exception : les contrôles papier créés avant cette règle (sans « g »), dont les sujets et les pages QR doivent rester identiques.
+    - hardOut : aucune question ★ pour ce type
+    - out : questions écartées, repérées dans leur texte
+    ⚠ Les contrôles papier « g: 2 » sont recalculés avec ces règles : ne plus les modifier une fois ces contrôles distribués.
+    Pour changer la liste, créer PROG_RULES3 et une génération « g: 3 » (les anciens contrôles garderaient celle-ci). */
+const PROG_RULES = {
+  'd-noms': { hardOut: true }, // les segments ne sont vus qu'au chapitre 3
+  'o-voc': { hardOut: true }, // « l'opération faite en dernier » : programme de 5e
+  'o-par2': { out: /× \(\d+ \+ \(\d+ ×/ },
+  'a-nature': { out: /le double|bissectrice|supplémentaire|complémentaire/ },
+  'a-mesure': { out: /aucun côté/ },
+  'a-calcul': { out: /supplémentaire de son complémentaire|bissectrice/ },
+  't-3cotes': { out: /Peut-on construire/ }, // l'inégalité triangulaire : programme de 5e
+  't-voc': { out: /Combien de triangles|quel angle est opposé/ },
+  't-nature': { out: /rectangle isocèle|= 60°/ },
+  't-180': { out: /prolonge|bissectrice/ },
+  't-natang': { out: /prolonge|rectangle isocèle/ },
+};
+/** Ce type peut-il avoir une question ★ ? g : génération de règles (absente pour un ancien contrôle papier) */
+const ctlHard = (k, g) => !!GENS[k]?.hard && !(g && PROG_RULES[k]?.hardOut);
+/** Tire une question en écartant ce qui n'est pas dans la fiche (sans autre hasard que Math.random : fonctionne aussi avec une graine) */
+function progDraw(k, hard) {
+  const out = PROG_RULES[k]?.out;
+  if (!out) return GENS[k].f(hard);
+  for (let i = 0; i < 300; i++) { const o = GENS[k].f(hard); if (!out.test(plain(o.q))) return o; }
+  return GENS[k].f(false);
+}
+
+/** Entraînement : une série finie et progressive (d'abord les bases, puis les ★), au lieu d'un compteur sans fin.
+    La série doit faire voir tous les mots et toutes les subtilités du programme, sans en sortir (voir PROG_RULES).
+    Les règles ci-dessous ne concernent que l'entraînement. Les fonctions d'exercice ne changent pas (sujets papier recalculés à partir d'une graine).
+    - noHard : pas de ★ dans la série (les questions de base couvrent déjà tout)
+    - qcm : nombre de questions à choix permises dans une série de tracés (1 par défaut)
+    - key : ce qui distingue deux questions, quand le texte seul ne suffit pas (sinon le texte, et _forme si la fonction en donne une) */
+const TRAIN_EASY = 4, TRAIN_HARD = 2, TRAIN_SLOW = 3, TRAIN_TRIES = 120;
+const TRAIN_RULES = {
+  't-cercle': { qcm: 2 }, // tous les mots de la définition, et un tracé
+  // les questions de base contiennent déjà tous les cas ; les ★ n'en reprennent qu'une partie, et en feraient manquer dans la série
+  'n-zeros': { noHard: true }, 'e-placer': { noHard: true }, 'e-comparer': { noHard: true }, 'e-intercaler': { noHard: true },
+  'n-lettres': { key: (t) => (t.match(/unités? et|dixièmes?|centièmes?|millièmes?/g) || []).join(' ') },
+};
+const TRAIN_NAMES = /^(?:[A-Z]{1,3}|Léa|Tom|Inès|Noah|Jade|Yanis|Emma|Lucas|Noa|Sacha|Camille|Alix)$/;
+const trainNorm = (s) => s.replace(/\d+(?:[,. ]\d+)*/g, '#').replace(/\p{L}+/gu, (w) => (TRAIN_NAMES.test(w) ? 'X' : w)).toLowerCase();
 const trainLen = (k) => (GENS[k].slow ? TRAIN_SLOW : TRAIN_EASY + (GENS[k].hard ? TRAIN_HARD : 0));
-function trainGen(k) {
-  let n = 0;
+/** Tire les questions d'une série : à chaque fois, celle qui apporte une bonne réponse ou une forme de question pas encore vue */
+function trainDraw(k) {
+  const G0 = GENS[k], R = { ...PROG_RULES[k], ...TRAIN_RULES[k] }, seen = new Set();
+  let n = 0, qcm = 0;
   return () => {
-    const hard = !!GENS[k].hard && ++n > TRAIN_EASY;
-    const o = GENS[k].f(hard);
+    n++;
+    let hard = ctlHard(k, 2) && !R.noHard && n > TRAIN_EASY, best = null, bestScore = -1, bestKeys = [];
+    for (let i = 0; i < TRAIN_TRIES && bestScore < 3; i++) {
+      const o = G0.f(hard), text = plain(o.q);
+      if (R.out?.test(text)) continue;
+      // série de tracés : l'élève doit surtout tracer ; une seule question à choix, sauf règle contraire
+      if (G0.slow && !o.q.includes('class="board"') && qcm >= (R.qcm ?? 1)) continue;
+      const stem = plain(o.q.replace(/<div class="choices[\s\S]*$/, ''));
+      const shape = `s:${R.key ? R.key(text) : trainNorm(stem)}|${o._forme || ''}`;
+      const answer = o._opts && o._correct !== undefined ? `a:${trainNorm(plain(o._opts[o._correct]))}` : '';
+      const score = (answer && !seen.has(answer) ? 2 : 0) + (seen.has(shape) ? 0 : 1);
+      if (score > bestScore) { best = o; bestScore = score; bestKeys = [shape, answer]; }
+      if (!seen.size) break; // première question : pas de choix à faire (le site en prépare une par exercice à l'ouverture)
+    }
+    if (!best) { hard = false; best = G0.f(false); }
+    if (G0.slow && !best.q.includes('class="board"')) qcm++;
+    bestKeys.filter(Boolean).forEach((x) => seen.add(x));
+    return { hard, o: best };
+  };
+}
+function trainGen(k) {
+  const draw = trainDraw(k);
+  return () => {
+    const { hard, o } = draw();
     if (hard) o.q = '<p class="tag">★ Question plus difficile</p>' + o.q;
     return o;
   };
@@ -3836,7 +3909,7 @@ function trainSummary(k, { good, limit, helpedCount }) {
 /** Contrôle blanc : chaque compétence une fois, les autres questions dans les compétences rapides en ★, et au moins 40 % de ★ */
 const EXAM_N = 15, EXAM_HARD = 0.4;
 function examPlan(keys) {
-  const canHard = (k) => !!GENS[k].hard;
+  const canHard = (k) => ctlHard(k, 2);
   const plan = shuffle([...keys]).slice(0, EXAM_N).map((k) => ({ k, hard: false }));
   const fast = keys.filter((k) => !GENS[k].slow), hardFast = fast.filter(canHard);
   let bag = shuffle([...(hardFast.length ? hardFast : fast.length ? fast : keys)]);
@@ -3887,6 +3960,8 @@ document.addEventListener('DOMContentLoaded', () => {
       summary: (r) => trainSummary(id, r),
       restartLabel: 'Refaire une autre série',
     });
+    el.querySelector('.ex-score').insertAdjacentHTML('beforebegin', '<button type="button" class="mini ex-paper" title="Obtenir ces exercices sur une feuille à imprimer ou en PDF">📄 PDF</button>');
+    el.querySelector('.ex-paper').addEventListener('click', () => printTraining(id));
   });
 
   // Contrôles blancs : voir examPlan
@@ -3987,12 +4062,12 @@ const planParse = (str) => {
 const ctlWide = (x) => !!GENS[x.k].slow; // les demi-droites graduées restent dans les colonnes (place)
 /** Les questions d'une copie : toujours les mêmes pour le même contrôle et le même numéro d'élève.
     Dans chaque compétence, les questions ★ sont les dernières. salt : autre tirage pour une copie qui ne tenait pas sur la page. */
-function ctlQuestions(id, n, ver, keys, plan, salt = 0) {
+function ctlQuestions(id, n, ver, keys, plan, salt = 0, g = 0) {
   const p = ctlVer(plan, keys, ver);
   // une graine par question : ajouter une question ou en rendre une ★ ne change pas les autres
   const all = keys.flatMap((k, ci) => (GENS[k] ? Array.from({ length: p.n[ci] }, (_, m) => {
-    const hard = m >= p.n[ci] - p.h[ci];
-    return { k, ci, m, hard, o: withSeed(hash32(`${id}#${n}#${ci}#${m}${salt ? '#' + salt : ''}`), () => wrapGen(k, false, hard)) };
+    const hard = m >= p.n[ci] - p.h[ci] && (!g || ctlHard(k, g));
+    return { k, ci, m, hard, o: withSeed(hash32(`${id}#${n}#${ci}#${m}${salt ? '#' + salt : ''}`), () => wrapGen(k, false, hard, !!g)) };
   }) : []));
   // en pleine largeur à la fin de la feuille : placer un point sur une demi-droite graduée, puis les tracés (grande figure) ; le reste sur deux colonnes au-dessus
   const rank = (x) => (GENS[x.k].slow ? 2 : ctlWide(x) ? 1 : 0);
@@ -4161,14 +4236,14 @@ function amenSet(classe, list) {
 }
 
 /* ---------- Fenêtre d'impression ---------- */
-function printWindow(title, bodyHTML, extraCSS = '', after) {
+function printWindow(title, bodyHTML, extraCSS = '', after, backHash = '#/prof') {
   const w = window.open('', '_blank');
   if (!w) { alert('Ton navigateur a bloqué la fenêtre d\'impression. Autorise les fenêtres pop-up pour ce site, puis recommence.'); return null; }
   const css = new URL('style.css?v=' + SITE_VERSION, location.href).href;
   w.document.open();
   // bouton « Revenir au site » : ferme cette fenêtre (ouverte par le site) ; sinon, recharge le site à cet endroit
-  const back = `<div class="no-print ctl-back"><button type="button" class="btn" onclick="window.close(); setTimeout(function () { location.href = '${siteURL()}#/prof'; }, 400);">← Revenir au site</button></div>`;
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${back}${bodyHTML}</body></html>`);
+  const back = `<div class="no-print ctl-back"><button type="button" class="btn" onclick="window.close(); setTimeout(function () { location.href = '${siteURL()}${backHash}'; }, 400);">← Revenir au site</button></div>`;
+  w.document.write(`<!doctype html><html lang="fr" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"><link rel="stylesheet" href="${css}"><link rel="stylesheet" href="${css.replace('style.css', 'chapitres-p2.css')}"><style>${extraCSS}</style></head><body class="print-doc">${back}${bodyHTML}</body></html>`);
   w.document.close();
   const go = () => { try { after?.(w); } catch (e) { /* rien */ } };
   if (w.document.readyState === 'complete') setTimeout(go, 300); else w.addEventListener('load', go);
@@ -4178,8 +4253,8 @@ function printWindow(title, bodyHTML, extraCSS = '', after) {
 /* ---------- Sujets ---------- */
 function sheetHTML(c, i) {
   const [name, ver] = c.s[i], n = i + 1, code = ctlCode(c.id, n);
-  const qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
-  const date = new Date(c.d).toLocaleDateString('fr-FR');
+  const qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n), c.g);
+  const date =new Date(c.d).toLocaleDateString('fr-FR');
   return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}"><div class="ctl-in">
     <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
     <div class="ctl-cut"></div>
@@ -4267,7 +4342,7 @@ function ctlAutoPlan(c, target = 30) {
   // 2. page pleine avant la durée visée : des questions deviennent ★ (même place, plus de temps)
   const upgrade = (list) => {
     for (let g = 0; g < 60 && T() < target - 1; g++) {
-      const cand = K.map((_, i) => i).filter((i) => GENS[K[i]]?.hard && p.h[i] < p.n[i] && !hfull.has(i));
+      const cand = K.map((_, i) => i).filter((i) => ctlHard(K[i], c.g) && p.h[i] < p.n[i] && !hfull.has(i));
       if (!cand.length) break;
       const i = cand.reduce((a, b) => (p.h[b] / p.n[b] < p.h[a] / p.n[a] ? b : a));
       p.h[i]++;
@@ -4372,10 +4447,61 @@ function printSheets(c) {
   });
 }
 
+/* ---------- Entraînement sur papier : une feuille à imprimer ou à enregistrer en PDF ---------- */
+/** Répartit des blocs sur des pages A4 (mêmes boîtes que les contrôles), en deux colonnes ou en pleine largeur */
+function paperPages(items, head, cls, oneCol) {
+  const box = document.createElement('div'); box.className = CTL_MODE; box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  box.innerHTML = '<div style="height:100mm;width:1px"></div>'; document.body.appendChild(box);
+  const limit = CTL_LIMIT * box.firstElementChild.getBoundingClientRect().height / 100;
+  const place = (parts, h) => {
+    box.innerHTML = `<div class="ctl-sheet tr-sheet ${cls}"><div class="ctl-in">${h}${oneCol ? `<div class="ctl-wide">${parts.join('')}</div>` : `<div class="ctl-qs ctl-cols"><div class="ctl-col">${parts.join('')}</div><div class="ctl-col"></div></div>`}</div></div>`;
+    if (!oneCol) balanceSheet(box.firstElementChild);
+  };
+  const pages = []; let cur = [];
+  items.forEach((it) => {
+    place([...cur, it], pages.length ? '' : head);
+    if (cur.length && box.querySelector('.ctl-in').getBoundingClientRect().height > limit) { pages.push(cur); cur = []; }
+    cur.push(it);
+  });
+  pages.push(cur);
+  const out = pages.map((p, i) => { place(p, i ? '' : head); return box.innerHTML; });
+  box.remove(); return out;
+}
+/** true si un bloc déborde d'une colonne (grand tableau, figure large) : la feuille passe alors en pleine largeur */
+function paperTooWide(items) {
+  const box = document.createElement('div'); box.className = CTL_MODE; box.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  box.innerHTML = `<div class="ctl-sheet tr-sheet"><div class="ctl-in"><div class="ctl-qs ctl-cols"><div class="ctl-col">${items.join('')}</div><div class="ctl-col"></div></div></div></div>`;
+  document.body.appendChild(box);
+  const wide = [...box.querySelectorAll('.ctl-qt')].some((q) => q.scrollWidth > q.clientWidth + 1);
+  box.remove(); return wide;
+}
+function printTraining(k) {
+  const G0 = GENS[k], ch = CHAPTERS.find((x) => x.id === G0.ch);
+  const draw = trainDraw(k), qs = Array.from({ length: trainLen(k) }, () => draw());
+  const items = qs.map((x, j) => `<section class="pq ctl-q"><div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div></section>`);
+  const corr = qs.map((x, j) => {
+    const a = questionAnswer(x.o);
+    let fig = '', end = '';
+    if (x.o.anim) { const h = ctlWork(); try { const sc = x.o.anim(); end = sc?.endText || ''; makePlayer(h, sc, { atEnd: true }); fig = h.querySelector('svg')?.outerHTML || ''; } catch (e) { /* rien */ } h.innerHTML = ''; }
+    const msg = fig ? 'Compare ton tracé à cette figure (ici réduite).' : stripLinks(String(a.msg));
+    return `<section class="pq ctl-q"><div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span></span><div class="ctl-qt">${a.good ? `<p><b>${esc(a.good)}</b></p>` : ''}${msg}${fig ? `<div class="ctl-corr-fig">${fig}</div>` : ''}${end ? `<p>${end}</p>` : ''}</div></div></section>`;
+  });
+  // tracés et rapporteurs à lire : pleine largeur, pour la vraie grandeur et la lisibilité des graduations
+  const slow = !!G0.slow, oneCol = slow || items.some((h) => h.includes('fig-big')) || paperTooWide(items);
+  const head = `<div class="ctl-head tr-head"><div class="ctl-title"><b>${esc(G0.label)}</b><br><span class="small">Entraînement · ${esc(ch?.title || '')}${slow ? ' · Figures en vraie grandeur : fais les tracés dessus, avec tes instruments.' : ''}${qs.some((x) => x.hard) ? ' · ★ : question plus difficile' : ''}</span></div><div class="tr-name">Prénom : <span class="tr-line"></span><br>Date : <span class="tr-line"></span></div></div>`;
+  const sujet = paperPages(items, head, '', oneCol);
+  const corrige = paperPages(corr, `<div class="ctl-head tr-head"><div class="ctl-title"><b>Corrigé — ${esc(G0.label)}</b></div></div>`, 'tr-corr-sheet', false);
+  const bar = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer ou enregistrer en PDF</button> <label class="small"><input type="checkbox" checked onchange="document.body.classList.toggle('no-corr', !this.checked)"> Ajouter le corrigé à la fin</label></p><p class="small">Pour un PDF : choisis « Enregistrer au format PDF » comme destination. Garde l'échelle à 100 %${slow ? ' : les figures restent ainsi en vraie grandeur (un carreau = 1 cm)' : ''}. Si l'adresse du site apparaît en bas de page, décoche « En-têtes et pieds de page ».</p></div>`;
+  printWindow(`${G0.label} — entraînement`, `${bar}<div class="${CTL_MODE}"><div class="tr-part">${sujet.join('')}</div><div class="tr-part tr-corr">${corrige.join('')}</div></div>`, PRINT_CSS, async (w) => {
+    try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
+    fitSheets(w.document);
+  }, `#/${G0.ch}`);
+}
+
 /* ---------- Corrigé du professeur, et fichier pour la correction assistée ---------- */
 function printCorrige(c) {
   const parts = c.s.map(([name, ver], i) => {
-    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
+    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n), c.g);
     return `<section class="ctl-corr"><h3>${ctlCode(c.id, n)} — ${esc(name)}${ver === 'a' ? ' <span class="small muted">(aménagé)</span>' : ''}</h3><ol>${qs.map((x) => {
       const a = questionAnswer(x.o);
       let fig = '';
@@ -4404,7 +4530,7 @@ function aiText(c) {
     L.push(`  Ajouter « ? » après un niveau en cas de doute (ex. C1=${levelFromBits(b)}?(${b})), et une courte remarque après « // » si utile.`); }
   L.push('');
   c.s.forEach(([, ver], i) => {
-    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n));
+    const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n), c.g);
     L.push(`=== ${ctlCode(c.id, n)} (version ${ver === 'a' ? 'aménagée' : 'standard'}) ===`);
     qs.forEach((x, j) => {
       const a = questionAnswer(x.o);
@@ -4447,7 +4573,7 @@ function retourURL(c, n, levels, bits, dest) {
   const plan = ctlPlan(c), pv = ctlVer(plan, c.k, ver);
   const allBits = c.k.map((k, i) => { const b = bits[i] || ''; const want = pv.n[i]; return b.length === want ? b : '-'.repeat(want); }).join('');
   const cl = encodeURIComponent(c.c || '').replace(/\./g, '%2E');
-  return siteURL() + `#/r/2.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
+  return siteURL() + `#/r/${c.g ? 3 : 2}.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
 }
 function printLabels(c, rows, skip, dest) {
   const W = 63.5, H = 38.1, TOP = 15.15, LEFT = 7.21, GAP = 2.54, PER = 21;
@@ -4639,7 +4765,7 @@ function setupControles() {
     const T = ctlMinutes(K, p), pa = ctlVer(p, K, 'a'), hasA = c.s.some(([, v]) => v === 'a');
     const nq = (pp) => pp.n.reduce((a, b) => a + b, 0);
     planBox.innerHTML = `<div class="ctl-plan"><table class="voc"><thead><tr><th>Compétence</th><th>Questions</th><th>dont ★ plus difficiles</th><th>≈ min</th>${hasA ? '<th>Version aménagée</th>' : ''}</tr></thead><tbody>${K.map((k, i) => {
-      const slow = GENS[k]?.slow, hard = GENS[k]?.hard;
+      const slow = GENS[k]?.slow, hard = ctlHard(k, c.g);
       return `<tr><td><b>C${i + 1}</b> ${esc(GENS[k]?.label || k)}</td>
         <td>${slow ? '1 (tracé)' : `<button type="button" class="mini" data-a="n" data-d="-1" data-i="${i}" aria-label="Une question de moins">−</button> <b>${p.n[i]}</b> <button type="button" class="mini" data-a="n" data-d="1" data-i="${i}" aria-label="Une question de plus">+</button>`}</td>
         <td>${hard ? `<button type="button" class="mini" data-a="h" data-d="-1" data-i="${i}" aria-label="Une question ★ de moins">−</button> <b>${p.h[i]}</b> <button type="button" class="mini" data-a="h" data-d="1" data-i="${i}" aria-label="Une question ★ de plus">+</button>` : '<span class="small muted">—</span>'}</td>
@@ -4667,7 +4793,7 @@ function setupControles() {
     if (!ks.length) { status('ko-t', 'Coche au moins une compétence dans la liste ci-dessus.'); return; }
     if (!ns.length) { status('ko-t', 'Colle la liste des élèves.'); $('ctl-names').focus(); return; }
     const am = new Set(amenGet($('ctl-classe').value));
-    const c = { id: newCtlId(), t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: dateOf($('ctl-date').value), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
+    const c = { id: newCtlId(), g: 2, t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: dateOf($('ctl-date').value), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
     const mode = $('ctl-q').value;
     status('', '🧮 Calcul du contrôle (mise en page de chaque copie)…'); planBox.innerHTML = '';
     setTimeout(() => {
@@ -4732,8 +4858,8 @@ function routeRetour(spec) {
   const [v, id, nS, verS, qS, ksS, lvS, bitsS, clS] = main.split('.');
   const ver = (verS || 's')[0], salt = parseInt((verS || '').slice(1), 10) || 0;
   const keys = (ksS || '').split('+'), n = parseInt(nS, 10);
-  // lien v1 : q questions par compétence ; lien v2 : plan détaillé (ex. 3-4h1-1)
-  const plan = v === '1' ? ctlPlan({ k: keys, q: parseInt(qS, 10) }) : v === '2' ? planParse(qS) : null;
+  // lien v1 : q questions par compétence ; lien v2 : plan détaillé (ex. 3-4h1-1) ; lien v3 : pareil, contrôle créé avec PROG_RULES
+  const plan = v === '1' ? ctlPlan({ k: keys, q: parseInt(qS, 10) }) : v === '2' || v === '3' ? planParse(qS) : null;
   if (!plan || plan.n.length !== keys.length || !/^[0-9A-Z]{3}$/.test(id || '') || !n || !keys.length) {
     host.innerHTML = '<h1>Lien illisible</h1><p class="lead">Ce QR code n\'a pas pu être lu en entier. Réessaie de le scanner, bien à plat et bien éclairé.</p><p><a class="btn" href="#/">Accueil du site</a></p>';
     return '';
@@ -4741,7 +4867,7 @@ function routeRetour(spec) {
   let classe = ''; try { classe = decodeURIComponent(clS || ''); } catch (e) { classe = ''; }
   const extra = (classe ? '/c=' + encodeURIComponent(classe) : '') + segs.filter((s) => /^[fg]=/.test(s)).map((s) => '/' + s).join('');
   const levels = keys.map((_, i) => LV1R[(lvS || '')[i]] || '');
-  const qs = ctlQuestions(id, n, ver === 'a' ? 'a' : 's', keys, plan, salt);
+  const qs = ctlQuestions(id, n, ver === 'a' ? 'a' : 's', keys, plan, salt, v === '3' ? 2 : 0);
   // réponses : une suite de 0/1 rangée par compétence (dans l'ordre des compétences)
   const counts = ctlVer(plan, keys, ver === 'a' ? 'a' : 's').n, starts = counts.map((_, i) => counts.slice(0, i).reduce((a, b) => a + b, 0));
   const bitOf = (x) => ((bitsS || '').length === qs.length ? bitsS[starts[x.ci] + x.m] || '-' : '-');

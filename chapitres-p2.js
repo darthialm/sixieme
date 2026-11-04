@@ -1064,6 +1064,7 @@ function genTriRect() {
     };
   };
   return {
+    _forme: hyp ? 'hypotenuse' : 'deux-cotes',
     anim: sceneRect,
     hints: [`Relis la méthode « Construire un triangle rectangle ${hyp ? 'connaissant l\'hypoténuse' : 'connaissant les côtés de l\'angle droit'} » dans ${ficheLink('triangles')}.`, `Outil : Équerre → clique sur [${nA}${nB}], puis sur ${nA} : tu obtiens la perpendiculaire en ${nA}.`, hyp ? `Outil : ${nC} est sur la perpendiculaire, à ${cm(h)} de ${nB} : arc de centre ${nB}, de rayon ${cm(h)}.` : `Outil : ${nC} est sur la perpendiculaire, à ${cm(q)} de ${nA} (Règle).`],
     remediate(r) {
@@ -1137,6 +1138,7 @@ function genTriNatAng() {
   const why = good === 'équilatéral' ? 'les trois angles mesurent 60°' : good.startsWith('rectangle') ? `un angle mesure 90°` : good.startsWith('isocèle') ? `deux angles ont la même mesure (les angles à la base) ; le sommet principal est le troisième sommet` : 'les trois angles sont différents et aucun n\'est droit';
   return {
     _rb: 0,
+    _forme: good.split(' ')[0],
     hints: [`Relis la méthode « Trouver la nature d'un triangle à partir de ses angles » dans ${ficheLink('triangles')}.`, 'Outil : calcule d\'abord le troisième angle avec la règle des 180°, puis compare les trois angles.', 'Outil : isocèle → deux angles égaux ; équilatéral → trois angles de 60° ; rectangle → un angle de 90°.'],
     q: `<p class="statement">${ns.join('')} est un triangle tel que ${angN(nA)} = ${deg(a)} et ${angN(nB)} = ${deg(b)}.</p>
       <p class="big">${angN(nC)} = ${inp('num', 'Mesure')} °</p>
