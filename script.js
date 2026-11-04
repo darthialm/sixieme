@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-04.4';
+const SITE_VERSION = '2026-11-04.5';
 
 /* =========================================================
    Outils
@@ -4491,7 +4491,7 @@ function printTraining(k) {
   const head = `<div class="ctl-head tr-head"><div class="ctl-title"><b>${esc(G0.label)}</b><br><span class="small">Entraînement · ${esc(ch?.title || '')}${slow ? ' · Figures en vraie grandeur : fais les tracés dessus, avec tes instruments.' : ''}${qs.some((x) => x.hard) ? ' · ★ : question plus difficile' : ''}</span></div><div class="tr-name">Prénom : <span class="tr-line"></span><br>Date : <span class="tr-line"></span></div></div>`;
   const sujet = paperPages(items, head, '', oneCol);
   const corrige = paperPages(corr, `<div class="ctl-head tr-head"><div class="ctl-title"><b>Corrigé — ${esc(G0.label)}</b></div></div>`, 'tr-corr-sheet', false);
-  const bar = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer ou enregistrer en PDF</button> <label class="small"><input type="checkbox" checked onchange="document.body.classList.toggle('no-corr', !this.checked)"> Ajouter le corrigé à la fin</label></p><p class="small">Pour un PDF : choisis « Enregistrer au format PDF » comme destination. Garde l'échelle à 100 %${slow ? ' : les figures restent ainsi en vraie grandeur (un carreau = 1 cm)' : ''}. Si l'adresse du site apparaît en bas de page, décoche « En-têtes et pieds de page ».</p></div>`;
+  const bar = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer ou enregistrer en PDF</button> <label class="small"><input type="checkbox" checked onchange="document.body.classList.toggle('no-corr', !this.checked)"> Ajouter le corrigé à la fin</label></p></div>`;
   printWindow(`${G0.label} — entraînement`, `${bar}<div class="${CTL_MODE}"><div class="tr-part">${sujet.join('')}</div><div class="tr-part tr-corr">${corrige.join('')}</div></div>`, PRINT_CSS, async (w) => {
     try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
     fitSheets(w.document);
