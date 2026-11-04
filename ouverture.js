@@ -9,7 +9,7 @@ window.OUVERTURE = {
   "decimaux1": true,
   "cercle": true,
   "decimaux2": true,
-  "operations": ["vocabulaire"],
+  "operations": true,
   "angles": [],
   "triangles": []
 };
