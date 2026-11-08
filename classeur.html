@@ -740,8 +740,9 @@ function nomPDF(font,s){
 async function genererParcours(p,win){
   const c=cur();if(!c||busy){if(win)win.close();return}
   if(!window.PDFLib){setStatus("La fabrication du PDF n'est pas disponible (bibliothèque non chargée).");return}
-  const liste=c.eleves.map((e,i)=>({e,i,g:(c.g[e.id]||{})[p]})).filter(x=>x.g);
-  if(!liste.length){if(win)win.close();setStatus("Aucun groupe noté pour le point "+p+" : note d'abord les billets.");return}
+  // un élève sans groupe (absent au billet, billet non noté) reçoit « Je m'entraîne »
+  const liste=c.eleves.map((e,i)=>({e,i,g:(c.g[e.id]||{})[p]||"E"}));
+  if(!liste.length){if(win)win.close();setStatus("Aucun élève dans cette classe.");return}
   busy=true;render();
   try{
     setStatus("Fabrication du PDF : "+liste.length+" parcours…");
@@ -914,12 +915,12 @@ function renderGroupes(c){
       <div class="count c-R"><b>${k.R}</b><span>Je reprends</span></div>
       <div class="count c-E"><b>${k.E}</b><span>Je m'entraîne</span></div>
       <div class="count c-D"><b>${k.D}</b><span>Je relève un défi</span></div>
-      <div class="count c-0"><b>${k["0"]}</b><span>sans groupe (absents ?)</span></div>
+      <div class="count c-0"><b>${k["0"]}</b><span>sans groupe : « Je m'entraîne » d'office</span></div>
     </div>
     <p class="hint">Billet de la ${p.b} : touche une case pour passer de vide à R, E, D, puis vide. 0 ou 1 juste = R, 2 justes = E, 3 justes = D.</p>
-    <div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${k.R+k.E+k.D} parcours sur ${Math.ceil((k.R+k.E+k.D)/2)} feuilles, avec les prénoms)`}</button>
+    <div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${c.eleves.length} parcours sur ${Math.ceil(c.eleves.length/2)} feuilles, avec les prénoms)`}</button>
     <span class="hint">Deux parcours par feuille, à couper au milieu. Le PDF s'ouvre dans un nouvel onglet : imprime-le depuis là.</span></div>
-    ${sans.length&&(k.R+k.E+k.D)?`<p class="warn">Sans groupe, donc sans parcours dans le PDF : ${sans.map(x=>esc(x.e.nom)).join(", ")}.</p>`:""}
+    ${sans.length?`<p class="hint">Sans groupe, donc « Je m'entraîne » dans le PDF : ${sans.map(x=>esc(x.e.nom)).join(", ")}</p>`:""}
   </div>
 
   <div class="scroll"><table>
@@ -928,14 +929,14 @@ function renderGroupes(c){
     <tbody>${c.eleves.map((e,i)=>`<tr><td class="name"><small>${i+1}</small>${esc(e.nom)}</td>${POINTS.map(x=>{
        const v=(c.g[e.id]||{})[x.n]||"";
        return `<td class="${x.n===p.n?"sel":""}"><button class="cell ${v}" data-e="${e.id}" data-p="${x.n}" aria-label="${esc(e.nom)}, point ${x.n} : ${v?G[v]:"pas de groupe"}">${v||"·"}</button></td>`}).join("")}</tr>`).join("")}</tbody>
-    <tfoot><tr><td class="name">À imprimer</td>${POINTS.map(x=>{const q=counts(c,x.n);return `<td class="${x.n===p.n?"sel":""}"><b class="R">R ${q.R}</b><br><b class="E">E ${q.E}</b><br><b class="D">D ${q.D}</b></td>`}).join("")}</tr></tfoot>
+    <tfoot><tr><td class="name">À imprimer</td>${POINTS.map(x=>{const q=counts(c,x.n);return `<td class="${x.n===p.n?"sel":""}"><b class="R">R ${q.R}</b><br><b class="E">E ${q.E+q["0"]}</b><br><b class="D">D ${q.D}</b></td>`}).join("")}</tr></tfoot>
   </table></div>
   <div class="legend"><span><i class="c-R">R</i>Je reprends</span><span><i class="c-E">E</i>Je m'entraîne</span><span><i class="c-D">D</i>Je relève un défi</span><span><i class="c-0">·</i>pas encore de groupe</span></div>
 
   <div class="panel">
     <h2>Ordre de distribution du point ${p.n}</h2>
     <p class="hint">Le PDF suit l'ordre du plan de classe. Le numéro de chaque élève est aussi écrit en petit dans le coin de sa feuille.</p>
-    ${ordre.some(x=>x.g)?`<ol class="ordre">${ordre.filter(x=>x.g).map(x=>`<li value="${x.i+1}">${esc(x.e.nom)}<span class="g c-${x.g}">${x.g}</span></li>`).join("")}</ol>`:`<p class="hint">Aucun groupe noté pour ce point.</p>`}
+    ${ordre.length?`<ol class="ordre">${ordre.map(x=>`<li value="${x.i+1}">${esc(x.e.nom)}<span class="g c-${x.g||"E"}" ${x.g?"":'title="pas de groupe : Je m’entraîne d’office"'}>${x.g||"E"}</span></li>`).join("")}</ol>`:`<p class="hint">Aucun élève dans cette classe.</p>`}
   </div>
   </div>`;
 }
