@@ -246,11 +246,11 @@ const SEANCES=[
  {id:"S1",chap:"Opérations",k:"Opérations · séance 1",t:"Le vocabulaire des opérations",cours:"Partie 1, méthode comprise",docs:["coursO","coursOp","actO","actOc"],act:"Qui suis-je ? (cartes à découper)",
   dev:"<p><b>Apprendre la partie 1 du cours : le vocabulaire des opérations.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Utiliser le vocabulaire des opérations », puis vérifier avec la correction.</p><p><b>Apporter : ciseaux et colle.</b></p>"},
  {id:"S2",chap:"Opérations",k:"Opérations · séance 2",t:"Calculer de gauche à droite, avec parenthèses, parenthèses doubles",cours:"Partie 2, règles 1, 2 et 3 avec leurs méthodes",docs:["coursO","coursOp","actO","actOc","billets","billetsC"],act:"Horloges folles (1)",billet:1,
-  dev:"<p><b>Apprendre les règles 1, 2 et 3 du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Calculer une expression avec des parenthèses ».</p><p><b>Apporter : de quoi écrire.</b></p>"},
+  dev:"<p><b>Apprendre les règles 1, 2 et 3 du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Calculer une expression avec des parenthèses ».</p>"},
  {id:"S3",chap:"Opérations",k:"Opérations · séance 3",t:"Addition et soustraction posées",cours:"Partie 3.1 (les opérations posées)",docs:["coursO","coursOp","projO","actO","actOc","corP1","billets","billetsC"],act:"Rappel : le compte est bon (écrans)",parcours:1,billet:2,
   dev:"<p><b>Apprendre la partie 3.1 du cours (poser une addition, une soustraction).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Poser une addition et une soustraction ».</p><p><b>Apporter : ciseaux et colle.</b></p>"},
  {id:"S4",chap:"Opérations",k:"Opérations · séance 4",t:"La multiplication posée",cours:"Partie 3.2, fin du cours",docs:["coursO","coursOp","actO","actOc","projO","corP2","multcur"],act:"Horloges folles (2), Ticket de caisse, Les élèves corrigent le prof (écrans)",parcours:2,
-  dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p><p><b>Apporter : de quoi écrire.</b></p>"},
+  dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p>"},
  {id:"S5",chap:"Opérations",k:"Évaluation Opérations, puis Angles · séance 1",t:"Évaluation Opérations (45 min) · Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["evalO","evalOc","coursA","coursAp","actA","actAc"],act:"Découverte « le plus grand angle »",eval:true,
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les angles (définition et notation).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Tracer trois angles sur le cahier et les nommer.</p><p><b>Apporter : équerre et ciseaux.</b></p>"},
  {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Nommer un angle, nature des angles",cours:"Méthode « Nommer », partie 1.2",docs:["coursA","coursAp","actA","actAc"],act:"Trier les angles",
@@ -387,7 +387,7 @@ function planifier(cr,us,depart){
   }
   return secours;
 }
-const MAT={S1:"ciseaux",S2:"ciseaux, colle",S3:"de quoi écrire",S4:"ciseaux, colle",S5:"de quoi écrire",S6:"équerre, ciseaux",
+const MAT={S1:"ciseaux",S2:"ciseaux, colle",S3:"",S4:"ciseaux, colle",S5:"",S6:"équerre, ciseaux",
  S7:"rapporteur, papier calque, ciseaux",S8:"rapporteur",S9:"rapporteur, règle, crayons de couleur, calculatrice",S10:"rapporteur, règle",
  S11:"rapporteur, règle, ciseaux",S12:"rapporteur, règle, équerre",S13:"compas, règle",S14:"compas, rapporteur, règle",S15:"compas, règle, ciseaux",
  S16:"équerre, compas, règle",S17:"ciseaux, rapporteur",S18:"rapporteur, règle",S19:"compas, équerre, règle",S20:"règle, équerre, rapporteur, compas"};
@@ -468,7 +468,7 @@ function devoirsCreneau(c,P,i){
   const nx=P.cr.slice(i+1).find(z=>z.cap>0&&z.pieces.some(p=>!p.marge));
   if(!parts.length&&nx&&x.pieces.some(p=>!p.marge&&BLOCS[p.sid][p.i].y!=="v"))parts.push("<p><b>Relire dans le cours ce qui a été fait aujourd'hui.</b></p>");
   if(nx){
-    const items=[];new Set(nx.pieces.filter(p=>!p.marge).map(p=>p.sid)).forEach(sid=>MAT[sid].split(", ").forEach(m=>{if(!items.includes(m))items.push(m)}));
+    const items=[];new Set(nx.pieces.filter(p=>!p.marge).map(p=>p.sid)).forEach(sid=>MAT[sid].split(", ").forEach(m=>{if(m&&!items.includes(m))items.push(m)}));
     if(items.length)parts.push(`<p><b>Pour le ${fmtJ(nx.date,{weekday:"long",day:"numeric",month:"long"})}, apporter : ${items.join(", ")}.</b></p>`);
   }
   return {html:parts.join(""),ended:list.map(s=>s.id)};
