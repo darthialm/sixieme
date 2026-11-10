@@ -21,6 +21,7 @@
   const colName = (c, u) => `la colonne des <b>${rang(c, u)}</b>`;
   const val = (x) => x.m / P10(x.k);
   const nStr = (x) => decStr(x.m, x.k, false);
+  let SEQ = 0; // ordre d'écriture des retenues (retenues « à droite », sur le côté)
   const range = (a, b) => { const t = []; for (let i = a; i <= b; i++) t.push(i); return t; };
   /** chiffres de m (k décimales) placés avec les unités dans la colonne u : {col: chiffre} */
   function place(m, k, u) {
@@ -84,7 +85,15 @@
         return `<span class="pz-t">${items}</span>`;
       }).join('')}</div>`;
     }
-    const sign = { A: '', B: st.op, R: st.op === '×' ? '' : '' };
+    const sign = { A: '', B: st.op, R: '' };
+    // retenues « à droite » : sur le côté, à droite de la ligne qu'on calcule, dans l'ordre où on les écrit
+    const side = st.op !== '−' && style === 'droite';
+    const sideCarries = (r) => {
+      const list = [];
+      st.carries.forEach((l, c) => l.forEach((k, i) => { if (k.row === r) list.push({ k, c, i }); }));
+      list.sort((p, q) => (p.k.n || 0) - (q.k.n || 0));
+      return list.map(({ k, c, i }) => `<span class="pz-k${k.x ? ' pz-x' : ''}${k.v === '' ? ' pz-empty' : ''}${isSel('carry', c, i) ? ' sel' : ''}${st.blink === `${c}:${i}` ? ' pz-blink' : ''}" data-carry="${c}:${i}">${k.v || '&nbsp;'}</span>`).join('');
+    };
     st.rows.forEach((r) => {
       const sg = r[0] === 'L' ? (r !== 'L0' ? '+' : '') : sign[r];
       h += `<div class="pz-row pz-r-${r}"><span class="pz-sign">${sg}</span>${cols.map((c) => {
@@ -94,13 +103,10 @@
         const cls = CLS({ 'pz-c': 1, sel: isSel('cell', r, c), 'pz-hl': st.hl.has(c), ok: mk === 1, ko: mk === 0, gz: st.ghost[`${r}:${c}`], 'pz-crossed': crossed, live });
         let inner = v === '' ? '' : v;
         if (r === 'A' && st.op === '−' && T.one === 0) inner = `<i class="pz-one${crossed ? ' pz-x' : ''}">1</i>` + inner;
-        if (r === 'A' && st.op !== '−' && style === 'droite' && st.carries[c].length) {
-          inner += `<span class="pz-cr">${st.carries[c].map((k, i) => `<span class="pz-k${k.x ? ' pz-x' : ''}${k.v === '' ? ' pz-empty' : ''}${isSel('carry', c, i) ? ' sel' : ''}${st.blink === `${c}:${i}` ? ' pz-blink' : ''}" data-carry="${c}:${i}">${k.v || '&nbsp;'}</span>`).join('')}</span>`;
-        }
         if (r === 'B' && st.op === '−' && st.plus[c]) inner += '<i class="pz-plus">+1</i>';
         if (st.comma[r] === c) inner += '<i class="pz-comma">,</i>';
         return `<span class="${cls}" ${live ? `data-r="${r}" data-c="${c}"` : ''}>${inner}</span>`;
-      }).join('')}</div>`;
+      }).join('')}${side ? `<span class="pz-side">${sideCarries(r)}</span>` : ''}</div>`;
     });
     return `<div class="pz-grid${live ? '' : ' pz-static'}${st.op === '×' ? ' pz-mul' : ''}" ${live ? 'tabindex="0" aria-label="Grille pour poser l\'opération"' : ''}>${h}</div>`;
   }
@@ -146,7 +152,7 @@
     if (K) st.comma.R = u;
     let cin = 0;
     for (let c = u - K; c < st.W; c++) {
-      if (cin) st.carries[c] = [{ v: String(cin), x: true, row: 'R' }];
+      if (cin) st.carries[c] = [{ v: String(cin), x: true, row: 'R', n: ++SEQ }];
       cin = Math.floor((dg(st, 'A', c) + dg(st, 'B', c) + cin) / 10);
     }
   }
@@ -193,7 +199,7 @@
     const lineCarries = (d, row) => {
       let cin = 0;
       xs.forEach((xd, c) => {
-        if (cin && c > 0) st.carries[c].push({ v: String(cin), x: true, row });
+        if (cin && c > 0) st.carries[c].push({ v: String(cin), x: true, row, n: ++SEQ });
         cin = Math.floor((xd * d + cin) / 10);
       });
     };
@@ -378,7 +384,7 @@
     }
     function headHTML() {
       if (st.op === '−') return `<div class="pz-head"><span class="small muted">Ta méthode :</span> <span class="pz-mini">${METH[st.method].icon} ${METH[st.method].short}</span> <button type="button" class="mini pz-change">changer</button></div>`;
-      return `<div class="pz-head"><span class="small">Mes retenues :</span><span class="pz-style">${['haut', 'droite'].map((s) => `<button type="button" class="pz-sbtn${st.style === s ? ' on' : ''}" data-style="${s}" title="Retenues ${s === 'haut' ? 'en haut' : 'à droite'}">${gridHTML(carryDemo(s), false)}<span>${s === 'haut' ? 'en haut' : 'à droite'}</span></button>`).join('')}</span></div>`;
+      return `<div class="pz-head"><span class="small"><b>Je préfère</b> écrire mes retenues :<br><span class="muted">c'est toi qui choisis, les deux sont justes</span></span><span class="pz-style">${['haut', 'droite'].map((s) => `<button type="button" class="pz-sbtn${st.style === s ? ' on' : ''}" data-style="${s}" title="Retenues ${s === 'haut' ? 'en haut' : 'à droite, sur le côté'}">${gridHTML(carryDemo(s), false)}<span>${s === 'haut' ? 'en haut' : 'à droite, sur le côté'}</span></button>`).join('')}</span></div>`;
     }
     function render() {
       if (st.op === '−' && !st.method) { host.innerHTML = `<div class="pz">${chooserHTML()}</div>`; return; }
@@ -451,7 +457,7 @@
         if (c < 0 || c >= st.W) { msgSet('Pas de retenue possible ici.', 'warn'); return; }
         const from = s.t === 'cell' ? s : null;
         const row = s.t === 'cell' ? s.a : s.t === 'carry' ? st.carries[s.a][s.b].row : 'R';
-        st.carries[c].push({ v: '', x: false, row: row === 'A' || row === 'B' ? (st.op === '×' ? (st.nL ? 'L0' : 'R') : 'R') : row, from });
+        st.carries[c].push({ v: '', x: false, row: row === 'A' || row === 'B' ? (st.op === '×' ? (st.nL ? 'L0' : 'R') : 'R') : row, from, n: ++SEQ });
         st.sel = { t: 'carry', a: c, b: st.carries[c].length - 1 };
         msgSet('Touche le chiffre de la retenue.', '');
         render(); return;
@@ -667,7 +673,7 @@
     if (ret) {
       const draw = () => {
         const cur = pref(RET_KEY, 'haut');
-        ret.innerHTML = `<div class="pz-fchoice">${['haut', 'droite'].map((s) => `<button type="button" class="pz-sbtn big${cur === s ? ' on' : ''}" data-style="${s}">${gridHTML(carryDemo(s), false)}<span>Retenue ${s === 'haut' ? 'en haut' : 'à droite'}${cur === s ? ' ✔' : ''}</span></button>`).join('')}</div>`;
+        ret.innerHTML = `<div class="pz-fchoice">${['haut', 'droite'].map((s) => `<button type="button" class="pz-sbtn big${cur === s ? ' on' : ''}" data-style="${s}">${gridHTML(carryDemo(s), false)}<span>${s === 'haut' ? 'En haut' : 'À droite, sur le côté'}${cur === s ? ' ✔ c\'est ma façon' : ''}</span></button>`).join('')}</div>`;
       };
       draw();
       ret.addEventListener('click', (e) => { const b = e.target.closest('[data-style]'); if (b) { setPref(RET_KEY, b.dataset.style); draw(); } });

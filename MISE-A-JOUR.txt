@@ -1,4 +1,4 @@
-MISE À JOUR 2026-11-10.1 : « Poser et calculer » (opérations posées pour de vrai)
+MISE À JOUR 2026-11-10.2 : « Poser et calculer » (opérations posées pour de vrai)
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
   index.html, script.js, chapitres-p2.css, README.md
@@ -8,9 +8,9 @@ Ne pas toucher aux autres fichiers (chapitres-p2.js, questions-difficiles.js, bi
 classeur.html, documents.bin, pdf-lib.min.js, qrcode.js, style.css).
 
 CE QUI CHANGE (chapitre 5) :
-- Nouvelle page « Poser et calculer » : addition, soustraction, multiplication. L'élève pose
+- Pages Addition, Soustraction, Multiplication (à la place de « Poser » et « Poser et calculer »). L'élève pose
   l'opération dans une grille (il touche une case, puis le chiffre), ajoute ses retenues
-  (en haut ou à droite, au choix), et le site lui rappelle de les barrer.
+  (en haut, ou à droite sur le côté : au choix de l'élève), et le site lui rappelle de les barrer.
 - Soustraction : au début de chaque question, l'élève choisit sa méthode en touchant une image
   (je barre le chiffre d'à côté / 1 en haut et 1 en bas).
 - Des questions où un des deux nombres est entier.

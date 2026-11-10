@@ -170,9 +170,9 @@ Le site vérifie les directions à 2° près, les longueurs et les rayons à 1 m
 
 
 ## Poser et calculer (10/11/2026) — `poser.js`
-- Page `operations/calculer`, clés `o-pa` (addition), `o-ps` (soustraction), `o-pm` (multiplication), toutes avec ★.
+- Pages `operations/addition`, `soustraction`, `multiplication` (remplacent `poser` et `calculer`), clés `o-pa` (addition), `o-ps` (soustraction), `o-pm` (multiplication), toutes avec ★.
 - L'élève pose l'opération dans une grille : il touche une case puis un chiffre (pavé ou clavier), « , » pour la virgule.
-- Retenues : bouton « Ajouter une retenue », affichées en haut ou à droite (préférence `revisions6e-retenues`, choisie aussi dans la fiche). Une retenue comptée non barrée : rappel pendant le calcul, puis une fois avant la vérification.
+- Retenues : bouton « Ajouter une retenue », affichées en haut ou à droite sur le côté, à droite de la ligne calculée, dans l'ordre d'écriture (préférence `revisions6e-retenues`, choisie aussi dans la fiche). Une retenue comptée non barrée : rappel pendant le calcul, puis une fois avant la vérification.
 - Soustraction : méthode choisie en image au début de chaque question (cassage : barrer et réécrire + petit 1 devant ; conservation des écarts : petit 1 devant + « +1 » en bas). Fiche : l'élève touche sa méthode, une seule s'affiche (`revisions6e-soustraction`).
 - Erreurs repérées : virgules non alignées (cas d'un nombre entier), nombres alignés à droite, nombre mal recopié ou inversé, retenue oubliée, soustraction à l'envers, +1 oublié, case vide en haut (écrire un 0), ligne non décalée, virgule du produit.
 - Papier : la grille devient un cadre ; corrigé = opération posée. Vidéoprojecteur : « Afficher la réponse » remplit la grille.
