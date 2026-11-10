@@ -167,3 +167,12 @@ Le site vérifie les directions à 2° près, les longueurs et les rayons à 1 m
 - **Contrôles papier** : un nouveau type d'exercice peut indiquer son temps estimé, en minutes (`t: 2` dans `GENS`). Il peut aussi avoir une version ★ : `hard: true` dans `GENS`, et la fonction reçoit alors `hard` en paramètre. Sinon, un tracé compte pour 6 minutes et une autre question pour 2 minutes.
 - **Questions ★ et sujets déjà imprimés** : les sujets papier et les pages des étiquettes QR sont recalculés à partir d'une graine. Modifier une fonction d'exercice changerait donc les sujets déjà distribués. Les versions ★ ajoutées ensuite sont dans `questions-difficiles.js`, sans toucher aux fonctions d'origine. Pour ajouter des questions à un type déjà utilisé sur papier, crée plutôt un nouveau type d'exercice.
 - **Réglages** : nombre de questions du contrôle blanc et part de ★ dans `EXAM_N` et `EXAM_HARD`, longueur des séries d'entraînement dans `TRAIN_EASY`, `TRAIN_HARD` et `TRAIN_SLOW` (`script.js`).
+
+
+## Poser et calculer (10/11/2026) — `poser.js`
+- Page `operations/calculer`, clés `o-pa` (addition), `o-ps` (soustraction), `o-pm` (multiplication), toutes avec ★.
+- L'élève pose l'opération dans une grille : il touche une case puis un chiffre (pavé ou clavier), « , » pour la virgule.
+- Retenues : bouton « Ajouter une retenue », affichées en haut ou à droite (préférence `revisions6e-retenues`, choisie aussi dans la fiche). Une retenue comptée non barrée : rappel pendant le calcul, puis une fois avant la vérification.
+- Soustraction : méthode choisie en image au début de chaque question (cassage : barrer et réécrire + petit 1 devant ; conservation des écarts : petit 1 devant + « +1 » en bas). Fiche : l'élève touche sa méthode, une seule s'affiche (`revisions6e-soustraction`).
+- Erreurs repérées : virgules non alignées (cas d'un nombre entier), nombres alignés à droite, nombre mal recopié ou inversé, retenue oubliée, soustraction à l'envers, +1 oublié, case vide en haut (écrire un 0), ligne non décalée, virgule du produit.
+- Papier : la grille devient un cadre ; corrigé = opération posée. Vidéoprojecteur : « Afficher la réponse » remplit la grille.

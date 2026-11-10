@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-04.5';
+const SITE_VERSION = '2026-11-10.1';
 
 /* =========================================================
    Outils
@@ -3558,6 +3558,7 @@ function setupBilan() {
    ========================================================= */
 /** Affiche la correction d'une question sans réponse de l'élève */
 function revealAnswer(cur, q) {
+  if (cur.reveal) return cur.reveal(q); // opérations posées pour de vrai (poser.js)
   if (q.querySelector('.board')) return { anim: !!cur.anim, msg: cur.anim ? '' : 'Construction à faire au tableau.' };
   if (cur._correct !== undefined) {
     q.querySelector(`.rb[data-o="${cur._correct}"]`).checked = true;
@@ -4031,7 +4032,7 @@ const CTL_T = {
   'n-rang': 1.5, 'n-combien': 2, 'n-tranches': 2, 'n-decomp': 2.5, 'n-zeros': 1.5, 'n-fracdec': 2, 'n-lettres': 2, 'n-formes': 2.5,
   'c-notation': 1.5, 'c-ecrire': 1.5, 'c-milieu': 2, 'c-tracer': 4, 'c-med-prop': 1.5, 'c-med-trace': 7, 'c-voc': 1.5, 'c-rd': 1.5, 'c-disque': 1, 'c-trace-cercle': 4,
   'e-lire': 2, 'e-placer': 2, 'e-comparer': 1.5, 'e-ranger': 3, 'e-intercaler': 2, 'e-encadrer': 2, 'e-arrondir': 2,
-  'o-voc': 1.5, 'o-gauche': 1.5, 'o-par': 1.5, 'o-par2': 2, 'o-add': 3, 'o-mul': 4, 'o-pb': 4,
+  'o-voc': 1.5, 'o-gauche': 1.5, 'o-par': 1.5, 'o-par2': 2, 'o-add': 3, 'o-mul': 4, 'o-pb': 4, 'o-pa': 3, 'o-ps': 3, 'o-pm': 4,
   'a-nom': 1.5, 'a-nature': 1, 'a-mesure': 2, 'a-construire': 4, 'a-calcul': 2.5, 'a-reco': 1.5, 'a-biss': 5,
   't-voc': 1.5, 't-nature': 1.5, 't-3cotes': 6, 't-angles': 6, 't-iso': 6, 't-rect': 6, 't-180': 2, 't-natang': 2, 't-cercle': 7,
 };
@@ -4099,6 +4100,8 @@ function paperHTML(html) {
   });
   // rapporteur à lire : figure plus grande, pour lire les graduations
   if (/rapporteur/i.test(d.textContent)) d.querySelectorAll('svg.fig').forEach((f) => f.classList.add('fig-big'));
+  // opération à poser (poser.js) : un cadre quadrillé à la place de la grille
+  d.querySelectorAll('.pz-host').forEach((h) => { const w = document.createElement('div'); w.className = 'work tall'; h.replaceWith(w); });
   // « sur ton cahier » : sur la copie, un cadre quadrillé pour poser l'opération ou écrire les étapes
   const cahier = [...d.querySelectorAll('p')].find((x) => /sur ton cahier/.test(x.textContent));
   if (cahier) {
@@ -4196,6 +4199,7 @@ function questionAnswer(o) {
   try { o.mount?.(body); } catch (e) { /* rien */ }
   let msg = '', good = '';
   if (body.querySelector('.board')) msg = 'Construction : vérifier le tracé sur la copie.';
+  else if (o.reveal) { try { msg = o.reveal(body, true).msg; } catch (e) { msg = ''; } good = o._good || ''; }
   else {
     try { const r = revealAnswer(o, body); msg = typeof r?.msg === 'string' ? r.msg : ''; } catch (e) { msg = ''; }
     if (o._correct !== undefined) {

@@ -1,15 +1,25 @@
-MISE À JOUR 2026-11-02.2 : vidéos visibles dans le site, contrôles blancs de 15 questions,
-questions ★ plus difficiles dans tous les chapitres et à l'entraînement
+MISE À JOUR 2026-11-10.1 : « Poser et calculer » (opérations posées pour de vrai)
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
-  index.html, script.js, style.css, chapitres-p2.js, chapitres-p2.css, README.md
-  et le NOUVEAU fichier : questions-difficiles.js
+  index.html, script.js, chapitres-p2.css, README.md
+  et le NOUVEAU fichier : poser.js
 
-Ne pas toucher aux autres fichiers (bilan.html, ouverture.js, classeur.html, documents.bin,
-pdf-lib.min.js, qrcode.js).
+Ne pas toucher aux autres fichiers (chapitres-p2.js, questions-difficiles.js, bilan.html, ouverture.js,
+classeur.html, documents.bin, pdf-lib.min.js, qrcode.js, style.css).
 
-PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 », mêmes clés d'exercices).
-TES CONTRÔLES, LISTES ET PLANS DE CLASSE : gardés.
-SUJETS DÉJÀ IMPRIMÉS ET ÉTIQUETTES QR : inchangés (les tirages existants sont identiques, vérifié).
+CE QUI CHANGE (chapitre 5) :
+- Nouvelle page « Poser et calculer » : addition, soustraction, multiplication. L'élève pose
+  l'opération dans une grille (il touche une case, puis le chiffre), ajoute ses retenues
+  (en haut ou à droite, au choix), et le site lui rappelle de les barrer.
+- Soustraction : au début de chaque question, l'élève choisit sa méthode en touchant une image
+  (je barre le chiffre d'à côté / 1 en haut et 1 en bas).
+- Des questions où un des deux nombres est entier.
+- Fiche : « Si un des nombres est entier », « Les retenues » (choix en haut / à droite),
+  et les deux méthodes de soustraction (l'élève touche la sienne, une seule s'affiche).
+- Nouvelles compétences pour les devoirs et les contrôles papier : o-pa, o-ps, o-pm
+  (sur papier : un cadre pour poser l'opération).
+
+PROGRESSION DES ÉLÈVES : rien ne change (clé « revisions6e-v1 », anciennes clés intactes).
+SUJETS DÉJÀ IMPRIMÉS ET ÉTIQUETTES QR : inchangés (les anciens exercices ne sont pas modifiés).
 
 Après le dépôt : recharger le site avec Ctrl + F5.
