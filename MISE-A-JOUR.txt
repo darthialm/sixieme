@@ -1,3 +1,20 @@
+MISE À JOUR 2026-11-11.2 : cours « Les angles » (classeur)
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
+  classeur.html, documents.bin
+
+CE QUI CHANGE :
+- Cours Angles (élève et enseignant), 4 pages au lieu de 5 :
+  p.1 : définition et notation, puis nature d'un angle ; méthodes « Nommer » et « Nature ».
+  p.2 : mesurer un angle (sans « 1) », sans les angles particuliers ni la méthode KLM), construire un angle.
+  p.3 : relations entre deux angles, une seule méthode avec une seule figure.
+  p.4 : bissectrice (inchangée).
+- Classeur : renvois au cours mis à jour pour les séances Angles 2, 3, 4 et 6.
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-11 : fiches « Demi-droite graduée » et « Les angles »
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
