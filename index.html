@@ -666,16 +666,30 @@
         </ul>
       </div>
       <div class="nl" id="hl-intro"></div>
-      <h3>Méthode 1 : placer et lire des nombres</h3>
-      <p class="example">1) Quelles sont les abscisses des points A et B ? 2) Placer les points D(15) et E(17,5).</p>
-      <div class="nl" id="hl-m1a"></div>
-      <p>1) A a pour abscisse 13, soit A(13). B est situé au milieu entre 14 et 15, donc son abscisse est 14,5, soit B(14,5).<br>2) Les points D et E sont placés ci-dessous :</p>
-      <div class="nl" id="hl-m1b"></div>
-      <h3>Méthode 2 : adapter le pas de la graduation</h3>
-      <p class="example">a) Tracer une demi-droite graduée en plaçant 41,5 comme première graduation et en prenant 1 cm pour 1 dixième (0,1).<br>b) Placer les points A(42,8), B(41 + [[9|10]]) et C([[433|10]]).</p>
-      <p>a) On ajoute 0,1 à chaque graduation de 1 cm. b) Pour B : 41 + [[9|10]] = 41 + 0,9 = 41,9. Pour C : [[433|10]] = 43,3.</p>
-      <div class="nl" id="hl-m2"></div>
-      <p class="tip"><b>Astuce :</b> avant de lire ou de placer, cherche combien vaut <b>une</b> graduation : compte les graduations entre deux nombres écrits.</p>
+      <p class="example">Le point A est à 4 unités de l'origine : son abscisse est 4. On note <b>A(4)</b>.</p>
+
+      <h3>Méthode 1 : trouver ce que vaut une graduation</h3>
+      <p>Avant de lire ou de placer un point, on cherche <b>toujours</b> ce que vaut une petite case entre deux traits.</p>
+      <div class="nl" id="hl-pas"></div>
+      <ol class="steps">
+        <li>On choisit deux nombres écrits qui se suivent : ici <b>7</b> et <b>8</b>. Pour aller de 7 à 8, on avance de 8 − 7 = <b>1</b>.</li>
+        <li>On compte les petites cases entre 7 et 8 : il y en a <b>10</b> (elles sont numérotées en orange).</li>
+        <li>On partage : 1 : 10 = <b>0,1</b>. Chaque case vaut donc <b>un dixième</b>.</li>
+      </ol>
+      <p class="warnbox"><b>Piège :</b> on compte les <b>cases</b>, pas les traits. Entre 7 et 8, il y a 11 traits mais seulement 10 cases.</p>
+
+      <h3>Méthode 2 : lire ou placer un point</h3>
+      <p>On part du nombre écrit <b>juste avant</b> le point, puis on avance case par case en ajoutant ce que vaut une case.</p>
+      <div class="nl" id="hl-lire"></div>
+      <p class="example"><b>Lire l'abscisse de A.</b> A est après 7. On compte les cases à partir de 7 : 7,1 ; 7,2 ; 7,3. A est 3 cases après 7, donc <b>A(7,3)</b>.</p>
+      <p class="example"><b>Placer le point B(8,6).</b> 8,6 est entre 8 et 9. On part de 8 et on avance de 6 cases : 8,1 ; 8,2 ; 8,3 ; 8,4 ; 8,5 ; 8,6. On place B sur ce trait.</p>
+
+      <h3>Toujours la même méthode, avec d'autres graduations</h3>
+      <div class="p2-figgrid hl-grid">
+        <figure><div class="nl" id="hl-unite"></div><figcaption>De 14 à 15 : 1 seule case, qui vaut <b>1</b>. C est au milieu de cette case : <b>C(14,5)</b>.</figcaption></figure>
+        <figure><div class="nl" id="hl-cent"></div><figcaption>De 2,3 à 2,4 : on avance de 0,1 en 10 cases. Une case vaut 0,1 : 10 = <b>0,01</b>. D est 4 cases après 2,3 : <b>D(2,34)</b>.</figcaption></figure>
+      </div>
+      <p class="tip"><b>Si l'abscisse est une fraction</b>, on l'écrit d'abord en nombre décimal, puis on la place comme d'habitude : [[433|10]] = 43,3 et 41 + [[9|10]] = 41,9.</p>
       <a class="btn small-btn" href="#/decimaux2/demidroite">S'entraîner →</a>
     </article>
 
@@ -944,16 +958,14 @@
 
     <article class="card">
       <h2><span class="badge">1</span> Définition, notation et nature</h2>
-      <div class="fig-row">
-        <div>
-          <div class="rule"><b>Définition :</b> un angle est une ouverture délimitée par deux <b>demi-droites de même origine</b>.</div>
-          <ul class="checklist">
-            <li>Le <b>sommet</b> de l'angle est le point B.</li>
-            <li>Ses <b>côtés</b> sont les demi-droites [BA) et [BC).</li>
-            <li>Notation : <span class="ang">ABC</span>, avec le sommet <b>au milieu</b>. On peut aussi le noter <span class="ang">CBA</span>.</li>
-          </ul>
-        </div>
-        <div class="fig-box" data-fig="a-def"></div>
+      <div class="rule"><b>Définition :</b> un angle est une ouverture délimitée par deux <b>demi-droites de même origine</b>.</div>
+      <h3>Nommer un angle</h3>
+      <div class="p2-figgrid">
+        <figure><div class="fig-box" data-fig="a-def"></div><figcaption>Le sommet est <b>B</b>, les côtés sont [BA) et [BC).<br>On écrit <span class="ang">ABC</span> ou <span class="ang">CBA</span> : le sommet <b>au milieu</b>.</figcaption></figure>
+        <figure><div class="fig-box" data-fig="a-nom-plus"></div><figcaption>A et D sont sur le même côté, C et E aussi.<br><span class="ang">ABC</span>, <span class="ang">DBC</span>, <span class="ang">ABE</span> et <span class="ang">DBE</span> ont <b>la même mesure</b> : on peut utiliser n'importe lequel de ces noms pour l'angle rouge.</figcaption></figure>
+        <figure><div class="fig-box" data-fig="a-nom-3"></div><figcaption>Trois angles ont pour sommet O : on ne peut pas dire « l'angle O ».<br>Rouge : <span class="ang">AOB</span> ; bleu : <span class="ang">BOC</span>.</figcaption></figure>
+        <figure><div class="fig-box" data-fig="a-nom-plat"></div><figcaption>A, B et D sont alignés, B est au milieu.<br>Attention : <span class="ang">ABC</span> (rouge) et <span class="ang">DBC</span> (bleu) sont <b>deux angles différents</b>. Ensemble, ils forment un angle plat.</figcaption></figure>
+        <figure><div class="fig-box" data-fig="a-nom-tri"></div><figcaption>Dans le triangle ABC, l'angle rouge a pour sommet A.<br>C'est <span class="ang">BAC</span> ou <span class="ang">CAB</span>.</figcaption></figure>
       </div>
       <h3>Nature d'un angle</h3>
       <div class="table-wrap">
@@ -1024,8 +1036,13 @@
       <div class="fig-row">
         <div>
           <div class="rule"><b>Définition :</b> la bissectrice d'un angle est la demi-droite qui partage cet angle en <b>deux angles de même mesure</b>.</div>
-          <ol class="steps"><li>On mesure l'angle : <span class="ang">xAy</span> = 70°.</li><li>On divise par 2 : 70° : 2 = 35°.</li><li>On construit un angle de 35° à partir de [Ax) : c'est la bissectrice.</li></ol>
+          <p class="example">Sur la figure, [Az) est la bissectrice de l'angle <span class="ang">xAy</span>.<br>Les deux angles rouges ont le même codage : <span class="ang">xAz</span> = <span class="ang">zAy</span>.<br>Chacun mesure la moitié de <span class="ang">xAy</span>.</p>
         </div>
+        <div class="fig-box" data-fig="a-biss-def"></div>
+      </div>
+      <h3>Construire la bissectrice</h3>
+      <div class="fig-row">
+        <ol class="steps"><li>On mesure l'angle : <span class="ang">xAy</span> = 70°.</li><li>On divise par 2 : 70° : 2 = 35°.</li><li>On construit un angle de 35° à partir de [Ax) : c'est la bissectrice.</li></ol>
         <div class="fig-box" data-fig="a-anim-biss"></div>
       </div>
       <a class="btn small-btn" href="#/angles/bissectrice">S'entraîner →</a>

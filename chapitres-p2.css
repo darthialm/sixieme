@@ -239,3 +239,9 @@ body.projo-mode main { padding-top: 8px; padding-bottom: 8px; }
 .ex-fb .pz-grid { font-size: 1.25em; }
 .print-doc .pz-grid { font-size: 1.1em; }
 @media (max-width: 420px) { .pz-grid { font-size: 1.35em; } .pz-pad { grid-template-columns: repeat(6, 1fr); } }
+
+/* Fiches : figures légendées côte à côte (nommer un angle, demi-droites graduées) */
+.p2-figgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 10px 0 14px; }
+.p2-figgrid figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.p2-figgrid figcaption { font-size: .95em; line-height: 1.45; }
+.p2-figgrid.hl-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }

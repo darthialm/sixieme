@@ -2536,9 +2536,11 @@ function renderDec2Fiche() {
   const box = (id) => document.getElementById(id);
   const set = (id, html) => { if (box(id)) box(id).innerHTML = html; };
   set('hl-intro', drawHalfLine({ a: 0, s: 1, k: 0, n: 7, every: 1, origin: true, points: [{ i: 4, label: 'A' }] }));
-  set('hl-m1a', drawHalfLine({ a: 12, s: 1, k: 0, n: 6, every: 1, points: [{ i: 1, label: 'A' }, { i: 2.5, label: 'B' }] }));
-  set('hl-m1b', drawHalfLine({ a: 12, s: 1, k: 0, n: 6, every: 1, points: [{ i: 1, label: 'A' }, { i: 2.5, label: 'B' }, { i: 3, label: 'D' }, { i: 5.5, label: 'E' }] }));
-  set('hl-m2', drawHalfLine({ a: 415, s: 1, k: 1, n: 19, every: 5, points: [{ i: 4, label: 'B' }, { i: 13, label: 'A' }, { i: 18, label: 'C' }] }));
+  set('hl-pas', drawHalfLine({ a: 70, s: 1, k: 1, n: 13, every: 10 }));
+  if (box('hl-pas')) intervalOverlay(box('hl-pas'), { n: 13 }, 0, 10);
+  set('hl-lire', drawHalfLine({ a: 70, s: 1, k: 1, n: 20, every: 10, points: [{ i: 3, label: 'A' }, { i: 16, label: 'B' }] }));
+  set('hl-unite', drawHalfLine({ a: 12, s: 1, k: 0, n: 5, every: 1, points: [{ i: 2.5, label: 'C' }] }));
+  set('hl-cent', drawHalfLine({ a: 230, s: 1, k: 2, n: 13, every: 10, points: [{ i: 4, label: 'D' }] }));
   set('hl-enc1', drawHalfLine({ a: 51, s: 1, k: 0, n: 10, every: 1, points: [{ i: 5.7, label: '56,7' }] }));
   set('hl-enc2', drawHalfLine({ a: 561, s: 1, k: 1, n: 10, every: 10, labelAll: true, small: true, points: [{ i: 6.3, label: '56,73' }] }));
   document.querySelectorAll('[data-arr]').forEach((el) => { const [m, k, p] = el.dataset.arr.split(',').map(Number); el.innerHTML = arrDemo(m, k, p); });

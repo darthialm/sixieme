@@ -1,3 +1,33 @@
+MISE À JOUR 2026-11-11 : fiches « Demi-droite graduée » et « Les angles »
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
+  index.html, script.js, chapitres-p2.js, chapitres-p2.css, questions-difficiles.js
+
+CE QUI CHANGE :
+- Chapitre 4, fiche partie 1 : la demi-droite graduée est réexpliquée sans « a) / b) ».
+  Méthode 1 : trouver ce que vaut une case (cases numérotées en orange, piège cases / traits).
+  Méthode 2 : lire et placer un point en avançant case par case. Puis deux exemples
+  (graduation de 1 avec un milieu, graduation de 0,01) et une ligne pour les fractions.
+- Chapitre 6, fiche partie 1 : « Nommer un angle » uniquement avec des figures légendées
+  (plusieurs points sur un même côté, trois angles de même sommet, deux angles qui forment
+  un angle plat, angle dans un triangle). On dit « ont la même mesure ».
+- Chapitre 6, fiche partie 5 : la bissectrice est définie avec une figure codée
+  (deux angles de même mesure), puis la construction animée.
+- Question ★ « Nommer un angle » : « ont-ils la même mesure ? » au lieu de « sont-ils le même angle ? ».
+- Exercice « Nommer un angle » : toutes les questions ont une figure (angle dans un triangle,
+  plusieurs points sur un même côté, « comment s'appelle l'angle bleu ? » avec trois demi-droites).
+- Exercice « Bissectrice », question de calcul : avec une figure codée (deux arcs de même mesure).
+- Sur les figures d'angles, la lettre du sommet est écrite à l'extérieur de l'angle.
+
+PROGRESSION DES ÉLÈVES : inchangée.
+ATTENTION : les questions « Nommer un angle » et « Bissectrice » des contrôles papier du chapitre 6
+sont tirées autrement. Le chapitre étant encore fermé aux élèves, aucun sujet ne devrait déjà être
+imprimé ; sinon, réimprimer ces sujets.
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-10.2 : « Poser et calculer » (opérations posées pour de vrai)
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :

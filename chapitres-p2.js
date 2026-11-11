@@ -517,7 +517,7 @@ function angleFig(a1, a2, names, { len = 3.6, arc = true, arcCls = 'f-arcm', lab
   if (label) items.push(arcLabel(V, u, v, label, 1.35));
   const [n1, nV, n2] = names;
   const pts = { [nV]: V, [n1]: P1, [n2]: P2 };
-  return figure(pts, items.concat(extra), { marks: { [nV]: 'none', [n1]: { dash: u }, [n2]: { dash: v } }, extra: [G.mul(u, len), G.mul(v, len), { x: -1, y: -1 }, { x: 1, y: 1 }], pad: 0.7, center: G.mul(G.norm(G.add(u, v)), -2) });
+  return figure(pts, items.concat(extra), { marks: { [nV]: 'none', [n1]: { dash: u }, [n2]: { dash: v } }, extra: [G.mul(u, len), G.mul(v, len), { x: -1, y: -1 }, { x: 1, y: 1 }], pad: 0.7, center: G.mul(G.norm(G.add(u, v)), 2) });
 }
 /** triangle pour les questions de vocabulaire (sommets nommés) */
 function randTriangle(minAng = 30) {
@@ -531,7 +531,7 @@ function randTriangle(minAng = 30) {
 /* ---------- 1. Nommer un angle ---------- */
 function genAngNom() {
   const ns = pickNames3(), v = rand(0, 2);
-  const hints = [`Relis « Définition et notation » dans ${ficheLink('angles')}. Où se place la lettre du sommet ?`, 'Outil : le sommet de l\'angle s\'écrit <b>au milieu</b>, entre une lettre de chaque côté.'];
+  const hints = [`Relis « Nommer un angle » dans ${ficheLink('angles')}. Où se place la lettre du sommet ?`, 'Outil : le sommet de l\'angle s\'écrit <b>au milieu</b>, entre une lettre de chaque côté.'];
   if (v === 0) {
     const P = randTriangle(35), i = rand(0, 2), j = (i + 1) % 3, k = (i + 2) % 3;
     const V = P[i], items = [F2.seg(P[0], P[1]), F2.seg(P[1], P[2]), F2.seg(P[2], P[0]), arcMark(V, G.sub(P[j], V), G.sub(P[k], V), 0.75, 'f-arcm f-arc-red')];
@@ -542,15 +542,29 @@ function genAngNom() {
       `Le sommet de l'angle rouge est ${ns[i]} : il s'écrit au milieu. L'angle se nomme ${angN(good1)} ou ${angN(good2)}.`,
       () => `Le sommet de l'angle rouge est <b>${ns[i]}</b> : sa lettre doit être <b>au milieu</b> du nom.`), hints);
   }
+  const V = { x: 0, y: 0 }, a1 = rand(-15, 15);
+  const mk = (pts, items, marks, dirs) => figure(pts, items, { marks, extra: dirs.map((d) => G.mul(d, 4)).concat([{ x: -1, y: 1 }]), pad: 0.7, center: G.mul(G.norm(dirs.reduce((p, d) => G.add(p, d), { x: 0, y: 0 })), 2) });
   if (v === 1) {
-    const nm = ns.join('');
-    const o = mcq(`<p class="statement">Quel est le sommet de l'angle ${angN(nm)} ?</p>`, [ns[0], ns[1], ns[2]], 1, `Dans ${angN(nm)}, la lettre du milieu est ${ns[1]} : le sommet est <b>${ns[1]}</b>.`, { keepOrder: true });
-    return withRemed(withHints(o, hints), () => 'Le sommet est toujours la lettre <b>du milieu</b>.');
+    // plusieurs points sur un même côté
+    const [nV, P1, P2, Q] = [ns[1], ns[0], pick(['D', 'E', 'G', 'H'].filter((x) => !ns.includes(x))), ns[2]];
+    const u = polar(a1), w = polar(a1 + rand(50, 75));
+    const fig = mk({ [nV]: V, [P1]: G.mul(u, 1.8), [P2]: G.mul(u, 3.3), [Q]: G.mul(w, 2.8) }, [F2.seg(V, G.mul(u, 4)), F2.seg(V, G.mul(w, 4)), arcMark(V, u, w, 0.75, 'f-arcm f-arc-red')],
+      { [nV]: 'none', [P1]: { dash: u }, [P2]: { dash: u }, [Q]: { dash: w } }, [u, w]);
+    const items2 = shuffle([{ html: angN(P1 + nV + Q), ok: true }, { html: angN(Q + nV + P2), ok: true }, { html: angN(nV + P1 + Q), ok: false, why: 'le sommet doit être au milieu du nom.' }, { html: angN(P1 + Q + nV), ok: false, why: `le sommet de l'angle rouge est ${nV}.` }]);
+    return withHints(multiQ(`<p>Coche <b>tous</b> les noms possibles de l'angle marqué en rouge.</p>${fig}`, items2,
+      `Le sommet est ${nV}. ${P1} et ${P2} sont sur le même côté : ${angN(P1 + nV + Q)} et ${angN(P2 + nV + Q)} ont la même mesure, ce sont deux noms de l'angle rouge.`,
+      (_k, it) => `${it.html} : ${it.why}`), hints);
   }
-  const nm = ns.join('');
-  const opts = [`[${ns[1]}${ns[0]}) et [${ns[1]}${ns[2]})`, `[${ns[0]}${ns[1]}) et [${ns[0]}${ns[2]})`, `[${ns[0]}${ns[1]}] et [${ns[1]}${ns[2]}]`, `(${ns[0]}${ns[1]}) et (${ns[1]}${ns[2]})`];
-  const o = mcq(`<p class="statement">Quels sont les côtés de l'angle ${angN(nm)} ?</p>`, opts, 0, `Les côtés d'un angle sont deux <b>demi-droites</b> qui partent du sommet ${ns[1]} : [${ns[1]}${ns[0]}) et [${ns[1]}${ns[2]}).`, { col: true });
-  return withRemed(withHints(o, hints), (i) => (i === 1 ? `Les côtés partent du <b>sommet</b>, ici ${ns[1]} (la lettre du milieu).` : 'Un angle est délimité par deux <b>demi-droites</b> de même origine : ce ne sont ni des segments, ni des droites.'));
+  // trois angles de même sommet : lequel est le bleu ?
+  const [nO, A, B, C] = [ns[1], ns[0], pick(['D', 'E', 'G', 'H'].filter((x) => !ns.includes(x))), ns[2]];
+  const u = polar(a1), w1 = polar(a1 + rand(40, 60)), w2 = polar(a1 + rand(105, 135)), blueFirst = Math.random() < 0.5;
+  const fig = mk({ [nO]: V, [A]: G.mul(u, 3), [B]: G.mul(w1, 3), [C]: G.mul(w2, 3) }, [F2.seg(V, G.mul(u, 4)), F2.seg(V, G.mul(w1, 4)), F2.seg(V, G.mul(w2, 4)),
+    arcMark(V, u, w1, 0.8, `f-arcm ${blueFirst ? 'f-arc-blue' : 'f-arc-red'}`), arcMark(V, w1, w2, 1.05, `f-arcm ${blueFirst ? 'f-arc-red' : 'f-arc-blue'}`)],
+    { [nO]: 'none', [A]: { dash: u }, [B]: { dash: w1 }, [C]: { dash: w2 } }, [u, w1, w2]);
+  const good = blueFirst ? A + nO + B : B + nO + C, other = blueFirst ? B + nO + C : A + nO + B;
+  const opts = [angN(good), angN(other), angN(A + nO + C), angN(nO + good[0] + good[2])];
+  const o = mcq(`<p>Comment s'appelle l'angle marqué en <b>bleu</b> ?</p>${fig}`, opts, 0, `L'angle bleu a pour sommet ${nO} et pour côtés [${nO}${good[0]}) et [${nO}${good[2]}) : c'est ${angN(good)}.`);
+  return withRemed(withHints(o, hints), (i) => (i === 1 ? `Ça, c'est l'angle <b>rouge</b>. Regarde quelles demi-droites délimitent l'angle bleu.` : i === 2 ? `Cet angle a pour côtés [${nO}${A}) et [${nO}${C}) : c'est le grand angle, rouge et bleu ensemble.` : 'Le sommet doit être <b>au milieu</b> du nom.'));
 }
 
 /* ---------- 2. Nature d'un angle ---------- */
@@ -744,6 +758,19 @@ function genAngReco() {
 }
 
 /* ---------- 7. La bissectrice ---------- */
+/** petit trait en travers d'un arc (codage d'angles de même mesure) */
+const arcTick = (V, d, r, cls = 'f-arcm f-arc-red') => { const p = G.add(V, G.mul(G.norm(d), r)), q = G.mul(G.norm(d), 0.16); return F2.seg(G.sub(p, q), G.add(p, q), cls); };
+/** figure d'une bissectrice codée : x, y, z ; known = mesure de l'angle entier (on demande la moitié) ou de la moitié (on demande l'angle entier) */
+function bissFig(nO, half, askHalf) {
+  const V = { x: 0, y: 0 }, b = rand(-10, 10), u = polar(b), v = polar(b + 2 * half), z = polar(b + half), L = 4.2;
+  const items = [F2.seg(V, G.mul(u, L)), F2.seg(V, G.mul(v, L)), F2.seg(V, G.mul(z, L), 'f-seg f-blue'),
+    arcMark(V, u, z, 1.1, 'f-arcm f-arc-red'), arcMark(V, z, v, 1.1, 'f-arcm f-arc-red'), arcTick(V, polar(b + half / 2), 1.1), arcTick(V, polar(b + 1.5 * half), 1.1),
+    F2.text(G.add(G.mul(u, L), G.mul(G.perp(u), -0.4)), 'x', 'f-lname'), F2.text(G.add(G.mul(v, L), G.mul(G.perp(v), 0.4)), 'y', 'f-lname'), F2.text(G.add(G.mul(z, L), G.mul(G.perp(z), -0.4)), 'z', 'f-lname')];
+  if (askHalf) items.push(arcLabel(V, u, z, '?', 1.75, 'f-len f-blue-t'));
+  else items.push(arcLabel(V, u, z, deg(half), 1.9), arcMark(V, u, v, 2.7, 'f-arcm f-arc-blue'), F2.text(polar(b + 1.6 * half, 3.15), '?', 'f-len f-blue-t'));
+  return figure({ [nO]: V }, items, { marks: { [nO]: 'none' }, extra: [G.mul(u, L), G.mul(v, L), G.mul(z, L), { x: -0.8, y: 0.8 }, { x: 0.8, y: 0.8 }], pad: 0.6, center: G.mul(z, 2) });
+}
+
 function sceneBiss(K, ux, m, nK = 'K', sg = -1) {
   const n = G.mul(G.perp(ux), sg), uy = G.rot(ux, sg * m), uz = G.rot(ux, (sg * m) / 2);
   const X = G.add(K, G.mul(ux, 6)), Y = G.add(K, G.mul(uy, 5.5)), Z = G.add(K, G.mul(uz, 6)), Mk = G.add(K, G.mul(uz, 3));
@@ -762,12 +789,13 @@ function sceneBiss(K, ux, m, nK = 'K', sg = -1) {
 function genAngBiss() {
   if (Math.random() < 0.4) {
     const half = rand(12, 80), toHalf = Math.random() < 0.6, nO = pick(['O', 'A', 'K']);
-    const q = toHalf ? `[${nO}z) est la bissectrice de l'angle ${angN('x' + nO + 'y')}, et ${angN('x' + nO + 'y')} = ${deg(2 * half)}.` : `[${nO}z) est la bissectrice de l'angle ${angN('x' + nO + 'y')}, et ${angN('x' + nO + 'z')} = ${deg(half)}.`;
     const askN = toHalf ? 'x' + nO + 'z' : 'x' + nO + 'y', ans = toHalf ? half : 2 * half;
+    const fig = bissFig(nO, half, toHalf);
+    const q = `Sur la figure, [${nO}z) est la bissectrice de l'angle ${angN('x' + nO + 'y')}.${toHalf ? ` On sait que ${angN('x' + nO + 'y')} = ${deg(2 * half)}.` : ''}`;
     return {
-      hints: [`Relis la définition de la bissectrice dans ${ficheLink('angles')}.`, 'Outil : la bissectrice partage l\'angle en <b>deux angles de même mesure</b>.'],
+      hints: [`Relis la définition de la bissectrice dans ${ficheLink('angles')}.`, `Outil : la bissectrice partage l'angle en <b>deux angles de même mesure</b> : les deux arcs rouges ont le même codage.`],
       remediate(r) { const y = val(r); if (!y || eq(y.value, ans)) return null; if (eq(y.value, toHalf ? 2 * half : half)) return toHalf ? `${angN('x' + nO + 'z')} n'est que la moitié de ${angN('x' + nO + 'y')}.` : `${angN('x' + nO + 'y')} est l'angle entier : il vaut deux fois ${angN('x' + nO + 'z')}.`; return null; },
-      q: `<p class="statement">${q}</p><p class="big">${angN(askN)} = ${inp('num', 'Mesure')} °</p>`,
+      q: `<p class="statement">${q}</p>${fig}<p class="big">${angN(askN)} = ${inp('num', 'Mesure')} °</p>`,
       check(r) { const y = val(r); if (!y) return null; const ok = eq(y.value, ans); markInput(r, 0, ok); return { ok, msg: toHalf ? `La bissectrice partage l'angle en deux : ${deg(2 * half)} : 2 = <b>${deg(half)}</b>.` : `L'angle entier vaut deux fois la moitié : 2 × ${deg(half)} = <b>${deg(2 * half)}</b>.` }; },
     };
   }
@@ -1268,7 +1296,31 @@ function renderP2Fiches() {
   set('o-pose-add', `<div class="p2-row">${poseAddHTML(dv(476, 1), dv(2835, 2), '+')}${poseAddHTML(dv(632, 1), dv(2547, 2), '−')}</div>`);
   set('o-pose-mul', poseMulHTML(dv(364, 1), dv(25, 1)));
   // Angles
-  set('a-def', angleFig(10, 70, ['A', 'B', 'C'], { len: 3.4 }));
+  set('a-def', angleFig(10, 70, ['A', 'B', 'C'], { len: 3.4, arcCls: 'f-arcm f-arc-red' }));
+  { // plusieurs points sur les côtés
+    const V = { x: 0, y: 0 }, u = polar(10), v = polar(70), L = 4;
+    set('a-nom-plus', figure({ B: V, A: G.mul(u, 1.8), D: G.mul(u, 3.3), C: G.mul(v, 1.8), E: G.mul(v, 3.3) }, [F2.seg(V, G.mul(u, L)), F2.seg(V, G.mul(v, L)), arcMark(V, u, v, 0.7, 'f-arcm f-arc-red')],
+      { marks: { B: 'none', A: { dash: u }, D: { dash: u }, C: { dash: v }, E: { dash: v } }, extra: [G.mul(u, L), G.mul(v, L), { x: -1, y: 1 }], pad: 0.7, center: G.mul(G.norm(G.add(u, v)), 2) }));
+  }
+  { // trois angles de même sommet
+    const V = { x: 0, y: 0 }, u = polar(0), v = polar(50), w = polar(115), L = 3.6;
+    set('a-nom-3', figure({ O: V, A: G.mul(u, 3), B: G.mul(v, 3), C: G.mul(w, 3) }, [F2.seg(V, G.mul(u, L)), F2.seg(V, G.mul(v, L)), F2.seg(V, G.mul(w, L)), arcMark(V, u, v, 0.8, 'f-arcm f-arc-red'), arcMark(V, v, w, 1.05, 'f-arcm f-arc-blue')],
+      { marks: { O: 'none', A: { dash: u }, B: { dash: v }, C: { dash: w } }, extra: [G.mul(u, L), G.mul(v, L), G.mul(w, L), { x: -1, y: 1 }], pad: 0.7, center: { x: 1, y: -2 } }));
+  }
+  { // deux angles qui forment un angle plat
+    const V = { x: 0, y: 0 }, u = polar(180), v = polar(0), w = polar(65), L = 3.4;
+    set('a-nom-plat', figure({ B: V, A: G.mul(u, 2.8), D: G.mul(v, 2.8), C: G.mul(w, 2.8) }, [F2.seg(G.mul(u, L), G.mul(v, L)), F2.seg(V, G.mul(w, L)), arcMark(V, u, w, 0.75, 'f-arcm f-arc-red'), arcMark(V, w, v, 0.95, 'f-arcm f-arc-blue')],
+      { marks: { B: 'none', A: { dash: u }, D: { dash: v }, C: { dash: w } }, extra: [G.mul(u, L), G.mul(v, L), G.mul(w, L), { x: 0, y: 0.9 }], pad: 0.6, center: { x: 0, y: -1 } }));
+  }
+  { const A = { x: 0, y: 0 }, B = { x: 5, y: 0.4 }, C = { x: 1.6, y: -3.2 }; set('a-nom-tri', triFig({ A, B, C }, [arcMark(A, G.sub(B, A), G.sub(C, A), 0.7, 'f-arcm f-arc-red')])); }
+  { // définition de la bissectrice : deux angles codés pareil
+    const V = { x: 0, y: 0 }, u = polar(0), v = polar(70), z = polar(35), L = 4.2;
+    const tickArc = (d, r) => { const p = G.mul(d, r); const q = G.mul(G.norm(d), 0.16); return F2.seg(G.sub(p, q), G.add(p, q), 'f-arcm f-arc-red'); };
+    set('a-biss-def', figure({ A: V }, [F2.seg(V, G.mul(u, L)), F2.seg(V, G.mul(v, L)), F2.seg(V, G.mul(z, L), 'f-seg f-blue'),
+      arcMark(V, u, z, 1.1, 'f-arcm f-arc-red'), arcMark(V, z, v, 1.1, 'f-arcm f-arc-red'), tickArc(polar(17.5), 1.1), tickArc(polar(52.5), 1.1),
+      F2.text(G.add(G.mul(u, L), { x: 0, y: 0.4 }), 'x', 'f-lname'), F2.text(G.add(G.mul(v, L), { x: -0.4, y: 0 }), 'y', 'f-lname'), F2.text(G.add(G.mul(z, L), { x: 0.15, y: -0.35 }), 'z', 'f-lname')],
+      { marks: { A: 'none' }, extra: [G.mul(u, L), G.mul(v, L), G.mul(z, L), { x: -0.8, y: 0.8 }], pad: 0.5, center: { x: 1, y: -1 } }));
+  }
   set('a-nat-aigu', angleFig(0, 50, ['', '', ''].map((_, i) => '_' + i), { len: 2.6 }));
   set('a-nat-droit', angleFig(0, 90, ['_a', '_b', '_c'], { len: 2.6, right: true }));
   set('a-nat-obtus', angleFig(0, 130, ['_a', '_b', '_c'], { len: 2.6 }));

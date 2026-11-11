@@ -114,12 +114,12 @@
   const named = (fn) => { const v = pick(['A', 'B', 'K', 'M', 'O', 'S']), rest = shuffle(['C', 'D', 'E', 'F', 'G', 'H', 'L', 'N', 'P', 'R', 'T'].filter((x) => x !== v)); return fn(v, rest); };
 
   function angNomH() {
-    const hints = [`Relis « Définition et notation » dans ${ficheLink('angles')}.`, 'Outil : le sommet s\'écrit au milieu. Deux points situés sur le même côté donnent le même angle.'];
+    const hints = [`Relis « Définition et notation » dans ${ficheLink('angles')}.`, 'Outil : le sommet s\'écrit au milieu. Deux points situés sur le même côté donnent des angles de même mesure.'];
     return named((nV, [P1n, P2n, Qn, Rn]) => {
       if (Math.random() < 0.3) {
         const same = Math.random() < 0.5;
-        const o = mcq(`<p class="statement">${same ? `Les points ${P1n} et ${P2n} sont sur la demi-droite [${nV}${Qn}).` : `Le point ${nV} est sur le segment [${P1n}${P2n}].`} Les angles ${angN(P1n + nV + Rn)} et ${angN(P2n + nV + Rn)} sont-ils le même angle ?</p>`, ['Oui', 'Non', 'On ne peut pas savoir'], same ? 0 : 1,
-          same ? `${P1n} et ${P2n} sont sur le même côté de l'angle de sommet ${nV} : c'est <b>le même angle</b>, avec deux noms.` : `${P1n} et ${P2n} sont de part et d'autre de ${nV} : ce sont <b>deux angles différents</b>. Ensemble, ils forment un angle plat.`, { keepOrder: true });
+        const o = mcq(`<p class="statement">${same ? `Les points ${P1n} et ${P2n} sont sur la demi-droite [${nV}${Qn}).` : `Le point ${nV} est sur le segment [${P1n}${P2n}] et l'angle ${angN(P1n + nV + Rn)} est aigu.`} Les angles ${angN(P1n + nV + Rn)} et ${angN(P2n + nV + Rn)} ont-ils la même mesure ?</p>`, ['Oui', 'Non', 'On ne peut pas savoir'], same ? 0 : 1,
+          same ? `${P1n} et ${P2n} sont sur le même côté de l'angle de sommet ${nV} : les deux angles ont <b>la même mesure</b> (ce sont deux noms de l'angle de sommet ${nV}).` : `${P1n} et ${P2n} sont de part et d'autre de ${nV} : ensemble, les deux angles forment un angle plat (180°). L'un est aigu, donc l'autre est obtus : ils n'ont <b>pas la même mesure</b>.`, { keepOrder: true });
         return withHints(o, hints);
       }
       const a1 = rand(-20, 10), a2 = a1 + rand(48, 65), a3 = a2 + rand(42, 58), V = { x: 0, y: 0 };
