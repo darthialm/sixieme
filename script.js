@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-10.2';
+const SITE_VERSION = '2026-11-12';
 
 /* =========================================================
    Outils
@@ -69,6 +69,50 @@ function inp(kind = 'frac', label = 'Réponse') {
 }
 const val = (root, i = 0) => parse(root.querySelectorAll('.ans')[i]?.value);
 const markInput = (root, i, ok) => root.querySelectorAll('.ans')[i]?.classList.add(ok ? 'right' : 'wrong');
+
+/** « Tes chiffres sont bons, regarde la virgule » : raw = ce que l'élève a tapé ; isOk(texte) dit si un autre texte serait juste.
+    On essaie les mêmes chiffres avec la virgule ailleurs (ou sans virgule, ou avec des zéros en plus). Ne donne jamais la réponse. */
+function commaDiag(raw, isOk) {
+  const s = String(raw ?? '').trim().replace(/[\s  ]/g, '').replace(/\./g, ',');
+  if (!/^\d+(,\d+)?$/.test(s) || !/[1-9]/.test(s)) return null;
+  const had = s.includes(','), me = parse(s).value;
+  const D = s.replace(',', '').replace(/^0+(?=\d)/, '');
+  const cands = [];
+  for (let p = 1; p <= D.length; p++) cands.push([D.slice(0, p) + (p < D.length ? ',' + D.slice(p) : ''), false]);
+  for (let z = 0; z <= 3; z++) cands.push(['0,' + '0'.repeat(z) + D, z > 0]);
+  for (let z = 1; z <= 3; z++) cands.push([D + '0'.repeat(z), 'end']);
+  for (const [c, zeros] of cands) {
+    const v = parse(c); if (!v || Math.abs(v.value - me) < 1e-9) continue;
+    let ok = false; try { ok = !!isOk(c); } catch (e) { ok = false; }
+    if (!ok) continue;
+    const tail = ' Où doit-elle se placer ? Vérifie avec un <b>ordre de grandeur</b> : ton résultat est-il raisonnable ?';
+    if (zeros === 'end') return `Presque ! ${had ? 'Regarde <b>la virgule</b> et les <b>zéros</b>' : 'As-tu oublié un ou des <b>zéros</b> à la fin'} ? Vérifie avec un <b>ordre de grandeur</b> : ton résultat est-il raisonnable ?`;
+    if (!had) return `Tes chiffres sont les bons, mais tu as <b>oublié la virgule</b> !${zeros ? ' (Attention aussi aux zéros.)' : ''}${tail}`;
+    if (!c.includes(',')) return 'Tes chiffres sont les bons, mais regarde <b>la virgule</b> : en faut-il vraiment une ici ?';
+    return `Tes chiffres sont les bons, mais <b>la virgule</b> n'est pas au bon endroit.${zeros ? ' (Attention aussi aux zéros.)' : ''}${tail}`;
+  }
+  return null;
+}
+/** Essai « à blanc » d'une question à cases (.ans) : la virgule est-elle la seule erreur ? */
+function commaProbe(cur, qEl) {
+  if (!cur || !cur.check || qEl._pz) return null;
+  const ins = [...qEl.querySelectorAll('input.ans')];
+  if (!ins.length || ins.length > 6) return null;
+  try { const cl = qEl.cloneNode(true); const ci = [...cl.querySelectorAll('input.ans')]; ins.forEach((x, j) => { if (ci[j]) ci[j].value = x.value; }); const r0 = cur.check(cl); if (!r0 || r0.ok || r0.retry) return null; } catch (e) { return null; }
+  for (let i = 0; i < ins.length; i++) {
+    if (!/\d/.test(ins[i].value)) continue;
+    const m = commaDiag(ins[i].value, (c) => {
+      const cl = qEl.cloneNode(true);
+      const ci = [...cl.querySelectorAll('input.ans')];
+      ins.forEach((x, j) => { if (ci[j]) ci[j].value = x.value; });
+      ci[i].value = c;
+      const res = cur.check(cl);
+      return res && res.ok && !res.retry;
+    });
+    if (m) return ins.length > 1 ? `Case n°${i + 1} : ${m}` : m;
+  }
+  return null;
+}
 const ficheLink = (ch, t = 'la fiche') => `<a href="#/${ch}/fiche">${t}</a>`;
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -2753,7 +2797,7 @@ function makeExercise(root, gen, opts = {}) {
   function filmButton() {
     const can = answered ? !!cur.anim : !!cur.example && !noHelp;
     bFilm.hidden = !can;
-    bFilm.textContent = answered ? '🎬 Voir la construction' : '🎬 Voir un exemple';
+    bFilm.textContent = answered ? (cur.animLabel || '🎬 Voir la construction') : '🎬 Voir un exemple';
   }
 
   function render(focus) {
@@ -2796,8 +2840,10 @@ function makeExercise(root, gen, opts = {}) {
 
   function check() {
     if (answered || cur.empty) return;
-    if (!noHelp && tries === 0 && cur.remediate) {
-      const m = cur.remediate(qEl);
+    const cm = noHelp ? null : commaProbe(cur, qEl);
+    if (!noHelp && tries === 0 && (cur.remediate || cm)) {
+      const m0 = cur.remediate ? cur.remediate(qEl) : null;
+      const m = m0 && /virgule/i.test(m0) ? m0 : cm || m0;
       if (m) {
         tries = 1;
         fb.className = 'ex-fb remed';
@@ -2822,7 +2868,8 @@ function makeExercise(root, gen, opts = {}) {
     qEl.querySelectorAll('input').forEach((i) => { i.disabled = true; });
     fb.className = 'ex-fb ' + (res.ok ? 'ok' : 'ko');
     const head = res.ok ? (h ? '<strong>✔ Bravo, avec un peu d\'aide !</strong> ' : '<strong>✔ Bravo !</strong> ') : '<strong>✘ Pas tout à fait.</strong> ';
-    fb.innerHTML = head + res.msg + (w && !noHelp ? weakNote[w](label()) : '');
+    const cmNote = !res.ok && cm && !/virgule/i.test(res.msg || '') ? '<p class="small">💡 Tes chiffres étaient les bons : c\'est <b>la virgule</b> qui n\'allait pas.</p>' : '';
+    fb.innerHTML = head + res.msg + cmNote + (w && !noHelp ? weakNote[w](label()) : '');
     bCheck.disabled = true;
     filmButton();
     hintButton();
@@ -4103,6 +4150,7 @@ function paperHTML(html) {
   // rapporteur à lire : figure plus grande, pour lire les graduations
   if (/rapporteur/i.test(d.textContent)) d.querySelectorAll('svg.fig').forEach((f) => f.classList.add('fig-big'));
   // opération à poser (poser.js) : un cadre quadrillé à la place de la grille
+  d.querySelectorAll('.pz-dir').forEach((h) => h.remove());
   d.querySelectorAll('.pz-host').forEach((h) => { const w = document.createElement('div'); w.className = 'work tall'; h.replaceWith(w); });
   // « sur ton cahier » : sur la copie, un cadre quadrillé pour poser l'opération ou écrire les étapes
   const cahier = [...d.querySelectorAll('p')].find((x) => /sur ton cahier/.test(x.textContent));

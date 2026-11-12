@@ -598,7 +598,45 @@ function protractorScene(m) {
   const P1 = G.mul(s1, L - 0.3), P2 = G.mul(s2, L - 0.3);
   const items = [protractorDraw(V, b, nUp, 3.1), F2.seg(V, G.mul(s1, L), 'f-seg f-thick'), F2.seg(V, G.mul(s2, L), 'f-seg f-thick')];
   const fig = figure({ [ns[1]]: V, [ns[0]]: P1, [ns[2]]: P2 }, items, { marks: { [ns[1]]: 'none', [ns[0]]: { dash: s1 }, [ns[2]]: { dash: s2 } }, extra: [G.mul(b, 3.6), G.mul(b, -3.6), G.mul(nUp, 3.5), G.mul(nUp, -0.6)], pad: 0.6, center: G.mul(nUp, -2), cls: 'p2-protfig' });
-  return { ns, fig, flip };
+  return { ns, fig, flip, s1, nUp };
+}
+/** Animation pas à pas : placer le rapporteur et lire une mesure.
+    V sommet, s1 direction du côté de départ [VA), m mesure, ns = [A, V, B] ; inner : le 0 est sur la graduation intérieure ;
+    sg = -1 : le côté [VB) est au-dessus de [VA) à l'écran */
+function sceneMesure(V, s1, m, ns = ['T', 'S', 'R'], { inner = false, sg = -1, n: nG = null } = {}) {
+  s1 = G.norm(s1);
+  const n = nG ? G.norm(nG) : G.mul(G.perp(s1), sg), rad = (d) => (d * Math.PI) / 180;
+  const dirAt = (d) => G.add(G.mul(s1, Math.cos(rad(d))), G.mul(n, Math.sin(rad(d))));
+  const s2 = dirAt(m), L = 4.6, R = 3.1;
+  const A = G.add(V, G.mul(s1, L - 0.3)), B = G.add(V, G.mul(s2, L - 0.3));
+  const b = inner ? G.mul(s1, -1) : s1; // le 0 de la graduation extérieure est dans la direction b
+  const C0 = G.add(V, G.add(G.mul(s1, -4.3), G.mul(n, -0.9))), ROT0 = 25 * (G.cross(s1, n) < 0 ? 1 : -1);
+  const prot = (C, a) => protractorDraw(C, G.rot(b, a), G.rot(n, a), R);
+  const [nA, nV, nB] = ns, ang = angN(nA + nV + nB);
+  const bis = G.norm(G.add(s1, s2));
+  const rr = inner ? R - 0.95 : R - 0.52;
+  const follow = (u) => { let d = ''; const k = Math.max(2, Math.round(30 * u)); for (let i = 0; i <= k; i++) { const p = G.add(V, G.mul(dirAt((m * u * i) / k), rr)); d += `${i ? 'L' : 'M'}${p.x.toFixed(3)} ${p.y.toFixed(3)} `; } return `<path d="${d}" class="a-follow"/>`; };
+  const side = (dir, cls) => F2.seg(V, G.add(V, G.mul(dir, L)), cls);
+  const zero = () => { const p = G.add(V, G.mul(s1, rr)); return `<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="0.34" class="a-ring"/>`; };
+  const read = () => { const p = G.add(V, G.mul(s2, rr)); return `<circle cx="${p.x.toFixed(3)}" cy="${p.y.toFixed(3)}" r="0.36" class="a-ring a-ring-ok"/>`; };
+  const nat = m < 90 ? 'aigu : sa mesure est bien plus petite que 90°' : 'obtus : sa mesure est bien plus grande que 90°';
+  return {
+    pts: [V, A, B, G.add(V, G.mul(s1, -3.4)), G.add(V, G.mul(n, 3.4)), G.add(V, G.mul(n, -0.6)), G.add(C0, G.mul(s1, -3.3)), G.add(C0, G.mul(n, 3.3)), G.add(C0, G.mul(n, -1))],
+    base: [side(s1, 'f-seg f-thick'), side(s2, 'f-seg f-thick'), ptSVG(nV, V, G.add(V, bis), 1, 'none'), ptSVG(nA, A, V, 1, { dash: s1 }), ptSVG(nB, B, V, 1, { dash: s2 })],
+    steps: [
+      { text: `Voici l'angle ${ang} à mesurer, et le rapporteur. Le <b>sommet</b> de l'angle est le point ${nV}.`, dur: 1800,
+        draw: (t, f) => (f ? '' : prot(C0, ROT0) + `<circle cx="${V.x}" cy="${V.y}" r="${(0.15 + 0.25 * Math.abs(Math.sin(t * Math.PI * 2))).toFixed(3)}" class="a-ring"/>`) },
+      { text: `1. On place le <b>centre</b> du rapporteur (le petit trou, ou la croix) exactement sur le sommet ${nV}.`, dur: 2200,
+        draw: (t, f) => (f ? '' : prot(G.add(C0, G.mul(G.sub(V, C0), t)), ROT0)) },
+      { text: `2. Sans bouger le centre, on <b>tourne</b> le rapporteur jusqu'à ce que la ligne du <b>0</b> soit sur le côté [${nV}${nA}).`, dur: 2200,
+        draw: (t, f) => (f ? '' : prot(V, ROT0 * (1 - t)) + (t > 0.85 ? side(s1, 'f-seg a-side') : '')) },
+      { text: `3. On cherche le <b>0</b> qui est sur [${nV}${nA}) : ici, c'est le 0 de la graduation <b>${inner ? 'intérieure' : 'extérieure'}</b>. On suit cette graduation : 0, 10, 20, 30…`, dur: 2600,
+        draw: (t, f) => (f ? '' : prot(V, 0) + side(s1, 'f-seg a-side') + zero() + follow(t)) },
+      { text: `4. On s'arrête sur l'autre côté [${nV}${nB}) et on lit : <b>${m}°</b>.`, dur: 1800,
+        draw: (t, f) => prot(V, 0) + side(s1, 'f-seg a-side') + side(s2, 'f-seg a-side2') + zero() + follow(1) + (t > 0.3 || f ? read() : '') },
+    ],
+    endText: `${ang} = ${m}°. On vérifie avec la nature : l'angle est ${nat}.`,
+  };
 }
 function genAngMesure() {
   let m; do { m = 5 * rand(4, 32); } while (m >= 80 && m <= 100);
@@ -611,9 +649,13 @@ function genAngMesure() {
     const o = mcq(`<p>Estime la mesure de l'angle ${nm(ns)}, sans rapporteur.</p>${fig}`, cand.map(deg), 0, `L'angle ${nm(ns)} mesure ${deg(m)} : il est ${NATS[natOf(m)]}${m < 90 ? ', donc moins de 90°' : ', donc plus de 90°'}.`);
     return withRemed(withHints(o, ['Outil : l\'angle est-il aigu ou obtus ? Compare-le à un angle droit (90°), puis à la moitié d\'un angle droit (45°).']), () => `Commence par la nature : l'angle est ${NATS[natOf(m)]}. Élimine les mesures impossibles.`);
   }
-  const { ns, fig, flip } = protractorScene(m);
+  const { ns, fig, flip, s1, nUp } = protractorScene(m);
+  let m2; do { m2 = 5 * rand(5, 31); } while (Math.abs(m2 - m) < 20 || (m2 >= 80 && m2 <= 100));
   return {
-    hints: [`Relis les 4 étapes « Utiliser le rapporteur » dans ${ficheLink('angles')}.`, `Outil : repère le côté [${ns[1]}${ns[0]}) : sur quelle graduation est-il à 0 ? ${flip ? 'Ici, le 0 est sur la graduation intérieure.' : 'Ici, le 0 est sur la graduation extérieure.'}`, `Outil : l'angle est ${NATS[natOf(m)]} : ta mesure doit être ${m < 90 ? 'plus petite' : 'plus grande'} que 90°.`],
+    animLabel: '🎬 Voir comment placer le rapporteur',
+    anim: () => sceneMesure({ x: 0, y: 0 }, s1, m, ns, { inner: flip, n: nUp }),
+    example: () => sceneMesure({ x: 0, y: 0 }, { x: 1, y: 0 }, m2, pickNames3(), { inner: Math.random() < 0.4 }),
+    hints: [`Relis les 4 étapes « Utiliser le rapporteur » dans ${ficheLink('angles')}, ou clique sur « 🎬 Voir un exemple » : le rapporteur se place pas à pas.`, `Outil : repère le côté [${ns[1]}${ns[0]}) : sur quelle graduation est-il à 0 ? ${flip ? 'Ici, le 0 est sur la graduation intérieure.' : 'Ici, le 0 est sur la graduation extérieure.'}`, `Outil : l'angle est ${NATS[natOf(m)]} : ta mesure doit être ${m < 90 ? 'plus petite' : 'plus grande'} que 90°.`],
     remediate(r) {
       const x = val(r); if (!x || eq(x.value, m)) return null;
       if (eq(x.value, 180 - m)) return `Tu as lu la mauvaise graduation. Suis celle qui part de <b>0</b> sur le côté [${ns[1]}${ns[0]}). Vérifie avec la nature : l'angle est ${NATS[natOf(m)]}.`;
@@ -1326,6 +1368,7 @@ function renderP2Fiches() {
   set('a-nat-obtus', angleFig(0, 130, ['_a', '_b', '_c'], { len: 2.6 }));
   set('a-nat-plat', angleFig(0, 180, ['_a', '_b', '_c'], { len: 2.6 }));
   { const { fig } = (() => { const V = { x: 0, y: 0 }, b = { x: 1, y: 0 }, n = { x: 0, y: -1 }, s2 = polar(48); const items = [protractorDraw(V, b, n, 3.1), F2.seg(V, { x: 4.2, y: 0 }, 'f-seg f-thick'), F2.seg(V, G.mul(s2, 4.2), 'f-seg f-thick')]; return { fig: figure({ S: V, T: { x: 3.9, y: 0 }, R: G.mul(s2, 3.9) }, items, { marks: { S: 'none', T: { dash: b }, R: { dash: s2 } }, extra: [{ x: -3.5, y: 0.6 }, { x: 4.4, y: -3.6 }], pad: 0.4, center: { x: 0, y: 2 }, cls: 'p2-protfig' }) }; })(); set('a-mesure', fig); }
+  if (box('a-anim-mesure')) makePlayer(box('a-anim-mesure'), sceneMesure({ x: 0, y: 0 }, { x: 1, y: 0 }, 48, ['T', 'S', 'R']), { atEnd: false });
   if (box('a-anim-construire')) makePlayer(box('a-anim-construire'), sceneAngle({ x: 0, y: 0 }, { x: 1, y: 0 }, 65, 'O', 'x', 'y'), { atEnd: true });
   { const V = { x: 0, y: 0 }; set('a-rel-adj', figure({ O: V }, [F2.seg(V, polar(0, 3)), F2.seg(V, polar(40, 3)), F2.seg(V, polar(95, 3)), arcMark(V, polar(0), polar(40), 0.7, 'f-arcm f-arc-red'), arcMark(V, polar(40), polar(95), 0.9, 'f-arcm f-arc-blue')], { marks: { O: 'none' }, extra: [polar(0, 3), polar(95, 3), { x: -0.6, y: 0.4 }], pad: 0.4 }));
     set('a-rel-opp', figure({ O: V }, [F2.seg(polar(20, 2.6), polar(200, 2.6)), F2.seg(polar(110, 2.6), polar(290, 2.6)), arcMark(V, polar(20), polar(110), 0.6, 'f-arcm f-arc-red'), arcMark(V, polar(200), polar(290), 0.6, 'f-arcm f-arc-red')], { marks: { O: 'none' }, pad: 0.3, extra: [polar(20, 2.6), polar(200, 2.6), polar(110, 2.6), polar(290, 2.6)] }));

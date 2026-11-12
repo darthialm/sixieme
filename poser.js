@@ -12,6 +12,7 @@
 (function () {
   const RET_KEY = 'revisions6e-retenues'; // 'haut' | 'droite' : simple préférence d'affichage
   const SUB_KEY = 'revisions6e-soustraction'; // méthode montrée dans la fiche
+  const DIR_KEY = 'revisions6e-pose-direct'; // '1' : l'élève pose sur son cahier et donne seulement le résultat
   const pref = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
   const setPref = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* rien */ } };
 
@@ -555,6 +556,28 @@
     const exK = op === '+' ? 'Exemple avec d\'autres nombres : 8,6 + 4,75. On écrit 8,60 au-dessus de 4,75, virgule sous virgule. Centièmes : 0 + 5 = 5. Dixièmes : 6 + 7 = 13 → on écrit 3 et on met une retenue 1 sur la colonne des unités. Unités : 1 + 8 + 4 = 13 → on barre la retenue et on écrit 13. Résultat : 13,35.'
       : op === '×' ? 'Exemple avec d\'autres nombres : 4,7 × 23. On pose 47 × 23, calés à droite. Ligne 1 : 47 × 3 = 141. Ligne 2 : on écrit un 0 à droite, puis 47 × 2 = 94 → 940. On additionne : 141 + 940 = 1 081. 4,7 a 1 chiffre après la virgule et 23 n\'en a pas : 1 chiffre après la virgule → 108,1.'
         : null;
+    const near = (x) => Math.abs(x - res) < 1e-9;
+    const directVal = (r) => parse(r.querySelector('.pz-dbox .ans')?.value);
+    /** remédiation quand l'élève donne seulement le résultat : on cherche l'erreur la plus probable, sans donner la réponse */
+    const directRemed = (v) => {
+      const cm = commaDiag(v.raw, (c) => near(parse(c).value)); if (cm) return cm;
+      if (op !== '×') {
+        const K = Math.max(a.k, b.k), mis = (op === '+' ? a.m + b.m : a.m - b.m) / P10(K);
+        if (a.k !== b.k && near(mis) === false && Math.abs(v.value - mis) < 1e-9) return 'Tu as calculé comme si les nombres étaient <b>alignés à droite</b>. Il faut aligner les <b>virgules</b> : unités sous unités, dixièmes sous dixièmes… Un nombre entier a sa virgule « cachée » après le chiffre des unités.';
+        if (op === '−' && Math.abs(v.value - (val(b) - val(a))) < 1e-9) return 'Dans une soustraction, le plus grand nombre s\'écrit <b>en haut</b>.';
+      }
+      const d = Math.abs(v.value - res);
+      for (let k = -3; k <= 5; k++) if (Math.abs(d - P10(k)) < 1e-9 * Math.max(1, P10(k))) {
+        return op === '−' ? 'Un seul chiffre est faux, de 1 : as-tu bien tenu compte du chiffre <b>cassé</b> (ou du <b>+1 en bas</b>) dans la colonne d\'à côté ?'
+          : 'Un seul chiffre est faux, de 1 : as-tu oublié une <b>retenue</b> (ou l\'as-tu comptée deux fois) ?';
+      }
+      const ra = Math.round(val(a)) || Math.round(val(a) * 10) / 10, rb = Math.round(val(b)) || Math.round(val(b) * 10) / 10;
+      const og = op === '+' ? ra + rb : op === '−' ? ra - rb : ra * rb;
+      const close = og > 0 && v.value > og * 0.6 && v.value < og * 1.6;
+      return (close ? 'Ton résultat a le bon <b>ordre de grandeur</b> : l\'erreur est dans un chiffre. Refais ton opération colonne par colonne, en partant de la droite.'
+        : `Vérifie avec un <b>ordre de grandeur</b> : ${fmt(ra)} ${op} ${fmt(rb)} = ${fmt(Math.round(og * 100) / 100)}. Ton résultat doit être proche de ça.`)
+        + ' Tu peux aussi poser l\'opération ici, dans la grille (bouton au-dessus).';
+    };
     let o;
     const subEx = () => (o?._mount?.st?.method === 'compensation'
       ? 'Exemple avec d\'autres nombres : 6,4 − 2,75. On écrit 6,40 au-dessus de 2,75. Centièmes : 0 − 5 impossible → petit 1 devant le 0 (10) et +1 sous le 7 (7 + 1 = 8) : 10 − 5 = 5. Dixièmes : 4 − 8 impossible → petit 1 devant le 4 (14) et +1 sous le 2 (3) : 14 − 8 = 6. Unités : 6 − 3 = 3. Résultat : 3,65.'
@@ -562,7 +585,7 @@
     o = {
       _forme: forme,
       _good: `${expr} = ${fmt(res)}`,
-      q: `<p class="statement">Pose et calcule : <b>${expr}</b></p><div class="pz-host"></div>`,
+      q: `<p class="statement">Pose et calcule : <b>${expr}</b></p><div class="pz-dir"><button type="button" class="mini pz-dtog"></button><p class="pz-dbox" hidden><span class="small muted">Pose l'opération sur ton cahier, puis écris le résultat :</span><br>${expr} = ${inp('num', 'Résultat')}</p></div><div class="pz-host"></div>`,
       hints: [
         op === '×' ? `Relis « Les calculs posés » dans ${ficheLink('operations')}. Dans une multiplication, est-ce qu'on aligne les virgules ? Quand s'occupe-t-on des virgules ?`
           : `Relis « Les calculs posés » dans ${ficheLink('operations')}. Qu'est-ce qu'on aligne quand on pose une ${op === '+' ? 'addition' : 'soustraction'} ? Par quelle colonne commence-t-on le calcul ?`,
@@ -573,9 +596,19 @@
       mount(r) {
         const host = r.querySelector('.pz-host'); if (!host) return;
         r._pz = createPose(host, spec); o._mount = r._pz;
+        const tog = r.querySelector('.pz-dtog'), box = r.querySelector('.pz-dbox');
+        const setDir = (on, save) => {
+          r._pz.direct = on; box.hidden = !on; host.hidden = on;
+          tog.textContent = on ? '▦ Je préfère poser l\'opération ici, dans la grille' : '✍️ J\'ai posé sur mon cahier : je donne juste le résultat';
+          if (save) setPref(DIR_KEY, on ? '1' : '0');
+          if (on && save) box.querySelector('.ans')?.focus({ preventScroll: true });
+        };
+        tog.addEventListener('click', () => { if (!r._pz.st.locked && !box.querySelector('.ans').disabled) setDir(!r._pz.direct, true); });
+        setDir(pref(DIR_KEY, '0') === '1', false);
       },
       remediate(r) {
         const p = r._pz; if (!p || p.st.locked) return null;
+        if (p.direct) { const v = directVal(r); return v && !near(v.value) ? directRemed(v) : null; }
         if (op === '−' && !p.st.method) return null;
         const ev = evaluate(p.st); if (ev.incomplete || ev.ok) return null;
         p.st.hl = new Set((ev.cols || []).filter((c) => c >= 0)); p.render();
@@ -583,6 +616,12 @@
       },
       check(r) {
         const p = r._pz; if (!p) return null;
+        if (p.direct) {
+          const v = directVal(r); if (!v) return null;
+          const ok = near(v.value); markInput(r, 0, ok);
+          p.st.locked = true; r.querySelector('.pz-dtog').disabled = true;
+          return { ok, msg: ok ? `${expr} = <b>${fmt(res)}</b>.` : `${expr} = <b>${fmt(res)}</b>. Voici l'opération posée :${corr(p.st)}` };
+        }
         const st = p.st;
         if (op === '−' && !st.method) return { retry: true, msg: 'Choisis d\'abord <b>ta façon</b> de faire la soustraction (touche une des deux images).' };
         const ev = evaluate(st); if (ev.incomplete) return null;

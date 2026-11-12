@@ -1,3 +1,31 @@
+MISE À JOUR 2026-11-12 : rapporteur animé, résultat direct, indice « virgule », progression, cours Angles
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
+  index.html, script.js, chapitres-p2.js, chapitres-p2.css, poser.js, classeur.html, documents.bin
+
+CE QUI CHANGE :
+- Cours Angles (classeur, élève et enseignant) : toutes les notations d'angle ont un chapeau (^) au lieu de l'arc.
+- Progression (classeur) :
+  séance Angles 2 : cahier d'activités ex. 1, 2 et 3 p. 84 (nommer), ex. 6 et 7 p. 85 (aigu, obtus) ;
+  séance Angles 3 : ex. 8 à 11 p. 85 (mesurer avec le rapporteur) ;
+  séance Angles 5 : ex. 12 à 17 p. 86 ;
+  séance Opérations 1 : encadré « À dire en classe » (2 × (5 + 2) est un produit : l'histoire du gâteau).
+- Site élève, opérations posées (Addition, Soustraction, Multiplication) : bouton
+  « J'ai posé sur mon cahier : je donne juste le résultat ». Le choix est retenu sur l'appareil.
+  Si c'est faux : indice selon l'erreur (virgule, retenue, nombres alignés à droite, ordre de grandeur),
+  second essai, puis l'opération posée en correction.
+- Site élève, tous les exercices avec une case : si les chiffres sont bons et que seule la virgule
+  est fausse (oubliée, mal placée, en trop), l'indice le dit.
+- Chapitre 6 : animation pas à pas « Placer le rapporteur » dans la fiche (partie 2), dans le bouton
+  « Voir un exemple » de l'exercice « Mesurer un angle », et après la réponse.
+
+PROGRESSION DES ÉLÈVES : inchangée (clé « revisions6e-v1 », anciennes clés intactes).
+SUJETS DÉJÀ IMPRIMÉS ET ÉTIQUETTES QR : inchangés.
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-11.2 : cours « Les angles » (classeur)
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :

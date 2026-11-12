@@ -100,6 +100,7 @@ details.seance>summary::-webkit-details-marker{display:none}
 .now{font-family:var(--f-display);font-size:1.05rem;margin:0;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink)}
 .now b{color:var(--accent)}
 .repere{font-weight:700;color:var(--accent)}
+.profnote{margin-top:6px;padding:8px 10px;border-left:4px solid var(--ok);background:var(--accent-soft);border-radius:6px;line-height:1.45}
 .tag.extra{color:var(--accent)}
 ol.deroule{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 ol.deroule li{display:flex;gap:10px;align-items:baseline;padding:4px 8px;border-radius:8px;border-left:4px solid var(--line);background:var(--bg)}
@@ -243,7 +244,7 @@ const NOTIONS={S1:["o-voc"],S2:["o-gauche","o-par","o-par2"],S3:["o-add"],S4:["o
  S19:["t-voc","t-nature","t-3cotes","t-angles","t-iso","t-180","t-natang","t-cercle"],S20:["t-180","t-natang","t-voc"]};
 const NB_Q={S4:15,S11:15,S19:15};
 const SEANCES=[
- {id:"S1",chap:"Opérations",k:"Opérations · séance 1",t:"Le vocabulaire des opérations",cours:"Partie 1, méthode comprise",docs:["coursO","coursOp","actO","actOc"],act:"Qui suis-je ? (cartes à découper)",
+ {id:"S1",chap:"Opérations",k:"Opérations · séance 1",t:"Le vocabulaire des opérations",cours:"Partie 1, méthode comprise",docs:["coursO","coursOp","actO","actOc"],act:"Qui suis-je ? (cartes à découper)",prof:"Pourquoi 2 × (5 + 2) est-il un <b>produit</b> et pas une somme ? Le nom d'un calcul, c'est le nom de son <b>résultat</b> : on le nomme d'après la <b>dernière</b> opération faite. La parenthèse passe d'abord : 5 + 2 devient 7, et il reste 2 × 7. Une fois le gâteau sorti du four, on ne continue pas à l'appeler « des œufs, de la farine et du chocolat » : on a un gâteau. (5 + 2), c'est le gâteau, c'est 7 ; 2 × (5 + 2), c'est donc 2 × 7 : un produit.",
   dev:"<p><b>Apprendre la partie 1 du cours : le vocabulaire des opérations.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Utiliser le vocabulaire des opérations », puis vérifier avec la correction.</p><p><b>Apporter : ciseaux et colle.</b></p>"},
  {id:"S2",chap:"Opérations",k:"Opérations · séance 2",t:"Calculer de gauche à droite, avec parenthèses, parenthèses doubles",cours:"Partie 2, règles 1, 2 et 3 avec leurs méthodes",docs:["coursO","coursOp","actO","actOc","billets","billetsC"],act:"Horloges folles (1)",billet:1,
   dev:"<p><b>Apprendre les règles 1, 2 et 3 du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Calculer une expression avec des parenthèses ».</p>"},
@@ -295,10 +296,10 @@ const BLOCS={
  S3:[BL(10,"Rappel : Le compte est bon (à projeter)"),BL(35,"Parcours point 1","p"),BL(20,"Cours : partie 3.1, poser une addition et une soustraction"),BL(5,"Billet de sortie n°2","b")],
  S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Horloges folles (2) : l'horloge décimale, en binôme"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 ; ticket de caisse pour ceux qui ont fini","p")],
  S5:[BL(45,"Évaluation Opérations","v"),BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
- S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(20,"Cahier d'activités","e"),BL(20,"Repérer des angles dans la classe ; donner la chasse photo, bilan","e")],
- S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°3","b")],
+ S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(20,"Cahier d'activités : ex. 1, 2 et 3 p. 84 (nommer), ex. 6 et 7 p. 85 (aigu, obtus)","e"),BL(20,"Repérer des angles dans la classe ; donner la chasse photo, bilan","e")],
+ S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier d'activités : ex. 8 à 11 p. 85 (mesurer avec le rapporteur)","e"),BL(5,"Billet de sortie n°3","b")],
  S8:[BL(10,"L'estimathon (à projeter)"),BL(20,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(40,"Parcours point 3 ; permis rapporteur pour ceux qui ont fini","p")],
- S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(20,"Cahier d'activités","e"),BL(40,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
+ S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(20,"Cahier d'activités : ex. 12 à 17 p. 86","e"),BL(40,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
  S10:[BL(10,"Questions flash : compléments à 90 et à 180"),BL(20,"Découverte : deux droites sécantes, mesurer les 4 angles"),BL(20,"Cours : tableau des relations, propriété"),BL(20,"Cours : méthode « Reconnaître et utiliser les relations »"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°4","b")],
  S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 ; chasse au trésor pour ceux qui ont fini","p")],
  S12:[BL(45,"Révisions : cahier d'activités, méthodes du cours","e",20),BL(45,"Évaluation Angles","v")],
@@ -884,6 +885,7 @@ function renderSeances(c){
               <div class="repere">${esc(chapPos(s))}</div>
               <div><b>Cours :</b> ${esc(s.cours)}</div>
               ${s.act?`<div><b>Activité :</b> ${esc(s.act)}</div>`:""}
+              ${s.prof?`<div class="profnote"><b>💡 À dire en classe :</b> ${s.prof}</div>`:""}
               ${(()=>{const i=SEANCES.indexOf(s),pv=i>0?SEANCES[i-1].id:null,l=pv&&projoLink(pv);return l?`<div><a class="btn small" href="${esc(l)}" target="_blank" rel="noopener">📽 Questions flash au vidéoprojecteur</a> <span class="hint">sur la séance précédente</span></div>`:""})()}
               ${s.parcours?`<div><b>Parcours :</b> ${BLOCS[s.id].find(b=>b.y==="p").m} min, d'après le billet de la séance précédente. <button class="btn small" data-goparc="${s.parcours}">Préparer les parcours du point ${s.parcours}</button></div>`:""}
               ${s.billet?`<div><b>Billet de sortie n°${s.billet}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
