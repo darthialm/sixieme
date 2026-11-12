@@ -10,6 +10,6 @@ window.OUVERTURE = {
   "cercle": true,
   "decimaux2": true,
   "operations": true,
-  "angles": [],
+  "angles": true,
   "triangles": []
 };
