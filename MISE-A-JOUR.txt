@@ -1,3 +1,13 @@
+MISE À JOUR 2026-11-13.4 : durées des étapes modifiables, accès rapide à l'Espace professeur
+
+CE QUI CHANGE :
+- Classeur, « ✏️ Modifier les textes de cette séance » : chaque étape du déroulé a maintenant sa durée
+  (en minutes, de 5 en 5) à côté de son texte, avec le total en direct. Avec des créneaux, la progression
+  se recalcule avec les nouvelles durées. « Revenir au texte d'origine » remet aussi les durées.
+- Site des élèves : bouton « 🔒 Espace prof » en haut à droite de chaque page (toujours protégé par le code).
+
+=========================================================
+
 MISE À JOUR 2026-11-13.3 : modifier aussi depuis les créneaux, titres des PDF
 
 CE QUI CHANGE (classeur) :

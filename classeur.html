@@ -171,6 +171,7 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
 .eddev{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;line-height:1.55;min-height:120px;outline:none}
 .eddev:focus{border-color:var(--accent)}
 .eddev p{margin:0 0 6px}
+.eddur{width:4.6em!important;flex:none;text-align:right;border:1px solid var(--line);border-radius:10px;padding:10px 8px;background:var(--bg)}
 .sync{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
 .sync h3{margin:0;font-size:1.05rem}
 .sync p{margin:0}
@@ -890,7 +891,7 @@ setInterval(()=>{
    Titre, cours, activité, déroulé (le texte de chaque étape, pas sa durée) et devoirs de chaque séance.
    Les modifications sont dans data.perso : enregistrées et synchronisées avec les classes. */
 const ORIG={};
-SEANCES.forEach(s=>{ORIG[s.id]={t:s.t,cours:s.cours,act:s.act||"",dev:s.dev||"",blocs:BLOCS[s.id].map(b=>b.t)}});
+SEANCES.forEach(s=>{ORIG[s.id]={t:s.t,cours:s.cours,act:s.act||"",dev:s.dev||"",blocs:BLOCS[s.id].map(b=>b.t),m:BLOCS[s.id].map(b=>b.m),min:BLOCS[s.id].map(b=>b.min)}});
 const LIEN_TXT="[lien des exercices]";
 function applyPerso(){
   const P=(data&&data.perso)||{};
@@ -900,7 +901,11 @@ function applyPerso(){
     s.cours=typeof p.cours==="string"?p.cours:o.cours;
     s.act=typeof p.act==="string"?p.act:o.act;
     s.dev=typeof p.dev==="string"?p.dev:o.dev;
-    BLOCS[s.id].forEach((b,i)=>{b.t=p.blocs&&typeof p.blocs[i]==="string"&&p.blocs[i].trim()?p.blocs[i]:o.blocs[i]});
+    BLOCS[s.id].forEach((b,i)=>{
+      b.t=p.blocs&&typeof p.blocs[i]==="string"&&p.blocs[i].trim()?p.blocs[i]:o.blocs[i];
+      const m=p.dur&&+p.dur[i];
+      if(m>=5&&m<=180){b.m=m;b.min=o.min[i]===o.m[i]?m:Math.min(o.min[i],m)}else{b.m=o.m[i];b.min=o.min[i]}
+    });
   });
 }
 const estPerso=(sid)=>!!(data.perso&&data.perso[sid]&&Object.keys(data.perso[sid]).length);
@@ -932,8 +937,9 @@ function editBox(s){
     <div class="fld"><label for="ed-c-${s.id}">Cours</label><input type="text" id="ed-c-${s.id}" value="${esc(s.cours)}"></div>
     <div class="fld"><label for="ed-a-${s.id}">Activité</label><input type="text" id="ed-a-${s.id}" value="${esc(s.act||"")}"></div>
     <div class="fld"><label>Déroulé et contenu de séance (École Directe)</label>
-      ${BLOCS[s.id].map((b,i)=>{const r=`<div class="edbloc"><span class="tps">${t}–${t+b.m}</span><input type="text" data-edbloc="${i}" aria-label="Étape ${i+1}" value="${esc(b.t)}"></div>`;t+=b.m;return r}).join("")}
-      <p class="hint">Tu changes le texte de chaque étape, pas sa durée. Ce texte sert aussi au contenu de séance à coller dans École Directe.</p></div>
+      ${BLOCS[s.id].map((b,i)=>`<div class="edbloc"><input type="number" class="eddur" data-eddur="${i}" min="5" max="180" step="5" value="${b.m}" aria-label="Durée de l'étape ${i+1}, en minutes"><span class="hint">min</span><input type="text" data-edbloc="${i}" aria-label="Étape ${i+1}" value="${esc(b.t)}"></div>`).join("")}
+      <p class="hint" data-edtot="${s.id}">${(()=>{const n=BLOCS[s.id].reduce((a,b)=>a+b.m,0);return "Total : "+fmtD(n)+(n!==90?" (prévu : 1h30)":"")+"."})()}</p>
+      <p class="hint">Durée en minutes (de 5 en 5), puis le texte de l'étape. Ce texte sert aussi au contenu de séance à coller dans École Directe. Avec des créneaux, la progression se recalcule avec les nouvelles durées.</p></div>
     <div class="fld"><label id="ed-dl-${s.id}">Devoirs</label>
       <div class="row"><button class="btn small" data-edbold="${s.id}" title="Ctrl + B"><b>G</b> Gras</button>${o.dev.includes(LIEN)?`<button class="btn small" data-edlien="${s.id}">Insérer ${esc(LIEN_TXT)}</button>`:""}</div>
       <div class="eddev" id="ed-d-${s.id}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="ed-dl-${s.id}">${devEd}</div>
@@ -951,6 +957,8 @@ function savePerso(sid){
   if(act!==o.act)p.act=act;
   const bl=[...box.querySelectorAll("[data-edbloc]")].map((x,i)=>x.value.trim()||o.blocs[i]);
   if(bl.some((v,i)=>v!==o.blocs[i]))p.blocs=bl;
+  const du=[...box.querySelectorAll("[data-eddur]")].map((x,i)=>{const v=Math.round(+x.value/5)*5;return v>=5&&v<=180?v:o.m[i]});
+  if(du.some((v,i)=>v!==o.m[i]))p.dur=du;
   const dev=cleanDev($("#ed-d-"+sid).innerHTML).split(esc(LIEN_TXT)).join(LIEN);
   if(dev!==o.dev)p.dev=dev;
   data.perso=data.perso||{};
@@ -1241,7 +1249,7 @@ function renderSeances(c){
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}${s.parcours?parcVierges(s.parcours):""}</div></div>
           </div>
           ${ui.edit===s.id&&!ui.editC?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
-          <div class="box"><h3>Déroulé (1h30)</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
+          <div class="box"><h3>Déroulé (${fmtD(BLOCS[s.id].reduce((a,b)=>a+b.m,0))})</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
           ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i}))),"ct-"+s.id,`data-copyct="${s.id}"`)}
           ${s.dev?`<div class="box"><h3>Devoirs à donner en fin de séance</h3>
             <div class="devoir" id="dev-${s.id}">${devoirHtml(s)}</div>
@@ -1379,6 +1387,12 @@ document.addEventListener("change",ev=>{
   if(t.dataset.lien){const id=t.dataset.lien;data.liens=data.liens||{};const v=t.value.trim();if(v)data.liens[id]=v;else delete data.liens[id];
     const el=document.getElementById("dev-"+id);const s=SEANCES.find(x=>x.id===id);if(el&&s)el.innerHTML=devoirHtml(s);
     if(c.edt&&ui.vue!=="seances"){persist();render();return}persist();return}
+});
+document.addEventListener("input",ev=>{
+  const t=ev.target;if(!t.dataset||t.dataset.eddur===undefined)return;
+  const box=t.closest(".editbox"),tot=box&&box.querySelector("[data-edtot]");if(!tot)return;
+  const n=[...box.querySelectorAll("[data-eddur]")].reduce((a,x)=>a+(+x.value||0),0);
+  tot.textContent="Total : "+fmtD(n)+(n!==90?" (prévu : 1h30)":"")+".";
 });
 document.addEventListener("toggle",ev=>{
   const d=ev.target;if(!(d instanceof HTMLDetailsElement)||!(d.dataset.sid||d.dataset.cid))return;

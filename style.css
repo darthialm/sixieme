@@ -946,3 +946,12 @@ body.print-doc { color: #000; }
   body.print-doc .tr-sheet { width: auto; height: auto; overflow: visible; }
 }
 @media screen { body.no-corr .tr-corr { display: none; } }
+
+/* ============ Lien rapide vers l'Espace professeur (en haut à droite) ============ */
+.prof-link {
+  margin-left: auto; flex: none;
+  font-size: .82rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+  color: var(--muted, #64748b); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+}
+.prof-link:hover, .prof-link:focus-visible { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 720px) { .prof-link { position: absolute; top: 10px; right: 12px; } .top { position: sticky; } }
