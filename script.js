@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-13.8';
+const SITE_VERSION = '2026-11-13.9';
 
 /* =========================================================
    Outils
@@ -4429,7 +4429,7 @@ function sheetHTML(c, i) {
   const [name, ver] = c.s[i], n = i + 1, code = ctlCode(c.id, n);
   const qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n), c.g);
   const date =new Date(c.d).toLocaleDateString('fr-FR');
-  return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' : ''}" data-code="${code}"><div class="ctl-in">
+  return `<div class="ctl-sheet${ver === 'a' ? ' ver-a' + (c.as ? ' ver-a-std' : '') : ''}" data-code="${code}"><div class="ctl-in">
     <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
     <div class="ctl-cut"></div>
     <div class="ctl-head">
@@ -4449,7 +4449,9 @@ function sheetHTML(c, i) {
    Safari, Firefox… (qui imposent parfois leurs propres marges) : copie un peu plus petite, qui tient dans la zone imprimable. */
 const CTL_BLINK = typeof navigator !== 'undefined' && !!(navigator.userAgentData || /(Chrome|Chromium|Edg)\//.test(navigator.userAgent)) && !/Firefox|CriOS|FxiOS/.test(navigator.userAgent);
 const CTL_MODE = CTL_BLINK ? 'pm-full' : 'pm-safe';
-const CTL_LIMIT = CTL_BLINK ? 275 : 258;
+// hauteur utile d'une copie, moins 6 mm de sécurité (à l'impression, les retours à la ligne peuvent changer un peu)
+const CTL_LIMIT = CTL_BLINK ? 272 : 256;
+const CTL_SLACK = 6;
 /** Deux colonnes construites à la main (les colonnes CSS ne s'impriment pas pareil partout) :
     toutes les questions sont d'abord dans la colonne de gauche ; on coupe la liste là où les deux colonnes sont le plus égales. */
 function balanceSheet(sheet) {
@@ -4492,7 +4494,7 @@ function ctlAutoPlan(c, target = 30) {
   const T = () => ctlMinutes(K, p);
   // Une copie qui déborde peut recevoir un autre tirage (d'autres nombres, une autre figure) : salts[numéro] = tirage
   let salts = {};
-  const cfg = () => ({ ...c, n: p.n, h: p.h, a: p.a, r: salts });
+  const cfg = () => ({ ...c, n: p.n, h: p.h, a: p.a, as: p.as, r: salts });
   const overIdx = (list) => ctlOverflow(cfg(), list).map((code) => parseInt(code.split('-')[1], 10) - 1);
   const fixCopies = (list, tries = 8) => {
     const bad = [];
@@ -4535,13 +4537,17 @@ function ctlAutoPlan(c, target = 30) {
     p.n[i]--; p.h[i] = Math.min(p.h[i], p.n[i]); salts = {};
   }
   hfull.clear(); if (st.length) upgrade(st);
-  // 4. version aménagée : une question de moins par compétence ; si sa page déborde (police plus grande, aides), encore une de moins
+  // 4. version aménagée : une question de moins par compétence ; si sa page déborde (police plus grande), encore une de moins ;
+  //    au minimum (une question de chaque type), la police redevient celle des autres copies
   let amOver = false;
   if (am.length) {
     p.a = K.map((k, i) => (ctlSlowK(k) ? p.n[i] : Math.max(ctlMinN(k), p.n[i] - 1)));
-    for (let g = 0; g < 20 && fixCopies(am).length; g++) {
+    for (let g = 0; g < 21 && fixCopies(am).length; g++) {
       const cand = K.map((_, i) => i).filter((i) => !ctlSlowK(K[i]) && p.a[i] > ctlMinN(K[i]));
-      if (!cand.length) { amOver = true; break; }
+      if (!cand.length) {
+        if (!p.as) { p.as = 1; am.forEach((i) => delete salts[i + 1]); continue; }
+        amOver = true; break;
+      }
       p.a[cand.reduce((a, b) => (p.a[b] > p.a[a] ? b : a))]--;
       am.forEach((i) => delete salts[i + 1]);
     }
@@ -4599,10 +4605,14 @@ function fitSheets(doc) {
   const bad = [];
   doc.querySelectorAll('.ctl-sheet').forEach((sh) => {
     const inn = sh.querySelector('.ctl-in'); if (!inn) return;
-    const room = () => sh.clientHeight - parseFloat(getComputedStyle(sh).paddingTop) - parseFloat(getComputedStyle(sh).paddingBottom);
-    const base = parseFloat(getComputedStyle(sh).fontSize);
-    for (let f = 1; inn.scrollHeight > room() + 0.5 && f > 0.84; f -= 0.03) { inn.style.fontSize = (base * (f - 0.03)) + 'px'; sh.dataset.fit = String(Math.round((f - 0.03) * 100)); }
-    if (inn.scrollHeight > room() + 0.5) bad.push(sh.dataset.code);
+    // la copie entière (texte, cadres, figures) est réduite si besoin, pour garder une marge libre en bas
+    const cs = getComputedStyle(sh), mm = sh.getBoundingClientRect().width / (CTL_BLINK ? 210 : 176);
+    const room = sh.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    inn.style.zoom = ''; const h = inn.getBoundingClientRect().height, target = room - CTL_SLACK * mm;
+    if (h <= target) return;
+    const z = Math.max(0.85, Math.floor((target / h) * 1000) / 1000);
+    inn.style.zoom = String(z); sh.dataset.fit = String(Math.round(z * 100));
+    if (inn.getBoundingClientRect().height > room - 0.5) bad.push(sh.dataset.code);
   });
   return bad;
 }
@@ -5054,10 +5064,11 @@ function setupControles() {
     }));
     $('ctl-print').addEventListener('click', () => {
       const cc = { ...c, d: dateOf($('ctl-date').value), n: [...p.n], h: [...p.h], a: p.a ? [...p.a] : null, r: { ...(p.r || {}) } };
+      if (p.as) cc.as = 1;
       const over = ctlOverflow(cc);
       if (!over.length) { create(cc); return; }
-      drawPlan(`<span class="warn-t">⚠ ${over.length} copie${over.length > 1 ? 's' : ''} sur ${cc.s.length} dépasse${over.length > 1 ? 'nt' : ''} une page (${over.slice(0, 6).join(', ')}${over.length > 6 ? '…' : ''}) : enlève une question (−), ou</span> <button type="button" class="mini" id="ctl-force">imprime quand même</button>`);
-      $('ctl-force').addEventListener('click', () => create(cc));
+      // jamais de copie coupée en bas de page : on n'imprime pas tant qu'une copie dépasse
+      drawPlan(`<span class="warn-t">⚠ ${over.length} copie${over.length > 1 ? 's' : ''} sur ${cc.s.length} dépasse${over.length > 1 ? 'nt' : ''} une page (${over.slice(0, 6).join(', ')}${over.length > 6 ? '…' : ''}) : enlève une question (−), puis imprime.</span>`);
     });
   }
   $('ctl-make').addEventListener('click', () => {

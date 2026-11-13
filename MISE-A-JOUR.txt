@@ -1,3 +1,16 @@
+MISE À JOUR 2026-11-13.9 : version aménagée sans aide, plus jamais de copie coupée
+
+À DÉPOSER : script.js, style.css, index.html
+
+CE QUI CHANGE (contrôles papier) :
+- Version aménagée : plus d'aide écrite. Elle a seulement moins de questions (toujours une de chaque
+  type) et des caractères un peu plus grands ; si elle ne tient pas, elle reprend la taille normale.
+- Aucune copie ne peut être coupée en bas de page : 6 mm restent toujours libres en bas. Si une copie
+  dépasse dans la fenêtre d'impression, elle est légèrement réduite en entier (cadres compris).
+  Le bouton « imprime quand même » n'existe plus : il faut enlever une question.
+
+=========================================================
+
 MISE À JOUR 2026-11-13.8 : avertissement avant le contrôle blanc, jeu Estimangle
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
