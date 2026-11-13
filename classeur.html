@@ -685,7 +685,11 @@ async function ghFetch(cfg,path,opt){
     headers:Object.assign({"Authorization":"Bearer "+cfg.token,"Accept":"application/vnd.github+json"},opt.headers||{})})}
   catch(e){throw SyncErr("reseau")}
 }
-function ghErr(r){
+async function ghErr(r){
+  let m="";try{m=String((await r.clone().json()).message||"")}catch(e){}
+  const e=ghErr0(r);e.gh=m;return e;
+}
+function ghErr0(r){
   if(r.status===401)return SyncErr("jeton",401);
   if(r.status===403||r.status===429)return SyncErr(r.headers.get("x-ratelimit-remaining")==="0"||r.status===429?"limite":"droits",r.status);
   if(r.status===404)return SyncErr("introuvable",404);
@@ -694,10 +698,10 @@ function ghErr(r){
 async function ghGet(cfg){
   const r=await ghFetch(cfg,"/contents/"+SYNC_FILE);
   if(r.status===404)return null;
-  if(!r.ok)throw ghErr(r);
+  if(!r.ok)throw await ghErr(r);
   const j=await r.json();
   let b64=j.content;
-  if(!b64||j.encoding!=="base64"){const r2=await ghFetch(cfg,"/git/blobs/"+j.sha);if(!r2.ok)throw ghErr(r2);b64=(await r2.json()).content}
+  if(!b64||j.encoding!=="base64"){const r2=await ghFetch(cfg,"/git/blobs/"+j.sha);if(!r2.ok)throw await ghErr(r2);b64=(await r2.json()).content}
   let file=null;try{file=JSON.parse(atob(String(b64).replace(/\s/g,"")))}catch(e){}
   return {sha:j.sha,file};
 }
@@ -706,13 +710,16 @@ async function ghPut(cfg,file,sha){
   if(sha)body.sha=sha;
   const r=await ghFetch(cfg,"/contents/"+SYNC_FILE,{method:"PUT",body:JSON.stringify(body),headers:{"Content-Type":"application/json"}});
   if(r.status===409||r.status===422)throw SyncErr("conflit",r.status);
-  if(!r.ok)throw ghErr(r);
+  if(!r.ok)throw await ghErr(r);
   return (await r.json()).content.sha;
 }
 function syncMsg(e){
+  return syncMsg0(e)+(e&&e.gh&&e.code!=="reseau"?" (GitHub : « "+e.gh+" »)":"");
+}
+function syncMsg0(e){
   return ({reseau:"pas de connexion Internet. Nouvel essai automatique.",
     jeton:"GitHub refuse le jeton (il a peut-être expiré). Crée un nouveau jeton, puis « Arrêter sur cet appareil » et reconnecte-toi (en bas de page).",
-    droits:"le jeton n'a pas le droit d'écrire dans le dépôt : il lui faut la permission « Contents : Read and write ».",
+    droits:"le jeton n'a pas le droit d'écrire dans le dépôt. Sur GitHub, ouvre le jeton (Settings → Developer settings → Fine-grained tokens) et vérifie : Repository access = ton dépôt privé, et Contents = « Read and write » (et pas « Read-only », la valeur proposée par défaut).",
     introuvable:"dépôt introuvable avec ce jeton (vérifie le nom du dépôt et que le jeton y a accès).",
     limite:"GitHub limite les envois pour l'instant. Nouvel essai automatique dans quelques minutes.",
     code:"la version en ligne est chiffrée avec un autre code de synchronisation. « Arrêter sur cet appareil », puis reconnecte-toi avec le bon code.",
@@ -829,7 +836,7 @@ async function syncActivate(){
   try{
     msg("Vérification du dépôt…");
     const r=await ghFetch(cfg,"");
-    if(!r.ok)throw ghErr(r);
+    if(!r.ok)throw await ghErr(r);
     const j=await r.json();
     if(!j.private)return msg("Ce dépôt est PUBLIC : n'importe qui pourrait télécharger le fichier. Crée un dépôt privé (ou rends celui-ci privé : Settings → Change visibility).");
     msg("Lecture de la version en ligne…");
