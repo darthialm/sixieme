@@ -984,7 +984,18 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 .eg-arc { fill: none; stroke: var(--accent); stroke-width: .06; }
 .eg-lab { font-size: .55px; font-weight: 700; fill: var(--accent); paint-order: stroke; stroke: var(--surface-2); stroke-width: .12px; }
 .eg-controls { text-align: center; margin: 10px 0; }
-.eg-form input { width: 5em; font: inherit; font-size: 1.15rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+/* roue de nombres : on la fait défiler (molette, doigt, flèches) */
+.eg-pick { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.eg-drum { display: flex; flex-direction: column; align-items: center; width: 6.2em; padding: 4px 0; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); cursor: ns-resize; touch-action: none; user-select: none; outline: none; position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.35) 0, #000 32%, #000 68%, rgba(0,0,0,.35) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,.35) 0, #000 32%, #000 68%, rgba(0,0,0,.35) 100%); }
+.eg-drum:hover, .eg-drum:focus-visible { border-color: var(--accent); }
+.eg-dr-n { display: block; height: 1.6em; line-height: 1.6em; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 1.05rem; }
+.eg-dr-cur { font-size: 1.7rem; height: 1.45em; line-height: 1.45em; font-weight: 700; color: var(--accent); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); width: 100%; text-align: center; }
+.eg-drum.eg-up .eg-dr-n { animation: eg-roll-up .14s ease-out; }
+.eg-drum.eg-down .eg-dr-n { animation: eg-roll-down .14s ease-out; }
+@keyframes eg-roll-up { from { transform: translateY(35%); opacity: .5; } to { transform: none; opacity: 1; } }
+@keyframes eg-roll-down { from { transform: translateY(-35%); opacity: .5; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .eg-drum .eg-dr-n { animation: none !important; } }
 .eg-go { font-size: 1.15rem; min-width: 9em; }
 .eg-go.eg-stop { background: var(--ko); border-color: var(--ko); color: var(--surface); }
 .eg-verdict { border-radius: 12px; padding: 10px 14px; border-left: 5px solid; }

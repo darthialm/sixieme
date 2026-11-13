@@ -2,13 +2,15 @@
    Jeux — Estimangle (chapitre Les angles)
    Mode « Estimer » : un angle est tracé, on donne sa mesure à l'œil.
    Mode « Lancer »  : une mesure est donnée, une demi-droite tourne, on l'arrête au bon moment.
-   Une réponse est JUSTE si l'écart avec la bonne mesure est au plus la marge du niveau
-   (Facile : 10°, Expert : 5°). Sinon elle est FAUSSE.
+   Une réponse est JUSTE seulement si c'est la mesure EXACTE. Pour que ce soit jouable, les mesures vont
+   de 10° en 10° (Facile) ou de 5° en 5° (Expert) : la réponse se choisit sur une roue de nombres
+   (molette, doigt ou flèches, sans cliquer avant), et la demi-droite avance par crans du même pas.
    ========================================================= */
 (function () {
   const ROUNDS = 10;
-  const LEVELS = { facile: { tol: 10, label: 'Facile', speed: 40 }, expert: { tol: 5, label: 'Expert', speed: 55 } };
-  const BEST_KEY = 'revisions6e-estimangle';
+  // step : pas des mesures ; tick : durée d'un cran de la demi-droite qui tourne (en secondes)
+  const LEVELS = { facile: { step: 10, label: 'Facile', tick: 0.25 }, expert: { step: 5, label: 'Expert', tick: 0.11 } };
+  const BEST_KEY = 'revisions6e-estimangle-exact'; // règle « mesure exacte » : records repartis de zéro
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const rad = (d) => (d * Math.PI) / 180;
   const dir = (a) => ({ x: Math.cos(rad(a)), y: -Math.sin(rad(a)) }); // y vers le bas à l'écran
@@ -24,6 +26,53 @@
   const loadBest = () => { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}') || {}; } catch (e) { return {}; } };
   const saveBest = (b) => { try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (e) { /* stockage indisponible */ } };
 
+  /** Roue de nombres : on fait défiler les valeurs (molette au survol, glisser du doigt ou de la souris, flèches du
+      clavier, ou clic sur le nombre au-dessus / au-dessous). Comme une vraie roue : les grands nombres sont en haut ;
+      molette vers le haut, flèche ↑ ou doigt qui tire la roue vers le bas = nombre plus grand. Un cran de molette = un pas. */
+  function drum(host, { min, max, step, value, onEnter }) {
+    let v = value;
+    host.innerHTML = `<div class="eg-drum" tabindex="0" role="spinbutton" aria-label="Mesure en degrés" aria-valuemin="${min}" aria-valuemax="${max}">
+      <span class="eg-dr-n eg-dr-prev"></span><span class="eg-dr-n eg-dr-cur"></span><span class="eg-dr-n eg-dr-next"></span></div>`;
+    const el = host.querySelector('.eg-drum'), [pv, cu, nx] = el.querySelectorAll('.eg-dr-n');
+    const show = (dirn = 0) => {
+      pv.textContent = v + step <= max ? `${v + step}°` : ''; cu.textContent = `${v}°`; nx.textContent = v - step >= min ? `${v - step}°` : '';
+      el.setAttribute('aria-valuenow', String(v)); el.setAttribute('aria-valuetext', `${v} degrés`);
+      // le nombre suivant arrive d'en haut (plus grand) ou d'en bas (plus petit)
+      if (dirn) { el.classList.remove('eg-up', 'eg-down'); void el.offsetWidth; el.classList.add(dirn > 0 ? 'eg-down' : 'eg-up'); }
+    };
+    const move = (k) => { const w = Math.min(max, Math.max(min, v + k * step)); if (w !== v) { v = w; show(k); } };
+    // molette (et pavé tactile) : pas besoin de cliquer avant, il suffit d'être au-dessus ; au plus un pas par cran
+    let acc = 0;
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      acc += e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
+      if (Math.abs(acc) >= 50) { move(acc < 0 ? 1 : -1); acc = 0; }
+    }, { passive: false });
+    // glisser : tirer la roue vers le bas fait descendre le nombre du dessus (plus grand) au milieu
+    let y0 = null, dragged = false;
+    el.addEventListener('pointerdown', (e) => { y0 = e.clientY; dragged = false; el.setPointerCapture(e.pointerId); el.focus({ preventScroll: true }); });
+    el.addEventListener('pointermove', (e) => {
+      if (y0 === null) return;
+      const dy = e.clientY - y0;
+      if (Math.abs(dy) >= 22) { move(dy > 0 ? 1 : -1); y0 = e.clientY; dragged = true; }
+    });
+    el.addEventListener('pointerup', (e) => {
+      if (y0 === null) return; y0 = null;
+      if (dragged) return;
+      // simple clic sur le nombre du dessus (plus grand) ou du dessous (plus petit) : on le choisit
+      const r = el.getBoundingClientRect(), y = (e.clientY - r.top) / r.height;
+      if (y < 0.33) move(1); else if (y > 0.67) move(-1);
+    });
+    el.addEventListener('pointercancel', () => { y0 = null; });
+    el.addEventListener('keydown', (e) => {
+      const k = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 3, PageDown: -3 }[e.key];
+      if (k) { e.preventDefault(); move(k); }
+      else if (e.key === 'Enter') { e.preventDefault(); onEnter?.(); }
+    });
+    show();
+    return { get value() { return v; }, el };
+  }
+
   function mount(root) {
     const st = { mode: 'estimer', level: 'facile', round: 0, good: 0, phase: 'idle', raf: 0 };
     root.innerHTML = `
@@ -33,8 +82,8 @@
           <button type="button" data-mode="lancer" aria-pressed="false">🚀 Lancer l'angle</button>
         </div>
         <div class="eg-seg" role="group" aria-label="Niveau">
-          <button type="button" data-level="facile" aria-pressed="true">Facile · à 10° près</button>
-          <button type="button" data-level="expert" aria-pressed="false">Expert · à 5° près</button>
+          <button type="button" data-level="facile" aria-pressed="true">Facile · de 10° en 10°</button>
+          <button type="button" data-level="expert" aria-pressed="false">Expert · de 5° en 5°</button>
         </div>
       </div>
       <p class="eg-rule"></p>
@@ -45,12 +94,12 @@
       <div class="eg-feedback" aria-live="polite"></div>`;
     const $ = (s) => root.querySelector(s);
     const svg = $('.eg-svg');
-    const tol = () => LEVELS[st.level].tol;
+    const step = () => LEVELS[st.level].step;
 
     function setRule() {
       $('.eg-rule').innerHTML = st.mode === 'estimer'
-        ? `Un angle est tracé. Donne sa mesure <b>sans rapporteur</b>, à l'œil. <b>C'est juste</b> si tu es à <b>${tol()}° près ou moins</b> de la vraie mesure ; au-delà, c'est faux. ${ROUNDS} angles par partie.`
-        : `Une mesure est donnée. Appuie sur <b>Lancer</b> : une demi-droite tourne. Appuie sur <b>Stop</b> (ou la barre <kbd>Espace</kbd>) quand l'angle te semble avoir la bonne mesure. <b>C'est juste</b> si tu t'arrêtes à <b>${tol()}° près ou moins</b> ; au-delà, c'est faux. ${ROUNDS} angles par partie.`;
+        ? `Un angle est tracé. Trouve sa mesure <b>sans rapporteur</b>, à l'œil : elle va de ${step()}° en ${step()}°. Fais défiler les nombres (molette de la souris, glisser du doigt ou flèches du clavier), puis valide. <b>C'est juste seulement si c'est la mesure exacte.</b> ${ROUNDS} angles par partie.`
+        : `Une mesure est donnée. Appuie sur <b>Lancer</b> : une demi-droite tourne, de ${step()}° en ${step()}°. Appuie sur <b>Stop</b> (ou la barre <kbd>Espace</kbd>) quand l'angle a la bonne mesure. <b>C'est juste seulement si c'est la mesure exacte.</b> ${ROUNDS} angles par partie.`;
     }
     function status() {
       $('.eg-status').innerHTML = st.round > ROUNDS ? '' : `<span>Angle <b>${st.round}</b> / ${ROUNDS}</span><span>✅ <b>${st.good}</b> juste${st.good > 1 ? 's' : ''}</span>`;
@@ -96,11 +145,11 @@
         <p><button type="button" class="btn primary eg-next">${st.round < ROUNDS ? 'Angle suivant →' : 'Voir mon score →'}</button></p>`;
       const b = $('.eg-next'); b.addEventListener('click', next); b.focus({ preventScroll: true });
     }
-    const gapTxt = (gap, ok) => `Écart : <b>${gap}°</b> — ${ok ? `c'est dans la marge (${tol()}° ou moins).` : `c'est plus que la marge de ${tol()}°.`}`;
+    const gapTxt = (gap, ok) => (ok ? 'Mesure exacte, bravo !' : `Écart : <b>${gap}°</b>. Il faut la mesure exacte.`);
 
     /* ---------- Mode 1 : estimer ---------- */
     function roundEstimer() {
-      const m = rnd(10, 170), s = Math.random() < 0.5 ? 1 : -1, a0 = rnd(0, 359), L = 4.4;
+      const m = step() * rnd(1, 180 / step() - 1), s = Math.random() < 0.5 ? 1 : -1, a0 = rnd(0, 359), L = 4.4;
       const mid = a0 + (s * m) / 2, V = { x: -2 * Math.cos(rad(mid)), y: 2 * Math.sin(rad(mid)) };
       const a1 = a0 + s * m;
       svg.style.display = '';
@@ -108,26 +157,27 @@
       const base = ray(V, a0, L, 'eg-ray') + ray(V, a1, L, 'eg-ray') + `<circle cx="${f(V.x)}" cy="${f(V.y)}" r="0.12" class="eg-dot"/>`;
       svg.innerHTML = base;
       $('.eg-ask').innerHTML = 'Combien mesure cet angle ?';
-      $('.eg-controls').innerHTML = `<form class="eg-form"><label>Mon estimation : <input type="number" inputmode="numeric" min="0" max="180" step="1" required aria-label="Mesure estimée en degrés"> °</label> <button type="submit" class="btn primary">Valider</button></form>`;
-      const form = $('.eg-form'), inp = form.querySelector('input');
-      inp.focus({ preventScroll: true });
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const g = Math.round(Number(String(inp.value).replace(',', '.')));
-        if (!Number.isFinite(g) || inp.value === '' || g < 0 || g > 180) { inp.setCustomValidity('Écris un nombre entre 0 et 180.'); inp.reportValidity(); inp.setCustomValidity(''); return; }
-        const gap = Math.abs(g - m), ok = gap <= tol();
+      $('.eg-controls').innerHTML = '<div class="eg-pick"><span>Mon estimation :</span><div class="eg-drum-host"></div><button type="button" class="btn primary eg-ok">Valider</button></div>';
+      let done = false;
+      const pick = drum($('.eg-drum-host'), { min: step(), max: 180 - step(), step: step(), value: 90, onEnter: () => validate() });
+      pick.el.focus({ preventScroll: true }); // les flèches du clavier marchent tout de suite
+      $('.eg-ok').addEventListener('click', () => validate());
+      function validate() {
+        if (done) return; done = true;
+        const g = pick.value;
+        const gap = Math.abs(g - m), ok = gap === 0;
         const ag = a0 + s * g;
         svg.innerHTML = base + ray(V, ag, L, `eg-guess ${ok ? 'ok' : 'ko'}`)
           + arc(V, Math.min(a0, a1), Math.max(a0, a1), 0.9, 'eg-arc') + label(V, (a0 + a1) / 2, 1.75, `${m}°`, 'eg-lab');
         $('.eg-controls').innerHTML = '';
         verdict(ok, `<p>L'angle mesure <b>${m}°</b>. Tu as dit <b>${g}°</b>${g === m ? ' : pile !' : g < m ? ' (trop petit).' : ' (trop grand).'}</p><p>${gapTxt(gap, ok)}</p>
-          <p class="muted small">Sur la figure, en pointillés : la demi-droite qui donnerait ${g}°.</p>`);
-      });
+          ${ok ? '' : `<p class="muted small">Sur la figure, en pointillés : la demi-droite qui donnerait ${g}°.</p>`}`);
+      }
     }
 
     /* ---------- Mode 2 : lancer ---------- */
     function roundLancer() {
-      const t = 5 * rnd(3, 33), left = Math.random() < 0.5, d0 = rnd(-12, 12);
+      const t = step() * rnd(1, 180 / step() - 1), left = Math.random() < 0.5, d0 = rnd(-12, 12);
       const a0 = left ? 180 + d0 : d0, s = left ? -1 : 1, V = { x: 0, y: 1.6 }, L = 4.6;
       svg.style.display = '';
       svg.setAttribute('viewBox', '-5.2 -3.5 10.4 6.8');
@@ -138,25 +188,30 @@
       $('.eg-controls').innerHTML = '<button type="button" class="btn primary eg-go">▶ Lancer</button>';
       const btn = $('.eg-go');
       btn.focus({ preventScroll: true });
-      let cur = 0, dirn = 1, last = 0;
-      const speed = LEVELS[st.level].speed;
+      // la demi-droite avance par crans du pas du niveau : on peut s'arrêter pile sur la bonne mesure
+      let cur = 0, dirn = 1, last = 0, acc = 0;
+      const dur = LEVELS[st.level].tick;
       const tick = (now) => {
-        const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
-        cur += dirn * speed * dt;
-        if (cur >= 180) { cur = 360 - cur; dirn = -1; }
-        if (cur <= 0) { cur = -cur; dirn = 1; }
-        draw(cur);
+        acc += last ? Math.min(0.1, (now - last) / 1000) : 0; last = now;
+        let moved = false;
+        while (acc >= dur) {
+          acc -= dur; moved = true;
+          cur += dirn * step();
+          if (cur >= 180) { cur = 180; dirn = -1; }
+          if (cur <= 0) { cur = 0; dirn = 1; }
+        }
+        if (moved) draw(cur);
         st.raf = requestAnimationFrame(tick);
       };
       const halt = () => {
         if (st.phase !== 'run') return;
         st.phase = 'done'; stop();
-        const a = Math.round(cur), gap = Math.abs(a - t), ok = gap <= tol();
+        const a = Math.round(cur), gap = Math.abs(a - t), ok = gap === 0;
         const lo = Math.min(0, s * a), hi = Math.max(0, s * a);
         draw(a, ray(V, a0 + s * t, L, `eg-guess eg-want`) + arc(V, a0 + lo, a0 + hi, 0.9, 'eg-arc') + label(V, a0 + (s * a) / 2, 1.75, `${a}°`, 'eg-lab'));
         $('.eg-controls').innerHTML = '';
         verdict(ok, `<p>Il fallait <b>${t}°</b>. Ton angle mesure <b>${a}°</b>${a === t ? ' : pile !' : a < t ? ' (trop petit).' : ' (trop grand).'}</p><p>${gapTxt(gap, ok)}</p>
-          <p class="muted small">Sur la figure, en pointillés verts : la demi-droite qui donnait ${t}°.</p>`);
+          ${ok ? '' : `<p class="muted small">Sur la figure, en pointillés verts : la demi-droite qui donnait ${t}°.</p>`}`);
       };
       btn.addEventListener('click', () => {
         if (st.phase === 'run') return halt();

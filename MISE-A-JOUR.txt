@@ -1,3 +1,17 @@
+MISE À JOUR 2026-11-13.10 : Estimangle, mesure exacte et roue de nombres
+
+À DÉPOSER : jeux.js, style.css, index.html, script.js
+
+CE QUI CHANGE (jeu Estimangle, chapitre Les angles) :
+- On gagne seulement avec la mesure EXACTE. Les angles vont de 10° en 10° (Facile) ou de 5° en 5° (Expert).
+- Mode « Estimer » : plus rien à écrire. On fait défiler une roue de nombres : molette de la souris
+  (sans cliquer avant), glisser du doigt, flèches du clavier, ou clic sur le nombre du dessus / dessous.
+  Entrée ou « Valider » pour répondre.
+- Mode « Lancer » : la demi-droite avance par crans de 10° ou 5°, on peut donc s'arrêter pile.
+- Les records repartent de zéro (nouvelle règle).
+
+=========================================================
+
 MISE À JOUR 2026-11-13.9 : version aménagée sans aide, plus jamais de copie coupée
 
 À DÉPOSER : script.js, style.css, index.html
