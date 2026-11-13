@@ -1,3 +1,15 @@
+MISE À JOUR 2026-11-13.2 : modifier soi-même les textes des séances (classeur)
+
+CE QUI CHANGE :
+- Classeur, onglet Séances : dans chaque séance, un bouton « ✏️ Modifier les textes de cette séance ».
+  On peut changer le titre, le cours, l'activité, le texte de chaque étape du déroulé (qui sert aussi au
+  contenu de séance pour École Directe) et les devoirs (avec gras). Les durées ne changent pas.
+- Les séances modifiées portent l'étiquette « Modifiée ». « Revenir au texte d'origine » annule.
+- Les modifications sont enregistrées avec les classes : sur l'appareil, dans la sauvegarde en fichier,
+  et en ligne sur tous tes appareils si la synchronisation est activée.
+
+=========================================================
+
 MISE À JOUR 2026-11-13 : synchronisation du classeur entre tes appareils
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB DU SITE (remplacer le fichier existant) :

@@ -162,6 +162,15 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
 .linkrow code{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;word-break:break-all;font-size:.82rem;max-width:100%}
 .filebtn{position:relative;overflow:hidden}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.tag.perso{color:var(--accent)}
+.editbox{border:2px solid var(--accent);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.editbox h3{margin:0}
+.editbox .fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.edbloc{display:flex;gap:8px;align-items:center}
+.edbloc .tps{font-variant-numeric:tabular-nums;color:var(--muted);min-width:4.6em;font-size:.9rem;flex:none}
+.eddev{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;line-height:1.55;min-height:120px;outline:none}
+.eddev:focus{border-color:var(--accent)}
+.eddev p{margin:0 0 6px}
 .sync{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
 .sync h3{margin:0;font-size:1.05rem}
 .sync p{margin:0}
@@ -587,7 +596,7 @@ function renderEdt(c){
 }
 
 /* ======================= ÉTAT ======================= */
-let data={classes:[],liens:{}};
+let data={classes:[],liens:{},perso:{}};
 let ui={cls:null,tab:"seances",point:1,mode:"groupe",manage:false,confirmDel:false,open:null,openC:null,vue:"creneaux"};
 try{Object.assign(ui,JSON.parse(localStorage.getItem("revisions6e-classeur-ui")||"{}"));ui.manage=false;ui.confirmDel=false}catch(e){}
 ui.mode="groupe";
@@ -604,6 +613,7 @@ function setStatus(t){$("#status").textContent=t}
 function norm(d){
   if(!d||!Array.isArray(d.classes))return {classes:[],liens:{}};
   d.liens=d.liens||{};
+  if(!d.perso||typeof d.perso!=="object")d.perso={};
   d.classes.forEach(c=>{c.g=c.g||{};c.ok=c.ok||{};c.prog=c.prog||{};c.eleves=c.eleves||[];c.cren=c.cren||{};if(c.edt===undefined)c.edt=null});
   return d;
 }
@@ -875,6 +885,79 @@ setInterval(()=>{
   if(sync&&started&&!syncBusy&&document.visibilityState==="visible"&&!/^(INPUT|TEXTAREA|SELECT)$/.test(tag||""))syncNow();
 },120000);
 
+/* ======================= TEXTES MODIFIÉS PAR LE PROFESSEUR =======================
+   Titre, cours, activité, déroulé (le texte de chaque étape, pas sa durée) et devoirs de chaque séance.
+   Les modifications sont dans data.perso : enregistrées et synchronisées avec les classes. */
+const ORIG={};
+SEANCES.forEach(s=>{ORIG[s.id]={t:s.t,cours:s.cours,act:s.act||"",dev:s.dev||"",blocs:BLOCS[s.id].map(b=>b.t)}});
+const LIEN_TXT="[lien des exercices]";
+function applyPerso(){
+  const P=(data&&data.perso)||{};
+  SEANCES.forEach(s=>{
+    const o=ORIG[s.id],p=P[s.id]||{};
+    s.t=typeof p.t==="string"?p.t:o.t;
+    s.cours=typeof p.cours==="string"?p.cours:o.cours;
+    s.act=typeof p.act==="string"?p.act:o.act;
+    s.dev=typeof p.dev==="string"?p.dev:o.dev;
+    BLOCS[s.id].forEach((b,i)=>{b.t=p.blocs&&typeof p.blocs[i]==="string"&&p.blocs[i].trim()?p.blocs[i]:o.blocs[i]});
+  });
+}
+const estPerso=(sid)=>!!(data.perso&&data.perso[sid]&&Object.keys(data.perso[sid]).length);
+/* nettoie le texte tapé dans l'éditeur des devoirs : des paragraphes <p>, avec seulement gras et italique */
+function cleanDev(html){
+  const tmp=document.createElement("div");tmp.innerHTML=html;
+  const BLOC=/^(P|DIV|LI|UL|OL|H[1-6]|BLOCKQUOTE)$/;
+  const inl=(n)=>{
+    if(n.nodeType===3)return esc(n.textContent.replace(/ /g," "));
+    if(n.nodeType!==1)return "";
+    const tag=n.tagName;if(tag==="BR")return "\n";
+    const inner=[...n.childNodes].map(inl).join("");
+    if(BLOC.test(tag))return "\n"+inner+"\n";
+    const fw=n.style&&n.style.fontWeight;
+    if(tag==="B"||tag==="STRONG"||fw==="bold"||+fw>=600)return inner.trim()?"<b>"+inner+"</b>":inner;
+    if(tag==="I"||tag==="EM")return inner.trim()?"<i>"+inner+"</i>":inner;
+    return inner;
+  };
+  const txt=[...tmp.childNodes].map(inl).join("");
+  const fix=document.createElement("div");
+  return txt.split("\n").map(l=>{fix.innerHTML=l.trim();return fix.innerHTML.trim()})
+    .filter(l=>l.replace(/<\/?[bi]>/g,"").trim()).map(l=>"<p>"+l+"</p>").join("");
+}
+function editBox(s){
+  const o=ORIG[s.id];let t=0;
+  const devEd=(s.dev||"").split(LIEN).join(esc(LIEN_TXT))||"<p></p>";
+  return `<div class="editbox" id="edit-${s.id}"><h3>✏️ Modifier la séance ${esc(s.id)}</h3>
+    <div class="fld"><label for="ed-t-${s.id}">Titre</label><input type="text" id="ed-t-${s.id}" value="${esc(s.t)}"></div>
+    <div class="fld"><label for="ed-c-${s.id}">Cours</label><input type="text" id="ed-c-${s.id}" value="${esc(s.cours)}"></div>
+    <div class="fld"><label for="ed-a-${s.id}">Activité</label><input type="text" id="ed-a-${s.id}" value="${esc(s.act||"")}"></div>
+    <div class="fld"><label>Déroulé et contenu de séance (École Directe)</label>
+      ${BLOCS[s.id].map((b,i)=>{const r=`<div class="edbloc"><span class="tps">${t}–${t+b.m}</span><input type="text" data-edbloc="${i}" aria-label="Étape ${i+1}" value="${esc(b.t)}"></div>`;t+=b.m;return r}).join("")}
+      <p class="hint">Tu changes le texte de chaque étape, pas sa durée. Ce texte sert aussi au contenu de séance à coller dans École Directe.</p></div>
+    <div class="fld"><label id="ed-dl-${s.id}">Devoirs</label>
+      <div class="row"><button class="btn small" data-edbold="${s.id}" title="Ctrl + B"><b>G</b> Gras</button>${o.dev.includes(LIEN)?`<button class="btn small" data-edlien="${s.id}">Insérer ${esc(LIEN_TXT)}</button>`:""}</div>
+      <div class="eddev" id="ed-d-${s.id}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="ed-dl-${s.id}">${devEd}</div>
+      <p class="hint">Entrée = nouveau paragraphe. Sélectionne un texte puis « Gras » (ou Ctrl + B). ${o.dev.includes(LIEN)?`${esc(LIEN_TXT)} est remplacé par le lien des exercices en ligne. `:""}Les lignes qui commencent par « Apporter » ne sont pas reprises dans les devoirs des créneaux (le matériel y est calculé à part).</p></div>
+    <div class="row"><button class="btn primary" data-edsave="${s.id}">Enregistrer</button><button class="btn" data-edcancel="${s.id}">Annuler</button>
+      ${estPerso(s.id)?`<button class="btn danger" data-edreset="${s.id}">Revenir au texte d'origine</button>`:""}</div>
+  </div>`;
+}
+function savePerso(sid){
+  const o=ORIG[sid],box=document.getElementById("edit-"+sid);if(!box)return;
+  const p={};
+  const t=$("#ed-t-"+sid).value.trim(),cours=$("#ed-c-"+sid).value.trim(),act=$("#ed-a-"+sid).value.trim();
+  if(t&&t!==o.t)p.t=t;
+  if(cours&&cours!==o.cours)p.cours=cours;
+  if(act!==o.act)p.act=act;
+  const bl=[...box.querySelectorAll("[data-edbloc]")].map((x,i)=>x.value.trim()||o.blocs[i]);
+  if(bl.some((v,i)=>v!==o.blocs[i]))p.blocs=bl;
+  const dev=cleanDev($("#ed-d-"+sid).innerHTML).split(esc(LIEN_TXT)).join(LIEN);
+  if(dev!==o.dev)p.dev=dev;
+  data.perso=data.perso||{};
+  if(Object.keys(p).length)data.perso[sid]=p;else delete data.perso[sid];
+  ui.edit=null;ui.open=sid;saveUi();persist();render();
+  setTimeout(()=>{const d=document.querySelector(`details[data-sid="${sid}"]`);if(d)d.scrollIntoView({block:"start"})},0);
+}
+
 /* ======================= OUTILS ======================= */
 function counts(c,p){const r={R:0,E:0,D:0,"0":0,ok:0};c.eleves.forEach(e=>{const v=(c.g[e.id]||{})[p];r[v||"0"]++;if((c.ok[e.id]||{})[p])r.ok++});return r}
 function devoirHtml(s){
@@ -1113,7 +1196,8 @@ function renderSeances(c){
       const tags=[pr.done?`<span class="tag fait">Faite${pr.date?" le "+new Date(pr.date+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""}</span>`:"",
         s.eval?`<span class="tag eval">Évaluation</span>`:"",
         s.parcours?`<span class="tag parc">Parcours point ${s.parcours}</span>`:"",
-        s.billet?`<span class="tag billet">Billet n°${s.billet} en fin de séance</span>`:""].join("");
+        s.billet?`<span class="tag billet">Billet n°${s.billet} en fin de séance</span>`:"",
+        estPerso(s.id)?`<span class="tag perso">Modifiée</span>`:""].join("");
       html+=`<details class="seance${pr.done?" done":""}" data-sid="${s.id}" ${open===s.id?"open":""}>
         <summary><span class="sid">${s.id}</span><span class="stitle">${esc(s.t)}<small>${esc(s.k)}</small></span>${tags}</summary>
         <div class="sbody">
@@ -1131,12 +1215,13 @@ function renderSeances(c){
             </div>
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}${s.parcours?parcVierges(s.parcours):""}</div></div>
           </div>
+          ${ui.edit===s.id?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
           <div class="box"><h3>Déroulé (1h30)</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
           ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i}))),"ct-"+s.id,`data-copyct="${s.id}"`)}
           ${s.dev?`<div class="box"><h3>Devoirs à donner en fin de séance</h3>
             <div class="devoir" id="dev-${s.id}">${devoirHtml(s)}</div>
             <div class="row"><button class="btn primary small" data-copy="${s.id}">Copier les devoirs</button></div>
-            ${s.dev.includes(LIEN)?lienBox(s,"lien"):""}</div>`:""}
+            ${s.dev.includes(LIEN)?lienBox(s,"lien"):""}</div>`:""}`}
         </div></details>`;
     }
     html+=`</div>`;
@@ -1189,6 +1274,7 @@ function renderDocuments(){
    +`<div class="panel docgroup"><h2>Parcours vierges (sans prénom, à projeter si besoin)</h2><div class="docs">${POINTS.map(p=>["R","E","D"].map(g=>`<button class="doc" data-pdoc="${p.n}${g}"><b>Point ${p.n}</b> · ${G[g]}</button>`).join("")).join("")}</div></div>`;
 }
 function render(){
+  applyPerso();
   data.classes.forEach(invalider);
   const keep=ui.manage&&$("#fEleves")?{n:$("#fNom").value,e:$("#fEleves").value}:null;
   if(!data.classes.find(c=>c.id===ui.cls)&&data.classes[0])ui.cls=data.classes[0].id;
@@ -1210,6 +1296,13 @@ document.addEventListener("click",ev=>{
   if(t.dataset.doc){telecharger(t.dataset.doc,openWin());return}
   if(t.dataset.pdoc){const k=t.dataset.pdoc,w=openWin();getBytes("docs/parcours/P"+k+".pdf").then(b=>save("Parcours_point"+k[0]+"_"+({R:"Je_reprends",E:"Je_m_entraine",D:"Je_releve_un_defi"})[k[1]]+".pdf",b,w)).catch(e=>{if(w)w.close();setStatus(docErr(e,"ce parcours"))});return}
   if(t.dataset.copylink){const v=t.dataset.copylink;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>{t.textContent="Copié ✓";setTimeout(()=>{t.textContent="Copier le lien seul"},1500)}).catch(()=>{prompt("Copie ce lien :",v)});return}
+  if(t.dataset.edit){ui.edit=t.dataset.edit;ui.open=t.dataset.edit;saveUi();render();const f=$("#ed-t-"+t.dataset.edit);if(f)f.focus();return}
+  if(t.dataset.edcancel){ui.edit=null;render();return}
+  if(t.dataset.edsave){savePerso(t.dataset.edsave);return}
+  if(t.dataset.edreset){const sid=t.dataset.edreset;if(!confirm("Remettre le texte d'origine de la séance "+sid+" ? Tes modifications de cette séance seront perdues."))return;
+    if(data.perso)delete data.perso[sid];ui.edit=null;persist();render();return}
+  if(t.dataset.edbold){const e=$("#ed-d-"+t.dataset.edbold);if(e){e.focus();document.execCommand("bold")}return}
+  if(t.dataset.edlien){const e=$("#ed-d-"+t.dataset.edlien);if(e){e.focus();document.execCommand("insertText",false,LIEN_TXT)}return}
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}
   if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i}))),t,"ct-"+sid);return}
   if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ctc-"+x.id);return}
