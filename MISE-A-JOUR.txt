@@ -1,3 +1,24 @@
+MISE À JOUR 2026-11-13.8 : avertissement avant le contrôle blanc, jeu Estimangle
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :
+  index.html, script.js, chapitres-p2.js, style.css
+  et le NOUVEAU fichier : jeux.js
+
+CE QUI CHANGE :
+- Contrôle blanc : si l'élève n'a pas encore fait tous les types d'exercices du chapitre, un encadré
+  « ⚠️ Attention » les liste (avec un lien vers chacun). Il peut quand même lancer le contrôle.
+- Angles, « Mesurer un angle » : plus que la lecture du rapporteur (la question « estime sans rapporteur »
+  est retirée).
+- Angles : nouvel onglet « 🎮 Jeux », en premier dans la liste des exercices, avec Estimangle :
+  · « Estimer l'angle » : un angle est tracé, on écrit sa mesure à l'œil ;
+  · « Lancer l'angle » : une mesure est donnée, une demi-droite tourne, on l'arrête au bon moment
+    (bouton Stop, barre Espace, ou clic sur la figure).
+  Niveau Facile : juste à 10° près ou moins ; Expert : à 5° près ou moins. Au-delà, c'est faux.
+  Chaque réponse affiche « ✅ JUSTE » ou « ❌ FAUX », la bonne mesure et l'écart. 10 angles par partie,
+  meilleur score gardé sur l'appareil.
+
+=========================================================
+
 MISE À JOUR 2026-11-13.7 : contrôles par chapitre, priorités de calcul en un seul exercice
 
 CE QUI CHANGE (contrôles papier) :

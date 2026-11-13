@@ -667,7 +667,9 @@ function sceneMesure(V, s1, m, ns = ['T', 'S', 'R'], { inner = false, sg = -1, n
 function genAngMesure() {
   let m; do { m = 5 * rand(4, 32); } while (m >= 80 && m <= 100);
   const nm = (ns) => angN(ns.join(''));
-  if (Math.random() < 0.3) {
+  // Ancienne variante « estimer sans rapporteur » : gardée uniquement pour recalculer à l'identique
+  // les contrôles papier créés avant la génération 4 (sur le site, seulement la lecture du rapporteur).
+  if (Math.random() < 0.3 && CTL_GEN >= 0 && CTL_GEN < 4) {
     const ns = pickNames3(), a1 = rand(-30, 40);
     const fig = angleFig(a1, a1 + m, ns, { len: 3.4 });
     const cand = [...new Set([m, 180 - m, clamp(m + pick([-30, 30, 45]), 10, 170), clamp(m + pick([-60, 60]), 10, 170)])].slice(0, 4);

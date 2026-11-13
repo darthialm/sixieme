@@ -96,7 +96,7 @@ Dans l'Espace professeur, carte **📝 Contrôle sur papier, par compétences** 
    - Deux tracés de droites (perpendiculaire et parallèle) avec une autre compétence ne tiennent pas sur une page.
    - Tu peux aussi choisir « ≈ 20 min », ou un nombre fixe de questions par compétence.
 3. **Imprimer les sujets** : une feuille A4 par élève, en recto seul. Les nombres changent pour chaque élève, mais les questions ressemblent à celles du site. En haut de la feuille, une bande porte le prénom, à détacher. La copie ne garde que son **code** (ex. `K7P-04`) et une grille **TB / MS / MF / MI** par compétence. Les tracés sont imprimés en vraie grandeur.
-   - Version aménagée : une question de moins par compétence (parfois deux, pour tenir sur la page), pas de ★, des caractères plus grands et une **aide** sous la première question de chaque compétence.
+   - Version aménagée : une question de moins par compétence (parfois deux, pour tenir sur la page), pas de ★, des caractères un peu plus grands, sans aide écrite. Il reste toujours au moins une question de chaque type d'exercice.
    - Chaque copie tient dans une page : elle ne peut jamais passer sur une 2e page. Les deux colonnes sont construites par le site (et non par le navigateur), donc elles s'impriment pareil partout.
    - Avec Chrome ou Edge, la copie occupe toute la page. Avec Safari ou Firefox, qui ajoutent parfois leurs propres marges, la copie est un peu plus petite pour tenir dans la zone imprimable (un peu moins de questions, ou plus de ★).
    - Si une copie est un peu trop longue à l'impression (police différente), son texte est légèrement resserré. Au pire, l'outil le signale avant d'imprimer.
