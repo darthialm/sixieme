@@ -545,6 +545,7 @@ function renderCreneaux(c){
         <div class="seg" role="group" aria-label="Ce créneau">
           ${[["","À venir"],["fait","Fait"],["partiel","Pas tout fini"],["annule","Annulé"]].map(([k,l])=>`<button data-cst="${k}" data-c="${x.id}" aria-pressed="${(x.st||"")===k}">${l}</button>`).join("")}
         </div>
+        ${ui.edit&&ui.editC===x.id&&x.pieces.some(p=>p.sid===ui.edit)?editBox(SEANCES.find(s=>s.id===ui.edit)):""}
         ${x.st==="partiel"?`<div class="row"><label for="reste-${x.id}">Temps qui n'a pas pu être fait</label>
           <select id="reste-${x.id}" data-reste="${x.id}">${[10,15,20,30,40,45,60,90].filter(m=>m<=x.d).map(m=>`<option value="${m}" ${+x.reste===m?"selected":""}>${fmtD(m)}</option>`).join("")}</select>
           <span class="hint">Ce qui n'a pas été fait passe au créneau suivant.</span></div>`:""}
@@ -558,7 +559,7 @@ function renderCreneaux(c){
         </div>
         <div class="sgrid">
           <div class="box"><h3>Repère</h3>${[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))].map(sid=>{const s=SEANCES.find(q=>q.id===sid);
-            return `<div><b>${esc(chapPos(s))}</b><br><span class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</span></div>`}).join("")||`<p class="hint">—</p>`}
+            return `<div><b>${esc(chapPos(s))}</b>${estPerso(s.id)?` <span class="tag perso">Modifiée</span>`:""}<br><span class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</span><br><button class="btn small" data-edit="${s.id}" data-editc="${x.id}" style="margin-top:4px">✏️ Modifier les textes de cette séance</button></div>`}).join("")||`<p class="hint">—</p>`}
             ${parcs.map(s=>{const n=POINTS.find(q=>q.p===s).n;return `<div><button class="btn small" data-goparc="${n}">Préparer les parcours du point ${n}</button></div>`}).join("")}
             ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">Billet n°${n} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
           </div>
@@ -954,8 +955,8 @@ function savePerso(sid){
   if(dev!==o.dev)p.dev=dev;
   data.perso=data.perso||{};
   if(Object.keys(p).length)data.perso[sid]=p;else delete data.perso[sid];
-  ui.edit=null;ui.open=sid;saveUi();persist();render();
-  setTimeout(()=>{const d=document.querySelector(`details[data-sid="${sid}"]`);if(d)d.scrollIntoView({block:"start"})},0);
+  const cid=ui.editC;ui.edit=null;ui.editC=null;if(!cid)ui.open=sid;saveUi();persist();render();
+  setTimeout(()=>{const d=document.querySelector(cid?`details[data-cid="${cid}"]`:`details[data-sid="${sid}"]`);if(d)d.scrollIntoView({block:"start"})},0);
 }
 
 /* ======================= OUTILS ======================= */
@@ -1016,17 +1017,41 @@ async function getBytes(path){
 }
 /** ouvre le PDF dans un nouvel onglet (lecture, impression) ; la fenêtre est ouverte tout de suite pour éviter le bloqueur */
 function openWin(){try{const w=window.open("","_blank");if(w)w.document.write("<p style='font-family:sans-serif;padding:20px'>Préparation du document…</p>");return w}catch(e){return null}}
-function show(win,filename,bytes){
-  const url=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
-  if(win&&!win.closed){win.location.href=url;setStatus("Document ouvert dans un nouvel onglet : "+filename)}
-  else{const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setStatus("Fichier téléchargé : "+filename)}
-  setTimeout(()=>URL.revokeObjectURL(url),120000);
+/* titre lisible : dans les infos du PDF (onglet, lecteur) et dans la page qui l'affiche, avec un bouton qui télécharge sous le bon nom */
+const titreDe=(filename)=>filename.replace(/\.pdf$/i,"").replace(/[_]+/g," ").trim();
+async function titrer(bytes,titre){
+  try{if(!window.PDFLib)return bytes;const doc=await PDFLib.PDFDocument.load(bytes,{updateMetadata:false,ignoreEncryption:true});
+    doc.setTitle(titre,{showInWindowTitleBar:true});return await doc.save({useObjectStreams:false})}
+  catch(e){return bytes}
+}
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+async function show(win,filename,bytes,titre){
+  titre=titre||titreDe(filename);
+  bytes=await titrer(bytes,titre);
+  const url=URL.createObjectURL(new File([bytes],filename,{type:"application/pdf"}));
+  if(win&&!win.closed){
+    if(IOS)win.location.href=url;
+    else{
+      const d=win.document;d.open();
+      d.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(titre)}</title>
+<style>html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#525659}.bar{height:48px;box-sizing:border-box;display:flex;gap:12px;align-items:center;padding:0 12px;background:#1f2937;color:#fff}
+.bar b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar a{color:#fff;background:#2563eb;padding:7px 12px;border-radius:8px;text-decoration:none;font-weight:600;white-space:nowrap}
+iframe{display:block;border:0;width:100%;height:calc(100% - 48px)}</style></head>
+<body><div class="bar"><b>${esc(titre)}</b><a href="${url}" download="${esc(filename)}">⬇ Télécharger</a></div><iframe src="${url}" title="${esc(titre)}"></iframe></body></html>`);
+      d.close();
+    }
+    setStatus("Document ouvert dans un nouvel onglet : "+titre);
+    setTimeout(()=>URL.revokeObjectURL(url),3600000);
+  }else{
+    const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setStatus("Fichier téléchargé : "+filename);
+    setTimeout(()=>URL.revokeObjectURL(url),120000);
+  }
   return true;
 }
-function save(filename,bytes,win){return show(win||null,filename,bytes)}
+function save(filename,bytes,win,titre){return show(win||null,filename,bytes,titre)}
 async function telecharger(key,win){
   const d=DOCS[key];if(!d)return;
-  try{setStatus("Préparation de « "+d.label+" »…");const b=await getBytes(d.path);show(win,d.path.split("/").pop(),b)}
+  try{setStatus("Préparation de « "+d.label+" »…");const b=await getBytes(d.path);await show(win,d.path.split("/").pop(),b,d.label+(d.sub?" ("+d.sub+")":""))}
   catch(e){if(win)win.close();setStatus(docErr(e,d.label))}
 }
 function docErr(e,label){
@@ -1091,7 +1116,7 @@ async function genererParcours(p,win){
     out.setTitle("Parcours point "+p+" – "+c.nom);
     const bytes=await out.save();
     const nom=("Parcours_point"+p+"_"+c.nom).replace(/[^A-Za-z0-9_\-]+/g,"_")+".pdf";
-    save(nom,bytes,win);
+    save(nom,bytes,win,"Parcours point "+p+" – "+c.nom);
   }catch(e){if(win)win.close();setStatus("Le PDF n'a pas pu être fabriqué. Réessaie, ou ouvre les parcours séparés dans l'onglet Documents.")}
   busy=false;render();
 }
@@ -1215,7 +1240,7 @@ function renderSeances(c){
             </div>
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}${s.parcours?parcVierges(s.parcours):""}</div></div>
           </div>
-          ${ui.edit===s.id?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
+          ${ui.edit===s.id&&!ui.editC?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
           <div class="box"><h3>Déroulé (1h30)</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
           ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i}))),"ct-"+s.id,`data-copyct="${s.id}"`)}
           ${s.dev?`<div class="box"><h3>Devoirs à donner en fin de séance</h3>
@@ -1296,11 +1321,12 @@ document.addEventListener("click",ev=>{
   if(t.dataset.doc){telecharger(t.dataset.doc,openWin());return}
   if(t.dataset.pdoc){const k=t.dataset.pdoc,w=openWin();getBytes("docs/parcours/P"+k+".pdf").then(b=>save("Parcours_point"+k[0]+"_"+({R:"Je_reprends",E:"Je_m_entraine",D:"Je_releve_un_defi"})[k[1]]+".pdf",b,w)).catch(e=>{if(w)w.close();setStatus(docErr(e,"ce parcours"))});return}
   if(t.dataset.copylink){const v=t.dataset.copylink;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>{t.textContent="Copié ✓";setTimeout(()=>{t.textContent="Copier le lien seul"},1500)}).catch(()=>{prompt("Copie ce lien :",v)});return}
-  if(t.dataset.edit){ui.edit=t.dataset.edit;ui.open=t.dataset.edit;saveUi();render();const f=$("#ed-t-"+t.dataset.edit);if(f)f.focus();return}
-  if(t.dataset.edcancel){ui.edit=null;render();return}
+  if(t.dataset.edit){ui.edit=t.dataset.edit;ui.editC=t.dataset.editc||null;if(ui.editC)ui.openC=ui.editC;else ui.open=ui.edit;saveUi();render();
+    const f=$("#ed-t-"+ui.edit);if(f){f.focus();const b=$("#edit-"+ui.edit);if(b)b.scrollIntoView({block:"start"})}return}
+  if(t.dataset.edcancel){ui.edit=null;ui.editC=null;render();return}
   if(t.dataset.edsave){savePerso(t.dataset.edsave);return}
   if(t.dataset.edreset){const sid=t.dataset.edreset;if(!confirm("Remettre le texte d'origine de la séance "+sid+" ? Tes modifications de cette séance seront perdues."))return;
-    if(data.perso)delete data.perso[sid];ui.edit=null;persist();render();return}
+    if(data.perso)delete data.perso[sid];ui.edit=null;ui.editC=null;persist();render();return}
   if(t.dataset.edbold){const e=$("#ed-d-"+t.dataset.edbold);if(e){e.focus();document.execCommand("bold")}return}
   if(t.dataset.edlien){const e=$("#ed-d-"+t.dataset.edlien);if(e){e.focus();document.execCommand("insertText",false,LIEN_TXT)}return}
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}

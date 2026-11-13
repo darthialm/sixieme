@@ -1,3 +1,14 @@
+MISE À JOUR 2026-11-13.3 : modifier aussi depuis les créneaux, titres des PDF
+
+CE QUI CHANGE (classeur) :
+- Classes suivies par créneaux : dans chaque créneau, encadré « Repère », bouton
+  « ✏️ Modifier les textes de cette séance » (mêmes possibilités que dans la liste des séances).
+- Documents et PDF fabriqués (cours, corrigés, parcours…) : l'onglet affiche un vrai titre
+  (ex. « Cours Angles (élève) ») au lieu d'une suite de lettres, et le bouton « ⬇ Télécharger »
+  enregistre le fichier sous son nom (ex. Angles_eleve.pdf).
+
+=========================================================
+
 MISE À JOUR 2026-11-13.2 : modifier soi-même les textes des séances (classeur)
 
 CE QUI CHANGE :
