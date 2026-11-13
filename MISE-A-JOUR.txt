@@ -1,3 +1,13 @@
+MISE À JOUR 2026-11-13.5 : sujets de contrôle en fichier PDF
+
+CE QUI CHANGE :
+- Espace professeur, « Imprimer les sujets » : nouveau bouton « 📄 Télécharger le PDF » à côté de
+  « Imprimer ». Il crée directement un fichier PDF, une page A4 par copie, dans l'ordre de distribution.
+  (Connexion internet nécessaire ; sinon, « Imprimer » puis « Enregistrer au format PDF ».)
+- Feuilles d'entraînement sur papier : même bouton « 📄 Télécharger le PDF ».
+
+=========================================================
+
 MISE À JOUR 2026-11-13.4 : durées des étapes modifiables, accès rapide à l'Espace professeur
 
 CE QUI CHANGE :

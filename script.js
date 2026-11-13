@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-12';
+const SITE_VERSION = '2026-11-13';
 
 /* =========================================================
    Outils
@@ -4483,14 +4483,51 @@ function fitSheets(doc) {
   });
   return bad;
 }
+/* ---------- Fichier PDF : chaque .ctl-sheet de la fenêtre d'impression devient une page A4 ---------- */
+const PDF_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
+function pdfLoad(w) {
+  return PDF_LIBS.reduce((p, src) => p.then(() => new Promise((ok, ko) => {
+    if (w.document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = w.document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('chargement'));
+    w.document.head.appendChild(s);
+  })), Promise.resolve());
+}
+const pdfName = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) + '.pdf';
+async function savePdf(w, fileName, btn) {
+  const d = w.document, label = btn.textContent, sheets = [...d.querySelectorAll('.ctl-sheet')].filter((s) => s.offsetParent);
+  if (!sheets.length) return;
+  btn.disabled = true;
+  try {
+    btn.textContent = '⏳ Préparation…';
+    await pdfLoad(w);
+    d.body.classList.add('pdf-snap');
+    const pdf = new w.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true }), px = 25.4 / 96;
+    for (let i = 0; i < sheets.length; i++) {
+      btn.textContent = `⏳ Page ${i + 1} / ${sheets.length}…`;
+      const sh = sheets[i], wMM = sh.offsetWidth * px, hMM = sh.offsetHeight * px;
+      const cv = await w.html2canvas(sh, { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false });
+      if (i) pdf.addPage('a4');
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', (210 - wMM) / 2, Math.max(0, (297 - hMM) / 2), wMM, hMM, undefined, 'FAST');
+      cv.width = cv.height = 0;
+    }
+    pdf.save(fileName);
+    btn.textContent = '✔ PDF téléchargé';
+    setTimeout(() => { btn.textContent = label; }, 3000);
+  } catch (e) {
+    btn.textContent = label;
+    w.alert('Le PDF n\'a pas pu être créé (connexion internet nécessaire). Tu peux utiliser « Imprimer », puis choisir « Enregistrer au format PDF » comme imprimante.');
+  } finally { d.body.classList.remove('pdf-snap'); btn.disabled = false; }
+}
 function printSheets(c) {
   const po = ctlPrintOrder(c);
   const ord = po.plan ? `Ordre de distribution : plan de classe${c.c ? ' de la ' + esc(c.c) : ''} (${po.placed} copie${po.placed > 1 ? 's' : ''}${po.rest.length ? ` ; hors plan, à la fin : ${po.rest.map(esc).join(', ')}` : ''})${seatGet(c.c).rev ? ', en ordre inverse' : ''}.` : 'Ordre alphabétique (pas de plan de classe pour cette classe).';
-  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <span class="small muted">Recto seul, marges : aucune, échelle 100 %. Si l'adresse du site apparaît encore en bas, décoche « En-têtes et pieds de page » dans la fenêtre d'impression.</span></p></div>`;
+  const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <button type="button" class="btn" id="ctl-pdf">📄 Télécharger le PDF</button> <span class="small muted">Recto seul, marges : aucune, échelle 100 %. Si l'adresse du site apparaît encore en bas, décoche « En-têtes et pieds de page » dans la fenêtre d'impression.</span></p></div>`;
   const body = bar + `<div class="${CTL_MODE}">` + renderSheets(c, po.order).join('') + '</div>';
   printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, async (w) => {
     // Une copie = une page : on attend la police, puis on resserre les rares copies qui dépasseraient
     const btn = w.document.getElementById('ctl-go'); if (btn) btn.disabled = true;
+    const pb = w.document.getElementById('ctl-pdf');
+    if (pb) { pb.disabled = true; pb.addEventListener('click', () => savePdf(w, pdfName(`Sujets ${c.id} ${c.t}`), pb)); }
     try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
     const bad = fitSheets(w.document), tight = w.document.querySelectorAll('.ctl-sheet[data-fit]').length;
     const el = w.document.getElementById('ctl-fit');
@@ -4498,6 +4535,7 @@ function printSheets(c) {
     el.textContent = bad.length ? `⚠ ${bad.length} copie(s) ne tiennent pas sur une page (${bad.slice(0, 8).join(', ')}${bad.length > 8 ? '…' : ''}) : la fin serait coupée. Reviens au site et enlève une question.`
       : `✔ ${c.s.length} copies, une page chacune${tight ? ` (${tight} copie${tight > 1 ? 's' : ''} un peu resserrée${tight > 1 ? 's' : ''})` : ''}.`;
     if (btn) btn.disabled = false;
+    if (pb) pb.disabled = false;
   });
 }
 
@@ -4545,10 +4583,12 @@ function printTraining(k) {
   const head = `<div class="ctl-head tr-head"><div class="ctl-title"><b>${esc(G0.label)}</b><br><span class="small">Entraînement · ${esc(ch?.title || '')}${slow ? ' · Figures en vraie grandeur : fais les tracés dessus, avec tes instruments.' : ''}${qs.some((x) => x.hard) ? ' · ★ : question plus difficile' : ''}</span></div><div class="tr-name">Prénom : <span class="tr-line"></span><br>Date : <span class="tr-line"></span></div></div>`;
   const sujet = paperPages(items, head, '', oneCol);
   const corrige = paperPages(corr, `<div class="ctl-head tr-head"><div class="ctl-title"><b>Corrigé — ${esc(G0.label)}</b></div></div>`, 'tr-corr-sheet', false);
-  const bar = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer ou enregistrer en PDF</button> <label class="small"><input type="checkbox" checked onchange="document.body.classList.toggle('no-corr', !this.checked)"> Ajouter le corrigé à la fin</label></p></div>`;
+  const bar = `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <button type="button" class="btn" id="ctl-pdf">📄 Télécharger le PDF</button> <label class="small"><input type="checkbox" checked onchange="document.body.classList.toggle('no-corr', !this.checked)"> Ajouter le corrigé à la fin</label></p></div>`;
   printWindow(`${G0.label} — entraînement`, `${bar}<div class="${CTL_MODE}"><div class="tr-part">${sujet.join('')}</div><div class="tr-part tr-corr">${corrige.join('')}</div></div>`, PRINT_CSS, async (w) => {
     try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
     fitSheets(w.document);
+    const pb = w.document.getElementById('ctl-pdf');
+    if (pb) pb.addEventListener('click', () => savePdf(w, pdfName(`${G0.label} entrainement`), pb));
   }, `#/${G0.ch}`);
 }
 

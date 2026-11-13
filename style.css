@@ -903,6 +903,8 @@ body.print-doc { color: #000; }
 /* Safari, Firefox… : copie plus petite que la zone imprimable, quelles que soient leurs marges */
 .pm-safe .ctl-sheet { width: 176mm; height: 262mm; padding: 0; }
 @media screen { .pm-safe .ctl-sheet { outline: 12mm solid #fff; margin: 18mm auto 22mm; } }
+/* capture pour le fichier PDF : ni ombre ni contour autour de la copie */
+body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 @media print { body.print-doc .ctl-sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; } body.print-doc .ctl-sheet:last-child { break-after: auto; page-break-after: auto; } }
 .ctl-sheet .ord-list { font-weight: 700; margin: .5mm 0; }
 .ctl-sheet .ord-ans { line-height: 2.1; margin: .5mm 0; }
