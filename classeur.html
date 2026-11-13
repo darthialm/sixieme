@@ -64,7 +64,7 @@ button{cursor:pointer}
 .hint{font-size:.9rem;color:var(--muted);margin:0}
 .warn{font-size:.9rem;color:var(--danger);margin:0}
 label{font-weight:700;font-size:.95rem}
-input[type=text],input[type=url],input[type=date],textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+input[type=text],input[type=url],input[type=date],input[type=password],textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
 input[type=date]{width:auto}
 textarea{min-height:220px;resize:vertical}
 .confirm{border:1px solid var(--danger);border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -162,6 +162,17 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
 .linkrow code{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;word-break:break-all;font-size:.82rem;max-width:100%}
 .filebtn{position:relative;overflow:hidden}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.sync{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.sync h3{margin:0;font-size:1.05rem}
+.sync p{margin:0}
+.syncgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.syncgrid>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sync details{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg)}
+.sync summary{cursor:pointer;font-weight:700}
+.sync ol{margin:8px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.sync a{color:var(--accent)}
+#syncAlert{border-color:var(--danger);margin-bottom:10px}
+#syncAlert p{margin:0}
 </style>
 </head>
 <body>
@@ -184,15 +195,17 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
     </div>
     <div class="bar" id="classBar"></div>
   </div>
+  <div id="syncAlert" class="panel" hidden role="alert"></div>
   <div id="manage" class="panel" hidden></div>
   <div class="tabs" role="tablist" id="tabs"></div>
   <div id="main"></div>
   <div class="panel" style="margin-top:8px">
     <h2>Sauvegarde</h2>
-    <p class="hint">Tes classes, groupes et progressions sont enregistrés <b>sur cet appareil seulement</b> (rien n'est envoyé sur Internet). Fais de temps en temps une sauvegarde : si le navigateur efface ses données, tu pourras tout restaurer.</p>
+    <p class="hint">Tes classes, groupes et progressions sont enregistrés <b>sur cet appareil</b>. Sans la synchronisation (plus bas), rien n'est envoyé sur Internet. Fais de temps en temps une sauvegarde dans un fichier : si le navigateur efface ses données, tu pourras tout restaurer.</p>
     <div class="row"><button class="btn" id="btnExport">💾 Sauvegarder dans un fichier</button>
     <label class="btn filebtn">📂 Restaurer une sauvegarde<input type="file" id="fileImport" accept="application/json,.json"></label>
     <button class="btn danger" id="btnLock">🔒 Verrouiller (oublier le code sur cet appareil)</button></div>
+    <div class="sync" id="syncBox"></div>
   </div>
   </div>
 </div>
@@ -599,8 +612,10 @@ function norm(d){
 function persist(){clearTimeout(timer);setStatus("Enregistrement…");timer=setTimeout(flush,400)}
 function flush(){
   timer=null;
+  let ok=true;
   try{localStorage.setItem(STORE_KEY,JSON.stringify(data,(k,v)=>k==="_plan"?undefined:v));setStatus("Enregistré sur cet appareil.")}
-  catch(e){setStatus("⚠ Pas enregistré : le navigateur refuse (navigation privée ?). Fais une sauvegarde dans un fichier.")}
+  catch(e){ok=false;setStatus("⚠ Pas enregistré : le navigateur refuse (navigation privée ?). Fais une sauvegarde dans un fichier.")}
+  if(sync){syncEdits++;sync.dirty=true;saveSync();if(ok)showSyncStatus();scheduleSync(4000)}
 }
 function loadLocal(){try{const d=JSON.parse(localStorage.getItem(STORE_KEY)||"null");if(d&&Array.isArray(d.classes))data=norm(d)}catch(e){}}
 
@@ -634,7 +649,224 @@ async function connect(){
   let ok=false;try{ok=await restoreKey()}catch(e){}
   if(ok)start();else{$("#gate").hidden=false;$("#gateCode").focus()}
 }
-function start(){$("#gate").hidden=true;$("#app").hidden=false;loadLocal();render();setStatus("Enregistré sur cet appareil.")}
+async function start(){$("#gate").hidden=true;$("#app").hidden=false;loadLocal();await loadSync();started=true;render();renderSync();setStatus("Enregistré sur cet appareil.");if(sync){showSyncStatus();syncNow()}}
+
+/* ======================= SYNCHRONISATION (dépôt GitHub privé, données chiffrées) =======================
+   Le classeur est envoyé dans le fichier classeur.json d'un dépôt GitHub PRIVÉ, chiffré (AES-GCM) avec une clé
+   tirée du code de synchronisation choisi par le professeur. Le code n'est jamais enregistré ni envoyé :
+   seule la clé qui en dérive est gardée sur l'appareil, comme pour le code des documents. */
+const SYNC_STORE="revisions6e-classeur-sync",SYNC_FILE="classeur.json",SYNC_ITER=250000;
+let sync=null,syncKey=null,syncTimer=null,syncBusy=false,syncAgain=false,syncEdits=0,syncRetries=0,syncConflict=null,syncErr="",started=false;
+const u8b64=(u)=>{let s="";for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
+const syncStrip=(d)=>JSON.parse(JSON.stringify(d,(k,v)=>k==="_plan"?undefined:v));
+function saveSync(){try{if(sync)localStorage.setItem(SYNC_STORE,JSON.stringify(sync));else localStorage.removeItem(SYNC_STORE)}catch(e){}}
+async function loadSync(){
+  sync=null;syncKey=null;
+  let s=null;try{s=JSON.parse(localStorage.getItem(SYNC_STORE)||"null")}catch(e){}
+  if(!s||!s.key||!s.repo||!s.token)return;
+  try{syncKey=await crypto.subtle.importKey("raw",b64u8(s.key),{name:"AES-GCM"},false,["encrypt","decrypt"]);sync=s}catch(e){}
+}
+async function syncDerive(code,salt){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(code),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64u8(salt),iterations:SYNC_ITER,hash:"SHA-256"},base,{name:"AES-GCM",length:256},true,["encrypt","decrypt"]);
+}
+async function syncEncrypt(key,obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(obj))));
+  const u=new Uint8Array(12+ct.length);u.set(iv);u.set(ct,12);return u8b64(u);
+}
+async function syncDecrypt(key,t){return JSON.parse(new TextDecoder().decode(await decryptBytes(key,b64u8(t))))}
+
+/* --- GitHub (API « contents ») --- */
+function SyncErr(code,st){const e=new Error(code);e.code=code;e.st=st;return e}
+async function ghFetch(cfg,path,opt){
+  opt=opt||{};
+  try{return await fetch("https://api.github.com/repos/"+cfg.repo+path,{method:opt.method||"GET",body:opt.body,cache:"no-store",
+    headers:Object.assign({"Authorization":"Bearer "+cfg.token,"Accept":"application/vnd.github+json"},opt.headers||{})})}
+  catch(e){throw SyncErr("reseau")}
+}
+function ghErr(r){
+  if(r.status===401)return SyncErr("jeton",401);
+  if(r.status===403||r.status===429)return SyncErr(r.headers.get("x-ratelimit-remaining")==="0"||r.status===429?"limite":"droits",r.status);
+  if(r.status===404)return SyncErr("introuvable",404);
+  return SyncErr("github",r.status);
+}
+async function ghGet(cfg){
+  const r=await ghFetch(cfg,"/contents/"+SYNC_FILE);
+  if(r.status===404)return null;
+  if(!r.ok)throw ghErr(r);
+  const j=await r.json();
+  let b64=j.content;
+  if(!b64||j.encoding!=="base64"){const r2=await ghFetch(cfg,"/git/blobs/"+j.sha);if(!r2.ok)throw ghErr(r2);b64=(await r2.json()).content}
+  let file=null;try{file=JSON.parse(atob(String(b64).replace(/\s/g,"")))}catch(e){}
+  return {sha:j.sha,file};
+}
+async function ghPut(cfg,file,sha){
+  const body={message:"Classeur : enregistrement du "+new Date().toLocaleString("fr-FR"),content:btoa(JSON.stringify(file))};
+  if(sha)body.sha=sha;
+  const r=await ghFetch(cfg,"/contents/"+SYNC_FILE,{method:"PUT",body:JSON.stringify(body),headers:{"Content-Type":"application/json"}});
+  if(r.status===409||r.status===422)throw SyncErr("conflit",r.status);
+  if(!r.ok)throw ghErr(r);
+  return (await r.json()).content.sha;
+}
+function syncMsg(e){
+  return ({reseau:"pas de connexion Internet. Nouvel essai automatique.",
+    jeton:"GitHub refuse le jeton (il a peut-être expiré). Crée un nouveau jeton, puis « Arrêter sur cet appareil » et reconnecte-toi (en bas de page).",
+    droits:"le jeton n'a pas le droit d'écrire dans le dépôt : il lui faut la permission « Contents : Read and write ».",
+    introuvable:"dépôt introuvable avec ce jeton (vérifie le nom du dépôt et que le jeton y a accès).",
+    limite:"GitHub limite les envois pour l'instant. Nouvel essai automatique dans quelques minutes.",
+    code:"la version en ligne est chiffrée avec un autre code de synchronisation. « Arrêter sur cet appareil », puis reconnecte-toi avec le bon code.",
+    fichier:"le fichier classeur.json du dépôt est abîmé ou n'est pas un classeur synchronisé."})[e&&e.code]||"GitHub n'a pas répondu correctement. Nouvel essai automatique.";
+}
+
+/* --- un cycle : lire la version en ligne, fusionner si besoin, envoyer --- */
+function scheduleSync(ms){clearTimeout(syncTimer);syncTimer=null;if(sync&&started)syncTimer=setTimeout(syncNow,ms)}
+async function syncNow(){
+  clearTimeout(syncTimer);syncTimer=null;
+  if(!sync||!syncKey||!started)return;
+  if(syncBusy){syncAgain=true;return}
+  syncBusy=true;syncAgain=false;showSyncStatus();
+  let retry=0;
+  try{
+    const rem=await ghGet(sync);
+    if(rem&&(!rem.file||rem.file.type!=="classeur-6e-sync"||!rem.file.data))throw SyncErr("fichier");
+    if(rem&&rem.sha!==sync.sha){
+      let remData;try{remData=norm(await syncDecrypt(syncKey,rem.file.data))}catch(e){throw SyncErr("code")}
+      if(JSON.stringify(remData)===JSON.stringify(syncStrip(data))){sync.sha=rem.sha;sync.dirty=false;saveSync()}
+      else if(!sync.dirty)adoptRemote(remData,rem.sha);
+      else{
+        const choix=await askConflict(remData,rem.file.date);
+        if(choix==="rem"){keepCopy(data);adoptRemote(remData,rem.sha)}
+        else{keepCopy(remData);sync.sha=rem.sha;sync.dirty=true;saveSync()}
+      }
+    }
+    if(!rem||sync.dirty){
+      const n=syncEdits;
+      const file={type:"classeur-6e-sync",v:1,salt:sync.salt,iter:SYNC_ITER,date:new Date().toISOString(),data:await syncEncrypt(syncKey,syncStrip(data))};
+      sync.sha=await ghPut(sync,file,rem?rem.sha:null);
+      sync.dirty=syncEdits!==n;
+    }
+    sync.last=Date.now();saveSync();syncErr="";syncRetries=0;
+  }catch(e){
+    syncErr=syncMsg(e);
+    if(e.code==="conflit"&&syncRetries<2){syncRetries++;syncAgain=true}
+    else if(["reseau","github","limite","conflit"].includes(e.code))retry=e.code==="limite"?300000:60000;
+  }finally{
+    syncBusy=false;
+    if(sync){showSyncStatus();renderSync();if(syncAgain)scheduleSync(300);else if(retry)scheduleSync(retry)}
+  }
+}
+function adoptRemote(d,sha){
+  data=d;sync.sha=sha;sync.dirty=false;saveSync();
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(syncStrip(data)))}catch(e){}
+  render();
+}
+function keepCopy(d){try{localStorage.setItem("revisions6e-classeur-ecarte",JSON.stringify({date:new Date().toISOString(),data:syncStrip(d)}))}catch(e){}}
+const resume=(d)=>{const n=d.classes.length,e=d.classes.reduce((a,c)=>a+c.eleves.length,0);return n+" classe"+(n>1?"s":"")+", "+e+" élève"+(e>1?"s":"")};
+function askConflict(remData,date){
+  return new Promise(res=>{
+    syncConflict=res;
+    const box=$("#syncAlert");
+    const quand=date?new Date(date).toLocaleString("fr-FR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}):"";
+    box.innerHTML=`<p><b>Deux versions différentes du classeur.</b> La version en ligne${quand?" (enregistrée le "+esc(quand)+")":""} et celle de cet appareil ont toutes les deux été modifiées. Laquelle garder ?</p>
+      <div class="row"><button class="btn primary" data-garde="rem">Garder la version en ligne (${esc(resume(remData))})</button>
+      <button class="btn" data-garde="loc">Garder celle de cet appareil (${esc(resume(data))})</button></div>
+      <p class="hint">L'autre version sera remplacée partout. En cas de doute, fais d'abord « 💾 Sauvegarder dans un fichier » (en bas de page).</p>`;
+    box.hidden=false;showSyncStatus();
+  });
+}
+$("#syncAlert").addEventListener("click",e=>{
+  const b=e.target.closest("[data-garde]");if(!b||!syncConflict)return;
+  const r=syncConflict;syncConflict=null;$("#syncAlert").hidden=true;$("#syncAlert").innerHTML="";r(b.dataset.garde);
+});
+function showSyncStatus(){
+  if(!sync||!started)return;
+  if(syncConflict)setStatus("⚠ Choisis la version du classeur à garder (en haut de la page).");
+  else if(syncErr)setStatus("⚠ Enregistré sur cet appareil, mais pas en ligne : "+syncErr);
+  else if(syncBusy||sync.dirty)setStatus("Enregistré sur cet appareil · envoi en ligne…");
+  else setStatus("Enregistré sur cet appareil et en ligne ✓");
+}
+
+/* --- encadré « Synchroniser entre tes appareils » --- */
+function renderSync(){
+  const box=$("#syncBox");if(!box)return;
+  if(sync){
+    const last=sync.last?new Date(sync.last).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"}):"pas encore";
+    box.innerHTML=`<h3>Synchronisation entre tes appareils</h3>
+      <p>Active avec le dépôt privé <b>${esc(sync.repo)}</b>. Dernière synchronisation : ${esc(last)}.</p>
+      ${syncErr?`<p class="warn">${esc(syncErr)}</p>`:""}
+      <div class="row"><button class="btn" id="syncBtn">🔄 Synchroniser maintenant</button>
+      <button class="btn" id="syncOff">Arrêter sur cet appareil</button></div>
+      <p class="hint">Le classeur est envoyé chiffré quelques secondes après chaque modification, et la version en ligne est relue quand tu reviens sur la page. « Arrêter » oublie le jeton et le code sur cet appareil : tes classes restent sur l'appareil et en ligne.</p>`;
+    return;
+  }
+  box.innerHTML=`<h3>Synchroniser entre tes appareils</h3>
+    <p class="hint">Pour retrouver le classeur sur tous tes appareils, il est envoyé <b>chiffré</b> dans un dépôt GitHub <b>privé</b>. Sans ton code de synchronisation, personne ne peut le lire, pas même GitHub. Tu ne remplis ceci qu'<b>une fois par appareil</b>, avec le même dépôt et le même code partout.</p>
+    <details><summary>Comment créer le dépôt et le jeton (une seule fois)</summary><ol>
+      <li>Sur GitHub, crée un <b>nouveau dépôt</b> (<a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>), par exemple <code>classeur-donnees</code>, et coche <b>Private</b>. Ne mets pas le classeur dans le dépôt du site, qui est public.</li>
+      <li>Crée un jeton : <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings → Developer settings → Fine-grained tokens → Generate new token</a>. Nom : <code>classeur</code> ; durée : la plus longue proposée (note la date) ; <b>Repository access</b> : <i>Only select repositories</i> → ton dépôt privé ; <b>Permissions</b> → <i>Contents</i> : <b>Read and write</b>.</li>
+      <li>Clique sur <b>Generate token</b> et copie le jeton (il commence par <code>github_pat_</code>). Garde-le dans un endroit sûr : GitHub ne le montre qu'une fois, et il te servira sur tes autres appareils.</li>
+      <li>Choisis ton code de synchronisation (au moins 8 caractères) et retiens-le bien : sans lui, la version en ligne est illisible.</li></ol></details>
+    <div class="syncgrid">
+      <div><label for="syncRepo">Dépôt privé</label><input type="text" id="syncRepo" placeholder="ton-identifiant/classeur-donnees" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div><label for="syncTok">Jeton GitHub</label><input type="password" id="syncTok" placeholder="github_pat_…" autocomplete="off"></div>
+      <div><label for="syncCode">Ton code de synchronisation</label><input type="password" id="syncCode" autocomplete="new-password"></div>
+      <div><label for="syncCode2">Retape ce code</label><input type="password" id="syncCode2" autocomplete="new-password"></div>
+    </div>
+    <div class="row"><button class="btn primary" id="syncGo">Activer la synchronisation</button></div>
+    <p class="warn" id="syncMsg" aria-live="polite"></p>`;
+}
+async function syncActivate(){
+  const msg=(t)=>{$("#syncMsg").textContent=t};
+  const repo=$("#syncRepo").value.trim().replace(/^https?:\/\/github\.com\//i,"").replace(/\.git$/i,"").replace(/\/+$/,"");
+  const token=$("#syncTok").value.trim(),c1=$("#syncCode").value,c2=$("#syncCode2").value;
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo))return msg("Écris le dépôt sous la forme : ton-identifiant/nom-du-depot.");
+  if(!token)return msg("Colle le jeton GitHub.");
+  if(c1.length<8)return msg("Choisis un code de synchronisation d'au moins 8 caractères.");
+  if(c1!==c2)return msg("Les deux codes ne sont pas identiques.");
+  const cfg={repo,token};
+  $("#syncGo").disabled=true;
+  try{
+    msg("Vérification du dépôt…");
+    const r=await ghFetch(cfg,"");
+    if(!r.ok)throw ghErr(r);
+    const j=await r.json();
+    if(!j.private)return msg("Ce dépôt est PUBLIC : n'importe qui pourrait télécharger le fichier. Crée un dépôt privé (ou rends celui-ci privé : Settings → Change visibility).");
+    msg("Lecture de la version en ligne…");
+    const rem=await ghGet(cfg);
+    let salt,key;
+    if(rem){
+      if(!rem.file||rem.file.type!=="classeur-6e-sync"||!rem.file.salt)return msg(syncMsg({code:"fichier"}));
+      salt=rem.file.salt;key=await syncDerive(c1,salt);
+      try{await syncDecrypt(key,rem.file.data)}catch(e){return msg("Ce n'est pas le bon code de synchronisation : tape celui que tu as choisi sur ton premier appareil.")}
+    }else{salt=u8b64(crypto.getRandomValues(new Uint8Array(16)));key=await syncDerive(c1,salt)}
+    const raw=u8b64(new Uint8Array(await crypto.subtle.exportKey("raw",key)));
+    syncKey=await crypto.subtle.importKey("raw",b64u8(raw),{name:"AES-GCM"},false,["encrypt","decrypt"]);
+    sync={repo,token,salt,key:raw,sha:null,dirty:!rem||data.classes.length>0,last:0};
+    syncErr="";saveSync();renderSync();await syncNow();
+  }catch(e){msg(e&&e.code==="jeton"?"GitHub refuse ce jeton : vérifie que tu l'as copié en entier et qu'il n'a pas expiré.":"Impossible d'activer : "+syncMsg(e))}
+  finally{const b=$("#syncGo");if(b)b.disabled=false}
+}
+$("#syncBox").addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.id==="syncGo")syncActivate();
+  else if(t.id==="syncBtn")syncNow();
+  else if(t.id==="syncOff"){
+    if(sync&&sync.dirty&&!confirm("Les dernières modifications ne sont pas encore en ligne. Arrêter quand même sur cet appareil ?"))return;
+    clearTimeout(syncTimer);sync=null;syncKey=null;syncErr="";saveSync();renderSync();setStatus("Enregistré sur cet appareil.");
+  }
+});
+$("#syncBox").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("#syncBox input"))syncActivate()});
+document.addEventListener("visibilitychange",()=>{
+  if(!sync||!started)return;
+  if(document.visibilityState==="visible")syncNow();
+  else{if(timer){clearTimeout(timer);flush()}if(sync.dirty)syncNow()}
+});
+window.addEventListener("online",()=>{if(sync&&started)syncNow()});
+setInterval(()=>{
+  const a=document.activeElement,tag=a&&a.tagName;
+  if(sync&&started&&!syncBusy&&document.visibilityState==="visible"&&!/^(INPUT|TEXTAREA|SELECT)$/.test(tag||""))syncNow();
+},120000);
 
 /* ======================= OUTILS ======================= */
 function counts(c,p){const r={R:0,E:0,D:0,"0":0,ok:0};c.eleves.forEach(e=>{const v=(c.g[e.id]||{})[p];r[v||"0"]++;if((c.ok[e.id]||{})[p])r.ok++});return r}

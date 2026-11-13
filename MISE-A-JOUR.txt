@@ -1,3 +1,27 @@
+MISE À JOUR 2026-11-13 : synchronisation du classeur entre tes appareils
+
+À DÉPOSER À LA RACINE DU DÉPÔT GITHUB DU SITE (remplacer le fichier existant) :
+  classeur.html, README.md
+
+CE QUI CHANGE :
+- Classeur, en bas de page : nouvel encadré « Synchroniser entre tes appareils ».
+  Le classeur (classes, élèves, groupes, progressions) est envoyé CHIFFRÉ dans le fichier classeur.json
+  d'un AUTRE dépôt GitHub, PRIVÉ. Il est chiffré avec un code de synchronisation que tu choisis toi-même.
+  Ce code n'est jamais envoyé ni écrit en clair : sans lui, le fichier est illisible, même pour GitHub.
+- À faire une seule fois : créer le dépôt privé et un jeton GitHub (les étapes sont dans l'encadré).
+  Puis, sur chaque appareil, une seule fois : dépôt + jeton + ton code.
+- Ensuite c'est automatique : envoi quelques secondes après chaque modification, et relecture de la version
+  en ligne quand tu reviens sur la page. Si les deux versions ont été modifiées, le classeur te demande laquelle garder.
+- Sans connexion, tout reste enregistré sur l'appareil, et l'envoi est refait automatiquement plus tard.
+- Le dépôt doit être privé : le classeur refuse un dépôt public.
+
+RGPD : ce sont des noms et des résultats d'élèves. Le chiffrement protège les données, mais demande l'avis
+du DPD de ton académie, et garde le moins de données possible (prénoms ou initiales).
+
+Ne pas toucher aux autres fichiers. Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-12 : rapporteur animé, résultat direct, indice « virgule », progression, cours Angles
 
 À DÉPOSER À LA RACINE DU DÉPÔT GITHUB (remplacer les fichiers existants) :

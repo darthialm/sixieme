@@ -176,3 +176,8 @@ Le site vérifie les directions à 2° près, les longueurs et les rayons à 1 m
 - Soustraction : méthode choisie en image au début de chaque question (cassage : barrer et réécrire + petit 1 devant ; conservation des écarts : petit 1 devant + « +1 » en bas). Fiche : l'élève touche sa méthode, une seule s'affiche (`revisions6e-soustraction`).
 - Erreurs repérées : virgules non alignées (cas d'un nombre entier), nombres alignés à droite, nombre mal recopié ou inversé, retenue oubliée, soustraction à l'envers, +1 oublié, case vide en haut (écrire un 0), ligne non décalée, virgule du produit.
 - Papier : la grille devient un cadre ; corrigé = opération posée. Vidéoprojecteur : « Afficher la réponse » remplit la grille.
+
+## Classeur : synchronisation entre appareils
+
+Par défaut, le classeur (`classeur.html`) garde les classes sur l'appareil. En bas de page, l'encadré **Synchroniser entre tes appareils** l'envoie aussi dans le fichier `classeur.json` d'un **dépôt GitHub privé, séparé de celui du site**. Le fichier est chiffré (AES-GCM, clé tirée par PBKDF2 d'un code de synchronisation choisi par le professeur). Le code n'est jamais enregistré : chaque appareil ne garde que la clé et le jeton GitHub (permission *Contents : Read and write* sur ce seul dépôt). Si deux appareils ont modifié le classeur, il demande quelle version garder. La version écartée est gardée sur l'appareil, dans `revisions6e-classeur-ecarte`.
+
