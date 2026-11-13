@@ -1,3 +1,19 @@
+MISE À JOUR 2026-11-13.11 : Estimangle, menu des deux jeux, angles au degré près
+
+À DÉPOSER : jeux.js, style.css, index.html, script.js
+
+CE QUI CHANGE (jeu Estimangle, chapitre Les angles) :
+- Un menu avec deux grandes cartes pour choisir le jeu : « Estimer » ou « Lancer » (bouton « ← Menu » pendant la partie).
+- Les angles vont de 1° en 1° (de 1° à 179°). Un point seulement avec la mesure exacte.
+- « Estimer » : la mesure se règle sur un cadenas à 3 roues (centaines, dizaines, unités) qu'on fait défiler
+  à la molette (sans cliquer avant), au doigt, aux flèches ou en tapant les chiffres.
+- « Lancer » : la demi-droite tourne degré par degré (lente en Facile, rapide en Expert).
+- Niveau Expert en « Estimer » : l'angle est tourné n'importe comment (Facile : un côté horizontal).
+- Nouveau décor de jeu (fond sombre, couleurs vives, pastilles de progression, étoiles à la fin).
+- Consignes réduites à une phrase de but. Les records repartent de zéro.
+
+=========================================================
+
 MISE À JOUR 2026-11-13.10 : Estimangle, mesure exacte et roue de nombres
 
 À DÉPOSER : jeux.js, style.css, index.html, script.js
