@@ -229,17 +229,18 @@
       $('.eg-controls').innerHTML = '<button type="button" class="eg-btn eg-go">▶ Lancer</button>';
       const btn = $('.eg-go');
       btn.focus({ preventScroll: true });
-      // la demi-droite avance degré par degré (on voit des degrés entiers : on peut s'arrêter pile)
+      // la demi-droite tourne de façon fluide : on déplace seulement son extrémité (pas de redessin = pas de clignotement) ;
+      // à l'arrêt, l'angle est arrondi au degré
       let cur = 0, dirn = 1, last = 0;
       const speed = LEVELS[st.level].speed;
-      let shown = -1;
+      const mv = svg.querySelector('.eg-move');
       const tick = (now) => {
         const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now;
         cur += dirn * speed * dt;
         if (cur >= 180) { cur = 360 - cur; dirn = -1; }
         if (cur <= 0) { cur = -cur; dirn = 1; }
-        const a = Math.round(cur);
-        if (a !== shown) { shown = a; draw(a); }
+        const P = at(V, a0 + s * cur, L);
+        mv.setAttribute('x2', f(P.x)); mv.setAttribute('y2', f(P.y));
         st.raf = requestAnimationFrame(tick);
       };
       const halt = () => {

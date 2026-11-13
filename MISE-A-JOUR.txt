@@ -1,3 +1,11 @@
+MISE À JOUR 2026-11-13.12 : Estimangle, demi-droite fluide
+
+À DÉPOSER : jeux.js, index.html, script.js
+
+- Mode « Lancer » : la demi-droite tourne normalement, sans clignoter.
+
+=========================================================
+
 MISE À JOUR 2026-11-13.11 : Estimangle, menu des deux jeux, angles au degré près
 
 À DÉPOSER : jeux.js, style.css, index.html, script.js
