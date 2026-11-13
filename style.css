@@ -985,8 +985,8 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 .eg-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px 16px; border-radius: 16px; border: 2px solid var(--g-line); color: var(--g-ink);
   background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.02)); transition: transform .12s, border-color .12s, box-shadow .12s; }
 .eg-card:hover, .eg-card:focus-visible { transform: translateY(-3px); outline: none; }
-.eg-card-estimer:hover, .eg-card-estimer:focus-visible { border-color: var(--g-cyan); box-shadow: 0 0 20px rgba(63,227,255,.35); }
-.eg-card-lancer:hover, .eg-card-lancer:focus-visible { border-color: var(--g-pink); box-shadow: 0 0 20px rgba(255,95,174,.35); }
+.eg-card-a:hover, .eg-card-a:focus-visible { border-color: var(--g-cyan); box-shadow: 0 0 20px rgba(63,227,255,.35); }
+.eg-card-b:hover, .eg-card-b:focus-visible { border-color: var(--g-pink); box-shadow: 0 0 20px rgba(255,95,174,.35); }
 .eg-card svg { width: 110px; height: 100px; }
 .eg-card-name { font-size: 1.35rem; font-weight: 800; }
 .eg-card-goal { color: var(--g-dim); font-size: .95rem; }
@@ -1013,6 +1013,17 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 .eg-dot { fill: var(--g-yellow); }
 .eg-guess { stroke: var(--g-red); stroke-width: .08; stroke-dasharray: .25 .18; stroke-linecap: round; }
 .eg-want { stroke: var(--g-green); }
+.eg-svg .eg-halo, .eg-card .eg-halo { stroke-width: .34; opacity: .2; }
+.eg-mine { stroke: var(--g-pink); }
+.eg-want-ok { stroke: var(--g-green); }
+.eg-name { font-size: .5px; font-weight: 800; fill: var(--g-ink); font-style: italic; }
+.eg-sq { fill: none; stroke: var(--g-green); stroke-width: .05; }
+.eg-svg.eg-grab { cursor: grab; touch-action: none; outline: none; }
+.eg-svg.eg-grab:active { cursor: grabbing; }
+.eg-svg.eg-grab:focus-visible { box-shadow: inset 0 0 0 2px var(--g-cyan); }
+.eg-lock.eg-shake { animation: eg-shake .35s; }
+@keyframes eg-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.eg-warn { color: var(--g-yellow); font-weight: 700; margin: 6px 0 0; }
 .eg-arc { fill: none; stroke: var(--g-pink); stroke-width: .07; }
 .eg-lab { font-size: .6px; font-weight: 800; fill: var(--g-yellow); paint-order: stroke; stroke: var(--g-bg); stroke-width: .14px; }
 .eg-controls { text-align: center; margin: 12px 0; }

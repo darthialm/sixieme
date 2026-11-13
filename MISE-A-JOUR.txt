@@ -1,3 +1,17 @@
+MISE À JOUR 2026-11-14.1 : nouveau jeu « Droite parfaite » (chapitre Droites), corrections d'Estimangle
+
+À DÉPOSER : jeux.js, style.css, index.html, script.js
+
+- Chapitre Droites : nouvelle page 🎮 Jeux avec « Droite parfaite ». Trace la parallèle ou la perpendiculaire à (d)
+  passant par un point, sans équerre. Deux modes : « Tracer » (on fait tourner la droite à la souris ou au doigt,
+  molette pour ajuster) et « Lancer » (la droite tourne, on l'arrête). PERFECT si l'écart est de 1° au plus (Facile)
+  ou 0,5° au plus (Expert) : confettis et « Perfect parallèle ! » / « Perfect perpendiculaire ! ».
+- Estimangle : plus de clignotement, et plus de côté d'angle invisible (sur iPad notamment) : l'effet lumineux
+  n'utilise plus de filtre.
+- Estimangle : on ne peut plus valider 0° ou plus de 179° par erreur (le cadenas tremble et demande une mesure de 1° à 179°).
+
+=========================================================
+
 MISE À JOUR 2026-11-13.13 : Estimangle, fête de la mesure exacte
 
 À DÉPOSER : jeux.js, style.css, index.html, script.js

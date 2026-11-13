@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-13.13';
+const SITE_VERSION = '2026-11-14.1';
 
 /* =========================================================
    Outils
