@@ -1,3 +1,12 @@
+MISE À JOUR 2026-11-13.13 : Estimangle, fête de la mesure exacte
+
+À DÉPOSER : jeux.js, style.css, index.html, script.js
+
+- Mesure exacte (les deux jeux) : pluie de confettis et une petite réplique façon mème (« Œil de lynx ! », « Rapporteur humain ! »…).
+- Correction : certains angles s'affichaient comme un point tout seul (côtés invisibles quand ils étaient horizontaux).
+
+=========================================================
+
 MISE À JOUR 2026-11-13.12 : Estimangle, demi-droite fluide
 
 À DÉPOSER : jeux.js, index.html, script.js

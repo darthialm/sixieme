@@ -26,7 +26,7 @@
     const P = at(V, a1, r), Q = at(V, a2, r), big = Math.abs(a2 - a1) > 180 ? 1 : 0, sweep = a2 > a1 ? 0 : 1;
     return `<path d="M${f(P.x)} ${f(P.y)} A${r} ${r} 0 ${big} ${sweep} ${f(Q.x)} ${f(Q.y)}" class="${cls}"/>`;
   };
-  const DEFS = '<defs><filter id="eg-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".09" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  const DEFS = '<defs><filter id="eg-glow" filterUnits="userSpaceOnUse" x="-20" y="-20" width="40" height="40"><feGaussianBlur stdDeviation=".09" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
   const dot = (V) => `<circle cx="${f(V.x)}" cy="${f(V.y)}" r="0.14" class="eg-dot"/>`;
   const loadBest = () => { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}') || {}; } catch (e) { return {}; } };
   const saveBest = (b) => { try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (e) { /* stockage indisponible */ } };
@@ -184,6 +184,22 @@
       $('.eg-feedback').innerHTML = `<div class="eg-verdict ${ok ? 'ok' : gap <= 2 ? 'near' : 'ko'}"><p class="eg-big">${head}</p>${html}</div>
         <p><button type="button" class="eg-btn eg-next">${st.round < ROUNDS ? 'Angle suivant →' : 'Voir mon score →'}</button></p>`;
       const b = $('.eg-next'); b.addEventListener('click', next); b.focus({ preventScroll: true });
+      if (ok) party();
+    }
+    /** Mesure exacte : pluie de confettis + une petite réplique façon mème */
+    const CHEERS = [['😎', 'Œil de lynx !'], ['🤯', 'Rapporteur humain !'], ['🐐', 'Le GOAT des angles'], ['🎯', 'En plein dans le mille !'],
+      ['🧠', 'Cerveau galaxie'], ['🔥', 'Trop fort !'], ['👑', 'Roi·reine des angles'], ['🦅', 'Vue d\'aigle !'], ['💯', 'Pile poil !'], ['🕺', 'Petite danse de la victoire']];
+    function party() {
+      root.querySelectorAll('.eg-party').forEach((n) => n.remove());
+      const [emo, txt] = CHEERS[rnd(0, CHEERS.length - 1)];
+      const colors = ['#3fe3ff', '#ff5fae', '#ffd23f', '#3ee08f', '#a78bfa', '#fff'];
+      let bits = '';
+      for (let i = 0; i < 70; i++) {
+        bits += `<i style="left:${rnd(0, 100)}%;background:${colors[i % colors.length]};--dx:${rnd(-80, 80)}px;--r:${rnd(360, 1080)}deg;animation:eg-fall ${(1.4 + Math.random() * 1.1).toFixed(2)}s cubic-bezier(.25,.6,.5,1) ${(Math.random() * 0.35).toFixed(2)}s both !important;${i % 3 ? '' : 'border-radius:50%;'}"></i>`;
+      }
+      root.insertAdjacentHTML('beforeend', `<div class="eg-party" aria-hidden="true">${bits}<div class="eg-meme"><span>${emo}</span><b>${txt}</b></div></div>`);
+      const p = root.querySelector('.eg-party');
+      setTimeout(() => p.remove(), 2800);
     }
 
     /* ---------- Jeu 1 : estimer ---------- */

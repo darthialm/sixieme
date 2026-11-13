@@ -1054,5 +1054,17 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 .eg-score { font-size: 2.6rem; font-weight: 800; color: var(--g-cyan); margin: .1em 0; text-shadow: 0 0 14px rgba(63,227,255,.5); }
 .eg-msg { font-size: 1.15rem; font-weight: 700; margin: .2em 0; }
 .eg-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-@media (prefers-reduced-motion: reduce) { .eg-game *, .eg-game { animation: none !important; transition: none !important; } }
+/* mesure exacte : confettis + mème */
+.eg-party { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.eg-party i { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; animation: eg-fall 2s cubic-bezier(.25,.6,.5,1) forwards; }
+@keyframes eg-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), 620px) rotate(var(--r)); opacity: 0; } }
+.eg-meme { position: absolute; left: 50%; top: 38%; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 22px; border-radius: 18px;
+  background: rgba(10,14,36,.88); box-shadow: 0 0 0 3px var(--g-yellow), 0 0 30px rgba(255,210,63,.55); transform: translate(-50%, -50%); animation: eg-meme 2.6s ease-out forwards; }
+.eg-meme span { font-size: 3.4rem; line-height: 1; }
+.eg-meme b { font-size: 1.5rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: .03em; -webkit-text-stroke: 1px #000; text-shadow: 0 2px 0 #000; white-space: nowrap; }
+@keyframes eg-meme { 0% { transform: translate(-50%, -50%) scale(.2) rotate(-12deg); opacity: 0; } 14% { transform: translate(-50%, -50%) scale(1.15) rotate(4deg); opacity: 1; }
+  22% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); } 80% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } 100% { transform: translate(-50%, -60%) scale(.9); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .eg-game *, .eg-game { animation: none !important; transition: none !important; }
+  /* la fête de la mesure exacte est courte : on la garde (le site coupe sinon toutes les animations) */
+  .eg-game .eg-meme { animation: eg-meme 2.6s ease-out forwards !important; } }
 @media (max-width: 480px) { .eg-game { padding: 12px; margin: 0 -6px; } .eg-title small { display: none; } }
