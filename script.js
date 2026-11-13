@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-13';
+const SITE_VERSION = '2026-11-13.7';
 
 /* =========================================================
    Outils
@@ -3289,7 +3289,7 @@ function renderProf() {
   let folded = {};
   try { folded = JSON.parse(localStorage.getItem('revisions6e-prof-plie') || 'null') || {}; } catch (e) { folded = {}; }
   host.innerHTML = CHAPTERS.slice().reverse().map((c) => {
-    const keys = Object.keys(GENS).filter((k) => GENS[k].ch === c.id);
+    const keys = Object.keys(GENS).filter((k) => GENS[k].ch === c.id && !GENS[k].hidden);
     const shut = c.id in folded ? folded[c.id] : c.num <= 4;
     return `<fieldset class="prof-ch${shut ? ' folded' : ''}" data-ch="${c.id}"><legend><button type="button" class="prof-fold" aria-expanded="${!shut}">Chapitre ${c.num} · ${c.title} <span class="prof-nb"></span></button>
       <button type="button" class="mini prof-all">tout cocher</button></legend>
@@ -3743,7 +3743,7 @@ const AUTO_N = 5, AUTO_WEAK = 3;
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const dayDiff = (a, b) => Math.round((new Date(b.replace(/-/g, '/')) - new Date(a.replace(/-/g, '/'))) / 86400000);
 function autoPlan() {
-  const quick = Object.keys(GENS).filter((k) => !GENS[k].slow && !GENS[k].locked);
+  const quick = Object.keys(GENS).filter((k) => !GENS[k].slow && !GENS[k].locked && !GENS[k].hidden);
   const weak = shuffle(Object.keys(stats._weak || {}).filter((k) => quick.includes(k))).slice(0, AUTO_WEAK);
   const now = Date.now();
   const practiced = quick.filter((k) => stats[k]?.total && !weak.includes(k));
@@ -4021,8 +4021,8 @@ document.addEventListener('DOMContentLoaded', () => {
       limit: EXAM_N, exam: true, ch,
       examKey: ch + ':controle',
       makeGen() {
-        let keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].locked);
-        if (!keys.length) keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch);
+        let keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].locked && !GENS[k].hidden);
+        if (!keys.length) keys = Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].hidden);
         const queue = examPlan(keys);
         return () => { const x = queue.shift(); return x ? wrapGen(x.k, true, x.hard) : wrapGen(pick(keys)); };
       },
@@ -4063,6 +4063,8 @@ document.addEventListener('DOMContentLoaded', () => {
    - le QR ouvre la page « Mon contrôle » (#/r/…) : corrigé de SON sujet, bilan, exercices de remédiation.
    Rien n'est stocké sur un serveur : le sujet est recréé à partir d'une « graine ».
    ========================================================= */
+/** true pendant le tirage des questions d'un contrôle papier récent (lu par les générateurs) */
+let CTL_PAPER = false;
 const CTL_STORE = 'revisions6e-controles', CTL_AMEN = 'revisions6e-amenages';
 const LEVELS = ['TB', 'MS', 'MF', 'MI'];
 const LEVEL_TXT = { TB: 'Très bonne maîtrise', MS: 'Maîtrise satisfaisante', MF: 'Maîtrise fragile', MI: 'Maîtrise insuffisante' };
@@ -4088,20 +4090,105 @@ const CTL_T = {
 const ctlT = (k) => GENS[k]?.t ?? CTL_T[k] ?? (GENS[k]?.slow ? 6 : 2);
 const HARD_X = 1.5;
 
+/* ---------- Compétences d'un contrôle ----------
+   Les types d'exercices cochés sont regroupés par compétence (3 ou 4 par chapitre). Une compétence du contrôle est
+   une clé de GENS (un seul type) ou plusieurs clés reliées par « ~ » (ex. « o-voc~o-gauche~o-par »).
+   Chaque type d'une compétence a au moins une question ; les questions en plus vont aux types qui ne sont pas des tracés. */
+const CTL_COMPS = [
+  ['Points, droites : codage et notations', ['d-codage', 'd-noms', 'd-appartient']],
+  ['Droites parallèles et perpendiculaires', ['d-position', 'd-prop']],
+  ['Tracer une perpendiculaire, une parallèle', ['d-perp', 'd-par']],
+  ['Lire et écrire les nombres', ['n-tranches', 'n-lettres', 'n-zeros']],
+  ['Valeur des chiffres', ['n-rang', 'n-combien', 'n-decomp']],
+  ['Fractions décimales et écritures', ['n-fracdec', 'n-formes']],
+  ['Notations : segment, demi-droite, droite', ['c-notation', 'c-ecrire']],
+  ['Milieu et médiatrice', ['c-milieu', 'c-med-prop']],
+  ['Le cercle : vocabulaire, rayon, diamètre', ['c-voc', 'c-rd', 'c-disque']],
+  ['Tracer : milieu, médiatrice, cercle', ['c-tracer', 'c-med-trace', 'c-trace-cercle']],
+  ['Demi-droite graduée', ['e-lire', 'e-placer']],
+  ['Comparer et ranger', ['e-comparer', 'e-ranger']],
+  ['Intercaler, encadrer, arrondir', ['e-intercaler', 'e-encadrer', 'e-arrondir']],
+  ['Vocabulaire et priorités de calcul', ['o-voc', 'o-prio', 'o-gauche', 'o-par', 'o-par2']],
+  ['Calculs posés', ['o-add', 'o-mul', 'o-pa', 'o-ps', 'o-pm']],
+  ['Résoudre un problème', ['o-pb']],
+  ['Nommer et reconnaître des angles', ['a-nom', 'a-nature', 'a-reco']],
+  ['Mesurer et calculer des angles', ['a-mesure', 'a-calcul']],
+  ['Construire un angle, une bissectrice', ['a-construire', 'a-biss']],
+  ['Vocabulaire et triangles particuliers', ['t-voc', 't-nature']],
+  ['Les angles d\'un triangle', ['t-180', 't-natang']],
+  ['Construire un triangle', ['t-3cotes', 't-angles', 't-iso', 't-rect', 't-cercle']],
+];
+const CTL_MAXN = 9; // questions par compétence (un seul chiffre dans le lien du QR code)
+const ctlSubs = (k) => String(k || '').split('~').filter((s) => GENS[s]);
+const ctlCompOf = (k) => CTL_COMPS.find((g) => g[1].includes(k));
+/** Nom d'une compétence du contrôle */
+const ctlLabel = (k) => {
+  const s = ctlSubs(k);
+  if (!s.length) return String(k);
+  if (s.length === 1) return GENS[s[0]].label;
+  const g = ctlCompOf(s[0]);
+  return g && s.every((x) => g[1].includes(x)) ? g[0] : s.map((x) => GENS[x].label).join(', ');
+};
+/** Types d'une compétence, pour l'afficher (vide pour un seul type) */
+const ctlSubLabels = (k) => { const s = ctlSubs(k); return s.length > 1 ? s.map((x) => GENS[x].label).join(' · ') : ''; };
+const ctlSlowK = (k) => { const s = ctlSubs(k); return s.length > 0 && s.every((x) => GENS[x].slow); }; // que des tracés : nombre de questions fixe
+const ctlMinN = (k) => Math.max(1, ctlSubs(k).length);
+/** Type de la question m d'une compétence : d'abord un de chaque, puis les types rapides à tour de rôle */
+function ctlSubAt(k, m) {
+  const s = ctlSubs(k), L = s.length;
+  if (m < L) return s[m];
+  const f = s.filter((x) => !GENS[x].slow);
+  return f.length ? f[(m - L) % f.length] : s[m % L];
+}
+/** Numéros des questions ★ d'une compétence (les h dernières parmi celles qui peuvent l'être) */
+function ctlHardIdx(k, n, h, can = (x) => !!GENS[x]?.hard) {
+  if (ctlSubs(k).length <= 1) return new Set(h > 0 && can(ctlSubs(k)[0] || k) ? [...Array(n).keys()].slice(Math.max(0, n - h)) : []);
+  const ix = [...Array(n).keys()].filter((m) => can(ctlSubAt(k, m)));
+  return new Set(h > 0 ? ix.slice(Math.max(0, ix.length - h)) : []);
+}
+const ctlHardMax = (k, n) => ctlHardIdx(k, n, CTL_MAXN).size;
+/** Exercices réunis en un seul sur le papier : ces types deviennent une seule question */
+const CTL_MERGE = { 'o-prio': ['o-gauche', 'o-par', 'o-par2'] };
+function ctlMerge(keys) {
+  let out = keys.filter((k) => GENS[k] && !GENS[k].hidden);
+  Object.entries(CTL_MERGE).forEach(([m, parts]) => {
+    const at = out.findIndex((k) => parts.includes(k)); if (at < 0 || !GENS[m]) return;
+    out = out.filter((k, i) => i === at || !parts.includes(k)); out[at] = m;
+  });
+  return out;
+}
+/** Tous les types d'exercices d'un chapitre, pour un contrôle */
+const ctlChapterKeys = (ch) => Object.keys(GENS).filter((k) => GENS[k].ch === ch && !GENS[k].hidden);
+/** Regroupe les types cochés par compétence (dans l'ordre de la liste) */
+function ctlGroup(keys) {
+  const out = [], at = new Map();
+  keys.filter((k) => GENS[k]).forEach((k) => {
+    const id = ctlCompOf(k)?.[0] || k;
+    if (!at.has(id)) { at.set(id, out.length); out.push([]); }
+    out[at.get(id)].push(k);
+  });
+  return out.map((s) => s.join('~'));
+}
+
 /** Plan d'un contrôle (version standard) : n = questions par compétence, h = combien sont ★ (plus difficiles) */
 function ctlPlan(c) {
   if (Array.isArray(c.n)) return { n: c.n.map(Number), h: (c.h || c.n.map(() => 0)).map(Number), a: Array.isArray(c.a) ? c.a.map(Number) : null };
-  return { n: c.k.map((k) => (GENS[k]?.slow ? 1 : Number(c.q) || 3)), h: c.k.map(() => 0) }; // anciens contrôles : q questions partout
+  return { n: c.k.map((k) => (ctlSlowK(k) ? ctlMinN(k) : Math.max(ctlMinN(k), Number(c.q) || 3))), h: c.k.map(() => 0) }; // anciens contrôles : q questions partout
 }
 /** Plan d'une copie : la version aménagée a une question de moins par compétence (sauf les tracés), parfois moins
     pour tenir sur la page (plan.a), et pas de ★ */
 function ctlVer(plan, keys, ver) {
   return {
-    n: plan.n.map((x, i) => (ver !== 'a' || GENS[keys[i]]?.slow ? x : plan.a ? plan.a[i] : Math.max(1, x - 1))),
-    h: plan.h.map((x, i) => (ver === 'a' || !GENS[keys[i]]?.hard ? 0 : Math.min(x, plan.n[i]))),
+    // la version aménagée garde au moins une question de chaque type
+    n: plan.n.map((x, i) => (ver !== 'a' || ctlSlowK(keys[i]) ? x : Math.max(ctlMinN(keys[i]), plan.a ? plan.a[i] : x - 1))),
+    h: plan.h.map((x, i) => (ver === 'a' || !ctlSubs(keys[i]).some((s) => GENS[s].hard) ? 0 : Math.min(x, plan.n[i]))),
   };
 }
-const ctlMinutes = (keys, p) => keys.reduce((s, k, i) => s + ctlT(k) * (p.n[i] + (HARD_X - 1) * (GENS[k]?.hard ? Math.min(p.h[i], p.n[i]) : 0)), 0);
+const ctlMinutes = (keys, p) => keys.reduce((s, k, i) => {
+  const hs = ctlHardIdx(k, p.n[i], p.h[i]);
+  for (let m = 0; m < p.n[i]; m++) s += ctlT(ctlSubAt(k, m)) * (hs.has(m) ? HARD_X : 1);
+  return s;
+}, 0);
 const planStr = (p) => p.n.map((x, i) => x + (p.h[i] ? 'h' + p.h[i] : '') + (p.a ? 'a' + p.a[i] : '')).join('-');
 const planParse = (str) => {
   const parts = String(str || '').split('-').map((t) => t.match(/^(\d)(?:h(\d))?(?:a(\d))?$/));
@@ -4115,10 +4202,17 @@ const ctlWide = (x) => !!GENS[x.k].slow; // les demi-droites graduées restent d
 function ctlQuestions(id, n, ver, keys, plan, salt = 0, g = 0) {
   const p = ctlVer(plan, keys, ver);
   // une graine par question : ajouter une question ou en rendre une ★ ne change pas les autres
-  const all = keys.flatMap((k, ci) => (GENS[k] ? Array.from({ length: p.n[ci] }, (_, m) => {
-    const hard = m >= p.n[ci] - p.h[ci] && (!g || ctlHard(k, g));
-    return { k, ci, m, hard, o: withSeed(hash32(`${id}#${n}#${ci}#${m}${salt ? '#' + salt : ''}`), () => wrapGen(k, false, hard, !!g)) };
-  }) : []));
+  // x.k : le type d'exercice de la question ; x.ci : sa compétence
+  CTL_PAPER = g >= 3; // contrôles récents : questions faites pour le papier (pas de QCM « bien posée », pas de case de retenue)
+  let all;
+  try { all = keys.flatMap((kc, ci) => {
+    if (!ctlSubs(kc).length) return [];
+    const hs = ctlHardIdx(kc, p.n[ci], p.h[ci], ctlSubs(kc).length > 1 ? (x) => !!GENS[x].hard : () => true);
+    return Array.from({ length: p.n[ci] }, (_, m) => {
+      const k = ctlSubAt(kc, m), hard = hs.has(m) && (!g || ctlHard(k, g));
+      return { k, ci, m, hard, o: withSeed(hash32(`${id}#${n}#${ci}#${m}${salt ? '#' + salt : ''}`), () => wrapGen(k, false, hard, !!g)) };
+    });
+  }); } finally { CTL_PAPER = false; }
   // en pleine largeur à la fin de la feuille : placer un point sur une demi-droite graduée, puis les tracés (grande figure) ; le reste sur deux colonnes au-dessus
   const rank = (x) => (GENS[x.k].slow ? 2 : ctlWide(x) ? 1 : 0);
   return [0, 1, 2].flatMap((r) => all.filter((x) => rank(x) === r));
@@ -4151,6 +4245,7 @@ function paperHTML(html) {
   if (/rapporteur/i.test(d.textContent)) d.querySelectorAll('svg.fig').forEach((f) => f.classList.add('fig-big'));
   // opération à poser (poser.js) : un cadre quadrillé à la place de la grille
   d.querySelectorAll('.pz-dir').forEach((h) => h.remove());
+  d.querySelectorAll('p.small.muted').forEach((pp) => { if (/Case de retenue|ligne du haut est pour la/.test(pp.textContent)) pp.remove(); });
   d.querySelectorAll('.pz-host').forEach((h) => { const w = document.createElement('div'); w.className = 'work tall'; h.replaceWith(w); });
   // « sur ton cahier » : sur la copie, un cadre quadrillé pour poser l'opération ou écrire les étapes
   const cahier = [...d.querySelectorAll('p')].find((x) => /sur ton cahier/.test(x.textContent));
@@ -4209,6 +4304,15 @@ function plain(html, strip = false) {
   return d.textContent.replace(/\s+/g, ' ').replace(/ ([.,;)])(?=\s|$)/g, '$1').trim();
 }
 const stripLinks = (html) => String(html || '').replace(/<a\b[^>]*>(.*?)<\/a>/g, '$1');
+/** Aide imprimée (version aménagée) : la première aide utile sur papier, sans « Relis … dans la fiche » ni vidéo */
+function paperAide(o) {
+  for (const h of o.hints || []) {
+    if (/<(div|svg|iframe|button)\b/.test(h)) continue;
+    const t = stripLinks(h).replace(/^\s*Outil\s*:\s*/, '').replace(/\s*Relis [^.?!]*[.?!]/g, '').replace(/\s*(Outil|Revois)[^.]*vidéo[^.]*\.?/g, '').trim();
+    if (plain(t).length > 10) return t;
+  }
+  return '';
+}
 
 /** Zone de travail invisible, pour monter les figures avant de les copier */
 function ctlWork() {
@@ -4316,11 +4420,11 @@ function sheetHTML(c, i) {
       <div class="ctl-code">${window.qrSVG ? qrSVG(code, 'M') : ''}<b>${code}</b></div>
       <div class="ctl-title"><b>${esc(c.t)}</b><br><span class="small">Écris tes réponses dans les cases.</span></div>
       <table class="ctl-grid"><tr><th>Compétence</th><th>TB</th><th>MS</th><th>MF</th><th>MI</th></tr>
-        ${c.k.map((k, ci) => `<tr><td>C${ci + 1} · ${esc(GENS[k]?.label || k)}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
+        ${c.k.map((k, ci) => `<tr><td>C${ci + 1} · ${esc(ctlLabel(k))}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
     </div>
     <div class="ctl-qs ctl-cols"><div class="ctl-col">${qs.map((x, j) => {
       const first = j === 0 || qs[j - 1].ci !== x.ci;
-      return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-col"></div></div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(GENS[x.k].label)}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && x.o.hints?.[0] ? `<p class="ctl-aide">💡 <b>Aide :</b> ${stripLinks(x.o.hints[0])}</p>` : ''}</section>`;
+      return `${ctlWide(x) && (j === 0 || !ctlWide(qs[j - 1])) ? '</div><div class="ctl-col"></div></div><div class="ctl-wide">' : ''}<section class="pq ctl-q">${first ? `<h3 class="ctl-ch">C${x.ci + 1} · ${esc(ctlLabel(c.k[x.ci]))}</h3>` : ''}<div class="ctl-qb"><span class="ctl-num"><span class="qn">${j + 1}</span>${x.hard ? '<span class="ctl-star" title="Question un peu plus difficile">★</span>' : ''}</span><div class="ctl-qt">${questionPaper(x.o)}</div></div>${ver === 'a' && first && paperAide(x.o) ? `<p class="ctl-aide">💡 <b>Aide :</b> ${paperAide(x.o)}</p>` : ''}</section>`;
     }).join('')}${qs.some(ctlWide) ? '' : '</div><div class="ctl-col"></div>'}</div>
   </div></div>`;
 }
@@ -4366,7 +4470,9 @@ function ctlAutoPlan(c, target = 30) {
   const K = c.k, am = [], st = [];
   c.s.forEach(([, v], i) => (v === 'a' ? am : st).push(i));
   const idx = st.length ? st.slice(0, 3) : am.slice(0, 1); // échantillon pour aller vite
-  const p = { n: K.map(() => 1), h: K.map(() => 0), a: null };
+  const p = { n: K.map((k) => ctlMinN(k)), h: K.map(() => 0), a: null }; // au moins une question de chaque type
+  const nMax = (i) => Math.min(CTL_MAXN, Math.max(6, ctlMinN(K[i]) + 3)), tNext = (i) => ctlT(ctlSubAt(K[i], p.n[i]));
+  const hardMax = (i) => ctlHardIdx(K[i], p.n[i], CTL_MAXN, (x) => ctlHard(x, c.g)).size;
   const T = () => ctlMinutes(K, p);
   // Une copie qui déborde peut recevoir un autre tirage (d'autres nombres, une autre figure) : salts[numéro] = tirage
   let salts = {};
@@ -4386,17 +4492,18 @@ function ctlAutoPlan(c, target = 30) {
   const startOk = fits(idx);
   // 1. on ajoute des questions (compétences les moins fournies d'abord) tant que la durée n'est pas atteinte et que la page tient
   for (let g = 0; g < 60 && startOk && T() < target - 1; g++) {
-    const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && !full.has(i) && p.n[i] < 6);
+    const cand = K.map((_, i) => i).filter((i) => !ctlSlowK(K[i]) && !full.has(i) && p.n[i] < nMax(i));
     if (!cand.length) break;
-    const i = cand.reduce((a, b) => (p.n[b] < p.n[a] || (p.n[b] === p.n[a] && ctlT(K[b]) < ctlT(K[a])) ? b : a));
-    if (T() + ctlT(K[i]) > target + 2 && T() >= target - 3) break; // déjà assez près : on ne dépasse pas trop
+    const r = (i) => p.n[i] / ctlMinN(K[i]); // compétences les moins fournies, par type d'exercice
+    const i = cand.reduce((a, b) => (r(b) < r(a) || (r(b) === r(a) && tNext(b) < tNext(a)) ? b : a));
+    if (T() + tNext(i) > target + 2 && T() >= target - 3) break; // déjà assez près : on ne dépasse pas trop
     p.n[i]++;
     if (!fits(idx)) { p.n[i]--; full.add(i); }
   }
   // 2. page pleine avant la durée visée : des questions deviennent ★ (même place, plus de temps)
   const upgrade = (list) => {
     for (let g = 0; g < 60 && T() < target - 1; g++) {
-      const cand = K.map((_, i) => i).filter((i) => ctlHard(K[i], c.g) && p.h[i] < p.n[i] && !hfull.has(i));
+      const cand = K.map((_, i) => i).filter((i) => p.h[i] < hardMax(i) && !hfull.has(i));
       if (!cand.length) break;
       const i = cand.reduce((a, b) => (p.h[b] / p.n[b] < p.h[a] / p.n[a] ? b : a));
       p.h[i]++;
@@ -4406,7 +4513,7 @@ function ctlAutoPlan(c, target = 30) {
   if (startOk) upgrade(idx);
   // 3. toutes les copies standard : autres tirages si besoin ; sinon une question de moins pour tout le monde
   for (let g = 0; g < 12 && st.length && fixCopies(st).length; g++) {
-    const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && p.n[i] > 1);
+    const cand = K.map((_, i) => i).filter((i) => !ctlSlowK(K[i]) && p.n[i] > ctlMinN(K[i]));
     if (!cand.length) break;
     const i = cand.reduce((a, b) => (p.n[b] > p.n[a] ? b : a));
     p.n[i]--; p.h[i] = Math.min(p.h[i], p.n[i]); salts = {};
@@ -4415,14 +4522,14 @@ function ctlAutoPlan(c, target = 30) {
   // 4. version aménagée : une question de moins par compétence ; si sa page déborde (police plus grande, aides), encore une de moins
   let amOver = false;
   if (am.length) {
-    p.a = K.map((k, i) => (GENS[k]?.slow ? 1 : Math.max(1, p.n[i] - 1)));
+    p.a = K.map((k, i) => (ctlSlowK(k) ? p.n[i] : Math.max(ctlMinN(k), p.n[i] - 1)));
     for (let g = 0; g < 20 && fixCopies(am).length; g++) {
-      const cand = K.map((_, i) => i).filter((i) => !GENS[K[i]]?.slow && p.a[i] > 1);
+      const cand = K.map((_, i) => i).filter((i) => !ctlSlowK(K[i]) && p.a[i] > ctlMinN(K[i]));
       if (!cand.length) { amOver = true; break; }
       p.a[cand.reduce((a, b) => (p.a[b] > p.a[a] ? b : a))]--;
       am.forEach((i) => delete salts[i + 1]);
     }
-    if (p.a.every((x, i) => GENS[K[i]]?.slow || x === Math.max(1, p.n[i] - 1))) p.a = null; // règle habituelle : pas besoin de l'écrire
+    if (p.a.every((x, i) => ctlSlowK(K[i]) || x === Math.max(ctlMinN(K[i]), p.n[i] - 1))) p.a = null; // règle habituelle : pas besoin de l'écrire
   }
   // on ne garde que les tirages utiles
   Object.keys(salts).forEach((nn) => { const keep = salts[nn]; delete salts[nn]; if (overIdx([Number(nn) - 1]).length) salts[nn] = keep; });
@@ -4483,10 +4590,54 @@ function fitSheets(doc) {
   });
   return bad;
 }
-/* ---------- Fichier PDF : chaque .ctl-sheet de la fenêtre d'impression devient une page A4 ---------- */
-const PDF_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
-function pdfLoad(w) {
-  return PDF_LIBS.reduce((p, src) => p.then(() => new Promise((ok, ko) => {
+/* ---------- Fichier PDF : chaque .ctl-sheet de la fenêtre d'impression devient une page A4 ----------
+   Chaque copie est dessinée par le navigateur lui-même (image SVG « foreignObject », avec les styles et la police
+   intégrés) : le rendu est celui de l'impression. html2canvas ne sert qu'en secours (Safari…) : il dessine mal
+   certains blocs (le fond blanc de la grille d'une opération passait par-dessus les chiffres). */
+const PDF_JS = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const PDF_H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+const toDataURL = (blob) => new Promise((ok, ko) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = ko; f.readAsDataURL(blob); });
+/** Styles de la fenêtre (sans le thème sombre), polices web intégrées, variables CSS de la page */
+async function pdfStyles(w) {
+  const d = w.document, parts = [];
+  for (const sh of d.styleSheets) {
+    let txt = '';
+    try {
+      txt = [...sh.cssRules].filter((r) => !(r.conditionText && /prefers-color-scheme:\s*dark/.test(r.conditionText))).map((r) => r.cssText).join('\n');
+    } catch (e) { if (sh.href) { try { txt = await (await fetch(sh.href)).text(); } catch (_) { txt = ''; } } }
+    parts.push(txt);
+  }
+  let css = parts.join('\n');
+  // seulement les polices de la page (Atkinson Hyperlegible) : en Latin, sans les autres alphabets
+  css = css.replace(/\/\*\s*(cyrillic|greek|vietnamese)[^*]*\*\/\s*@font-face\s*\{[^}]*\}/g, '');
+  const urls = [...new Set([...css.matchAll(/url\((['"]?)(https:[^'")]+)\1\)/g)].map((m) => m[2]))];
+  for (const u of urls) { try { css = css.split(u).join(await toDataURL(await (await fetch(u)).blob())); } catch (e) { /* police système */ } }
+  const cs = w.getComputedStyle(d.documentElement), bs = w.getComputedStyle(d.body);
+  let vars = '';
+  for (let i = 0; i < cs.length; i++) if (cs[i].startsWith('--')) vars += `${cs[i]}:${cs.getPropertyValue(cs[i])};`;
+  vars += `font-family:${bs.fontFamily};font-size:${bs.fontSize};line-height:${bs.lineHeight};color:#000;`;
+  return { css, vars };
+}
+/** Une copie en image (canvas), dessinée par le navigateur */
+async function sheetCanvas(w, sh, st, scale) {
+  const d = w.document, W = sh.offsetWidth, H = sh.offsetHeight;
+  const wrap = d.createElement('div');
+  wrap.className = CTL_MODE;
+  wrap.setAttribute('style', `${st.vars}margin:0;padding:0;background:#fff;width:${W}px;height:${H}px;`);
+  const style = d.createElement('style'); style.textContent = st.css; wrap.appendChild(style);
+  const cl = sh.cloneNode(true); cl.style.margin = '0'; cl.style.boxShadow = 'none'; cl.style.outline = '0'; wrap.appendChild(cl);
+  const xml = new w.XMLSerializer().serializeToString(wrap);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject x="0" y="0" width="${W}" height="${H}">${xml}</foreignObject></svg>`;
+  const img = new w.Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  await img.decode();
+  const cv = d.createElement('canvas'); cv.width = Math.round(W * scale); cv.height = Math.round(H * scale);
+  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.scale(scale, scale); g.drawImage(img, 0, 0, W, H);
+  cv.toDataURL('image/jpeg', 0.1); // lève une erreur si le navigateur interdit cette image (Safari) : on passe alors au secours
+  return cv;
+}
+function pdfLoad(w, list = [PDF_JS]) {
+  return list.reduce((p, src) => p.then(() => new Promise((ok, ko) => {
     if (w.document.querySelector(`script[src="${src}"]`)) return ok();
     const s = w.document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('chargement'));
     w.document.head.appendChild(s);
@@ -4502,12 +4653,16 @@ async function savePdf(w, fileName, btn) {
     await pdfLoad(w);
     d.body.classList.add('pdf-snap');
     const pdf = new w.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true }), px = 25.4 / 96;
+    let st = null, native = true;
+    try { st = await pdfStyles(w); } catch (e) { native = false; }
     for (let i = 0; i < sheets.length; i++) {
       btn.textContent = `⏳ Page ${i + 1} / ${sheets.length}…`;
       const sh = sheets[i], wMM = sh.offsetWidth * px, hMM = sh.offsetHeight * px;
-      const cv = await w.html2canvas(sh, { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false });
+      let cv = null;
+      if (native) { try { cv = await sheetCanvas(w, sh, st, 2.5); } catch (e) { native = false; } }
+      if (!cv) { await pdfLoad(w, [PDF_H2C]); cv = await w.html2canvas(sh, { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false }); }
       if (i) pdf.addPage('a4');
-      pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', (210 - wMM) / 2, Math.max(0, (297 - hMM) / 2), wMM, hMM, undefined, 'FAST');
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.85), 'JPEG', (210 - wMM) / 2, Math.max(0, (297 - hMM) / 2), wMM, hMM, undefined, 'FAST');
       cv.width = cv.height = 0;
     }
     pdf.save(fileName);
@@ -4608,7 +4763,7 @@ function printCorrige(c) {
 function aiText(c) {
   const L = [];
   L.push(`CONTRÔLE ${c.id} — ${c.t} — ${c.c || ''} — ${new Date(c.d).toLocaleDateString('fr-FR')}`);
-  L.push('Compétences : ' + c.k.map((k, i) => `C${i + 1} = ${GENS[k]?.label || k}`).join(' ; '));
+  L.push('Compétences : ' + c.k.map((k, i) => `C${i + 1} = ${ctlLabel(k)}`).join(' ; '));
   L.push('');
   L.push('CONSIGNES POUR LA CORRECTION');
   L.push('- Chaque copie porte un code (ex. ' + ctlCode(c.id, 1) + '). Les réponses sont écrites dans des cases ; les cases à cocher sont des ☐.');
@@ -4619,7 +4774,7 @@ function aiText(c) {
   L.push('- RÉPONDRE avec une ligne par copie, exactement sous cette forme :');
   const ps = ctlVer(ctlPlan(c), c.k, 's');
   L.push(`  ${ctlCode(c.id, 1)} ${c.k.map((k, i) => `C${i + 1}=TB(${'1'.repeat(ps.n[i])})`).join(' ')}`);
-  L.push('  (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés)');
+  L.push('  (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés, et garde une question de chaque type)');
   { const n1 = ps.n[0], b = n1 > 1 ? '1'.repeat(n1 - 1) + '0' : '0';
     L.push(`  Ajouter « ? » après un niveau en cas de doute (ex. C1=${levelFromBits(b)}?(${b})), et une courte remarque après « // » si utile.`); }
   L.push('');
@@ -4667,7 +4822,7 @@ function retourURL(c, n, levels, bits, dest) {
   const plan = ctlPlan(c), pv = ctlVer(plan, c.k, ver);
   const allBits = c.k.map((k, i) => { const b = bits[i] || ''; const want = pv.n[i]; return b.length === want ? b : '-'.repeat(want); }).join('');
   const cl = encodeURIComponent(c.c || '').replace(/\./g, '%2E');
-  return siteURL() + `#/r/${c.g ? 3 : 2}.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
+  return siteURL() + `#/r/${c.g >= 3 ? 4 : c.g ? 3 : 2}.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
 }
 function printLabels(c, rows, skip, dest) {
   const W = 63.5, H = 38.1, TOP = 15.15, LEFT = 7.21, GAP = 2.54, PER = 21;
@@ -4691,15 +4846,16 @@ function setupControles() {
   if (!after || document.getElementById('ctl-card')) return;
   after.insertAdjacentHTML('afterend', `<div class="card" id="ctl-card">
     <h2>📝 Contrôle sur papier, par compétences</h2>
-    <p class="small">Chaque compétence = un type d'exercice du site : <b>coche-les dans la liste ci-dessus</b>. Chaque élève reçoit son propre sujet (mêmes exercices que sur le site, nombres différents), avec son prénom sur une bande à détacher et un <b>code anonyme</b>.</p>
+    <p class="small"><b>Choisis le chapitre</b> : le contrôle reprend tout ce qu'il faut savoir, regroupé en 3 ou 4 compétences, avec au moins une question de chaque type d'exercice. <span class="muted">(Sans chapitre choisi, il reprend les types cochés dans la liste ci-dessus.)</span> Chaque élève reçoit son propre sujet (mêmes exercices que sur le site, nombres différents), avec son prénom sur une bande à détacher et un <b>code anonyme</b>.</p>
+    <div class="ctl-chs"><b>Chapitre :</b> ${CHAPTERS.map((c) => `<label><input type="checkbox" class="ctl-ch-box" value="${c.id}"> ${c.num} · ${esc(c.title)}</label>`).join(' ')}</div>
     <p id="ctl-sel" class="small"></p>
     <div class="prof-opts">
       <span><label for="ctl-title"><b>Titre :</b></label> <input type="text" id="ctl-title" maxlength="60" placeholder="Contrôle — décimaux"></span>
       <span><label for="ctl-classe"><b>Classe :</b></label> <select id="ctl-classe" class="cl-select"></select></span>
       <span><label for="ctl-date"><b>Date du contrôle :</b></label> <input type="date" id="ctl-date"></span>
-      <span><label for="ctl-q"><b>Durée :</b></label> <select id="ctl-q"><option value="a30" selected>≈ 30 min (automatique)</option><option value="a20">≈ 20 min (automatique)</option><option value="1">1 question par compétence</option><option value="2">2 questions par compétence</option><option value="3">3 questions par compétence</option><option value="4">4 questions par compétence</option></select></span>
+      <span><label for="ctl-q"><b>Durée :</b></label> <select id="ctl-q"><option value="a30" selected>≈ 30 min (automatique)</option><option value="a20">≈ 20 min (automatique)</option><option value="1">1 question par type d'exercice</option><option value="2">2 questions par type</option><option value="3">3 questions par type</option></select></span>
     </div>
-    <p class="small muted">Automatique : le site choisit le nombre de questions par compétence pour arriver à la durée voulue, sur une seule page. Si la page est pleine avant, certaines questions deviennent <b>★ un peu plus difficiles</b> (même compétence). Un tracé compte pour 1 question. Version aménagée : une question de moins par compétence, pas de ★, police plus grande et une aide sous la première question de chaque compétence.</p>
+    <p class="small muted">Automatique : le site choisit le nombre de questions par compétence pour arriver à la durée voulue, sur une seule page. Si la page est pleine avant, certaines questions deviennent <b>★ un peu plus difficiles</b> (même compétence). Un tracé compte pour 1 question. Version aménagée : une question de moins par compétence (mais toujours une de chaque type), pas de ★, police plus grande et une aide sous la première question de chaque compétence.</p>
     <label for="ctl-names"><b>Élèves</b> (un prénom par ligne ; tu peux coller ta liste depuis Grist) :</label>
     <textarea id="ctl-names" rows="5" placeholder="Léa M.&#10;Tom B.&#10;…"></textarea>
     <div id="ctl-students"></div>
@@ -4759,8 +4915,12 @@ function setupControles() {
   }
   $('ctl-names').addEventListener('change', drawStudents);
   $('ctl-students').addEventListener('change', () => amenSet($('ctl-classe').value, [...$('ctl-students').querySelectorAll('input:checked')].map((i) => normName(i.dataset.n))));
-  const showSel = () => { const ks = sel(); $('ctl-sel').innerHTML = ks.length ? `Compétences : ${ks.map((k, i) => `<b>C${i + 1}</b> ${esc(GENS[k].label)}`).join(' · ')}` : '<span class="warn-t">Coche au moins une compétence dans la liste ci-dessus.</span>'; };
-  document.getElementById('prof-list').addEventListener('change', showSel); showSel();
+  // compétences du contrôle : tout le(s) chapitre(s) choisi(s) ; sinon les types cochés dans la liste
+  const chosen = () => [...card.querySelectorAll('.ctl-ch-box:checked')].map((i) => i.value);
+  const ctlKeys = () => ctlGroup(ctlMerge(chosen().length ? chosen().flatMap(ctlChapterKeys) : sel()));
+  const showSel = () => { const ks = ctlKeys(); $('ctl-sel').innerHTML = ks.length ? `Compétences : ${ks.map((k, i) => `<b>C${i + 1}</b> ${esc(ctlLabel(k))}${ctlSubs(k).length > 1 ? ` <span class="muted">(${ctlSubs(k).length} types)</span>` : ''}`).join(' · ')}` : '<span class="warn-t">Choisis un chapitre.</span>'; };
+  document.getElementById('prof-list').addEventListener('change', showSel);
+  card.querySelectorAll('.ctl-ch-box').forEach((b) => b.addEventListener('change', showSel)); showSel();
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const dateOf = (v) => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12).getTime() : Date.now(); };
   const ymd = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -4854,24 +5014,26 @@ function setupControles() {
   const invalidate = () => { if (prep) { prep = null; planBox.innerHTML = ''; status('', 'Liste ou compétences modifiées : clique à nouveau sur « Préparer le contrôle ».'); } };
   ['ctl-names', 'ctl-students', 'ctl-classe', 'ctl-q', 'ctl-title'].forEach((id) => $(id).addEventListener('change', invalidate));
   document.getElementById('prof-list').addEventListener('change', invalidate);
+  card.querySelectorAll('.ctl-ch-box').forEach((b) => b.addEventListener('change', invalidate));
   function drawPlan(msg = '') {
     const { c, p } = prep, K = c.k;
     const T = ctlMinutes(K, p), pa = ctlVer(p, K, 'a'), hasA = c.s.some(([, v]) => v === 'a');
     const nq = (pp) => pp.n.reduce((a, b) => a + b, 0);
     planBox.innerHTML = `<div class="ctl-plan"><table class="voc"><thead><tr><th>Compétence</th><th>Questions</th><th>dont ★ plus difficiles</th><th>≈ min</th>${hasA ? '<th>Version aménagée</th>' : ''}</tr></thead><tbody>${K.map((k, i) => {
-      const slow = GENS[k]?.slow, hard = ctlHard(k, c.g);
-      return `<tr><td><b>C${i + 1}</b> ${esc(GENS[k]?.label || k)}</td>
-        <td>${slow ? '1 (tracé)' : `<button type="button" class="mini" data-a="n" data-d="-1" data-i="${i}" aria-label="Une question de moins">−</button> <b>${p.n[i]}</b> <button type="button" class="mini" data-a="n" data-d="1" data-i="${i}" aria-label="Une question de plus">+</button>`}</td>
+      const slow = ctlSlowK(k), hMax = ctlHardIdx(k, p.n[i], CTL_MAXN, (x) => ctlHard(x, c.g)).size, hard = hMax > 0, sub = ctlSubLabels(k);
+      return `<tr><td><b>C${i + 1}</b> ${esc(ctlLabel(k))}${sub ? `<br><span class="small muted">${esc(sub)}</span>` : ''}</td>
+        <td>${slow ? `${p.n[i]} (tracé${p.n[i] > 1 ? 's' : ''})` : `<button type="button" class="mini" data-a="n" data-d="-1" data-i="${i}" aria-label="Une question de moins">−</button> <b>${p.n[i]}</b> <button type="button" class="mini" data-a="n" data-d="1" data-i="${i}" aria-label="Une question de plus">+</button>`}</td>
         <td>${hard ? `<button type="button" class="mini" data-a="h" data-d="-1" data-i="${i}" aria-label="Une question ★ de moins">−</button> <b>${p.h[i]}</b> <button type="button" class="mini" data-a="h" data-d="1" data-i="${i}" aria-label="Une question ★ de plus">+</button>` : '<span class="small muted">—</span>'}</td>
-        <td>${fmt(Math.round(ctlT(k) * (p.n[i] + (HARD_X - 1) * (hard ? p.h[i] : 0)) * 2) / 2)}</td>${hasA ? `<td>${pa.n[i]}</td>` : ''}</tr>`;
+        <td>${fmt(Math.round(ctlMinutes([k], { n: [p.n[i]], h: [p.h[i]] }) * 2) / 2)}</td>${hasA ? `<td>${pa.n[i]}</td>` : ''}</tr>`;
     }).join('')}</tbody></table>
       <p><b>Durée estimée : ≈ ${Math.round(T)} min</b> (${nq(p)} questions)${hasA ? ` · version aménagée : ${nq(pa)} questions, sans ★, avec des aides` : ''}. <span class="small muted">Temps estimés : à ajuster après un premier contrôle.</span></p>
       ${msg ? `<p class="small">${msg}</p>` : ''}
       <p><button type="button" class="btn primary" id="ctl-print">🖨️ Imprimer les sujets</button> <span class="small muted">${c.s.length} copies · contrôle ${c.id}</span></p></div>`;
     planBox.querySelectorAll('button[data-a]').forEach((bt) => bt.addEventListener('click', () => {
       const i = Number(bt.dataset.i), d = Number(bt.dataset.d);
-      if (bt.dataset.a === 'n') { p.n[i] = Math.min(6, Math.max(1, p.n[i] + d)); p.h[i] = Math.min(p.h[i], p.n[i]); p.a = null; }
-      else p.h[i] = Math.min(p.n[i], Math.max(0, p.h[i] + d));
+      const k = c.k[i], hm = (n) => ctlHardIdx(k, n, CTL_MAXN, (x) => ctlHard(x, c.g)).size;
+      if (bt.dataset.a === 'n') { p.n[i] = Math.min(CTL_MAXN, Math.max(ctlMinN(k), p.n[i] + d)); p.h[i] = Math.min(p.h[i], hm(p.n[i])); p.a = null; }
+      else p.h[i] = Math.min(hm(p.n[i]), Math.max(0, p.h[i] + d));
       drawPlan();
     }));
     $('ctl-print').addEventListener('click', () => {
@@ -4883,11 +5045,11 @@ function setupControles() {
     });
   }
   $('ctl-make').addEventListener('click', () => {
-    const ks = sel(), ns = names();
-    if (!ks.length) { status('ko-t', 'Coche au moins une compétence dans la liste ci-dessus.'); return; }
+    const ks = ctlKeys(), ns = names();
+    if (!ks.length) { status('ko-t', 'Choisis un chapitre.'); return; }
     if (!ns.length) { status('ko-t', 'Colle la liste des élèves.'); $('ctl-names').focus(); return; }
     const am = new Set(amenGet($('ctl-classe').value));
-    const c = { id: newCtlId(), g: 2, t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: dateOf($('ctl-date').value), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
+    const c = { id: newCtlId(), g: 3, t: $('ctl-title').value.trim() || 'Contrôle', c: $('ctl-classe').value, d: dateOf($('ctl-date').value), k: ks, s: ns.map((n) => [n, am.has(normName(n)) ? 'a' : 's']) };
     const mode = $('ctl-q').value;
     status('', '🧮 Calcul du contrôle (mise en page de chaque copie)…'); planBox.innerHTML = '';
     setTimeout(() => {
@@ -4895,11 +5057,11 @@ function setupControles() {
       if (mode.startsWith('a')) {
         const r = ctlAutoPlan(c, Number(mode.slice(1)));
         p = r.p;
-        if (r.tooMany) msg = '<span class="warn-t">⚠ Même avec une seule question par compétence, la page déborde : enlève une compétence.</span>';
-        else if (r.short) msg = `<span class="warn-t">La page est pleine à ≈ ${Math.round(ctlMinutes(c.k, p))} min.</span> Pour aller jusqu'à ${mode.slice(1)} min sans déborder : ajoute une compétence de tracé, ou une compétence qui a des questions ★.`;
+        if (r.tooMany) msg = '<span class="warn-t">⚠ Même avec une seule question de chaque type, la page déborde : décoche un type d\'exercice (les tracés prennent beaucoup de place).</span>';
+        else if (r.short) msg = `<span class="warn-t">La page est pleine à ≈ ${Math.round(ctlMinutes(c.k, p))} min</span> (une page, avec une question de chaque type).`;
         else if (r.long) msg = '<span class="warn-t">Ces compétences demandent déjà plus de temps que prévu, même avec une seule question chacune.</span>';
-        if (r.amOver) msg += ' <span class="warn-t">La version aménagée dépasse une page même avec une question par compétence : enlève une compétence, ou imprime-la en recto-verso.</span>';
-      } else p = { n: ks.map((k) => (GENS[k]?.slow ? 1 : Number(mode))), h: ks.map(() => 0) };
+        if (r.amOver) msg += ' <span class="warn-t">La version aménagée dépasse une page même avec une question de chaque type : décoche un type d\'exercice, ou imprime-la en recto-verso.</span>';
+      } else p = { n: ks.map((k) => Math.min(CTL_MAXN, ctlSubs(k).reduce((a, s) => a + (GENS[s].slow ? 1 : Number(mode)), 0))), h: ks.map(() => 0) };
       prep = { c, p };
       status('ok-t', `Contrôle ${c.id} préparé. Vérifie la durée, ajuste si besoin avec − et +, puis imprime.`);
       drawPlan(msg);
@@ -4922,13 +5084,13 @@ function setupControles() {
       return { n, name, ver, lv: c.k.map((_, ci) => e[ci] || r.lv[ci] || ''), bits: r.bits, doubt: r.doubt, note: r.note };
     });
     const done = rows.filter((r) => r.lv.every(Boolean));
-    host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(GENS[k]?.label || k)}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
+    host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(ctlLabel(k))}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
       <p class="small muted">Cases orangées : Claude a un doute, vérifie la copie. Tu peux changer chaque niveau.</p>
       <p><button type="button" class="btn primary" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button> <span class="small muted">Seuls les élèves dont toutes les compétences ont un niveau ont une étiquette.</span></p>`;
     host.querySelectorAll('select').forEach((s) => s.addEventListener('change', () => { const k = c.id + s.dataset.n; edits[k] = edits[k] || {}; edits[k][s.dataset.ci] = s.value; drawTable(); }));
     $('ctl-print-lbl')?.addEventListener('click', () => printLabels(c, done, Number($('ctl-skip').value), profDest()));
     $('ctl-copy').addEventListener('click', async (ev) => {
-      const tsv = [['Élève', 'Code', ...c.k.map((k, i) => `C${i + 1} ${GENS[k]?.label || k}`)].join('\t'), ...rows.map((r) => [r.name, ctlCode(c.id, r.n), ...r.lv].join('\t'))].join('\n');
+      const tsv = [['Élève', 'Code', ...c.k.map((k, i) => `C${i + 1} ${ctlLabel(k)}`)].join('\t'), ...rows.map((r) => [r.name, ctlCode(c.id, r.n), ...r.lv].join('\t'))].join('\n');
       try { await navigator.clipboard.writeText(tsv); ev.target.textContent = '✔ Copié'; } catch (_) { ev.target.textContent = 'Copie impossible'; }
     });
   }
@@ -4953,7 +5115,7 @@ function routeRetour(spec) {
   const ver = (verS || 's')[0], salt = parseInt((verS || '').slice(1), 10) || 0;
   const keys = (ksS || '').split('+'), n = parseInt(nS, 10);
   // lien v1 : q questions par compétence ; lien v2 : plan détaillé (ex. 3-4h1-1) ; lien v3 : pareil, contrôle créé avec PROG_RULES
-  const plan = v === '1' ? ctlPlan({ k: keys, q: parseInt(qS, 10) }) : v === '2' || v === '3' ? planParse(qS) : null;
+  const plan = v === '1' ? ctlPlan({ k: keys, q: parseInt(qS, 10) }) : v === '2' || v === '3' || v === '4' ? planParse(qS) : null;
   if (!plan || plan.n.length !== keys.length || !/^[0-9A-Z]{3}$/.test(id || '') || !n || !keys.length) {
     host.innerHTML = '<h1>Lien illisible</h1><p class="lead">Ce QR code n\'a pas pu être lu en entier. Réessaie de le scanner, bien à plat et bien éclairé.</p><p><a class="btn" href="#/">Accueil du site</a></p>';
     return '';
@@ -4961,7 +5123,7 @@ function routeRetour(spec) {
   let classe = ''; try { classe = decodeURIComponent(clS || ''); } catch (e) { classe = ''; }
   const extra = (classe ? '/c=' + encodeURIComponent(classe) : '') + segs.filter((s) => /^[fg]=/.test(s)).map((s) => '/' + s).join('');
   const levels = keys.map((_, i) => LV1R[(lvS || '')[i]] || '');
-  const qs = ctlQuestions(id, n, ver === 'a' ? 'a' : 's', keys, plan, salt, v === '3' ? 2 : 0);
+  const qs = ctlQuestions(id, n, ver === 'a' ? 'a' : 's', keys, plan, salt, v === '4' ? 3 : v === '3' ? 2 : 0);
   // réponses : une suite de 0/1 rangée par compétence (dans l'ordre des compétences)
   const counts = ctlVer(plan, keys, ver === 'a' ? 'a' : 's').n, starts = counts.map((_, i) => counts.slice(0, i).reduce((a, b) => a + b, 0));
   const bitOf = (x) => ((bitsS || '').length === qs.length ? bitsS[starts[x.ci] + x.m] || '-' : '-');
@@ -4969,9 +5131,11 @@ function routeRetour(spec) {
   host.innerHTML = `<div class="hero"><p class="kicker">Mon contrôle · ${ctlCode(id, n)}</p><h1>Ton corrigé et tes exercices</h1>
     <p class="lead">Regarde d'abord ton bilan, puis refais les exercices proposés : c'est comme ça qu'une compétence fragile devient acquise.</p></div>
     <div class="card"><h2>Ton bilan</h2><ul class="ctl-bilan">${keys.map((k, i) => {
-      const l = levels[i], lab = GENS[k]?.label || 'Notion inconnue';
-      const link = GENS[k] ? `#/devoir/${k}/5/r${extra}` : ''; // r : remédiation (rangée à part dans le bilan Grist)
-      const act = !GENS[k] || !l ? '' : l === 'TB' ? '<span class="ok-t">✔ Bravo !</span>' : `<a class="btn${l === 'MS' ? '' : ' primary'}" href="${link}">${l === 'MS' ? '💪 Je m\'entraîne encore' : '🔁 Je refais ces exercices'}</a>`;
+      const l = levels[i], subs = ctlSubs(k), lab = subs.length ? ctlLabel(k) : 'Notion inconnue';
+      // compétence à plusieurs types : on refait ceux qui étaient faux (tous si les réponses ne sont pas connues)
+      const wrong = [...new Set(qs.filter((x) => x.ci === i && bitOf(x) === '0').map((x) => x.k))];
+      const link = subs.length ? `#/devoir/${[...new Set((wrong.length ? wrong : subs).flatMap((x) => CTL_MERGE[x] || x))].join(',')}/5/r${extra}` : ''; // r : remédiation (rangée à part dans le bilan Grist)
+      const act = !subs.length || !l ? '' : l === 'TB' ? '<span class="ok-t">✔ Bravo !</span>' : `<a class="btn${l === 'MS' ? '' : ' primary'}" href="${link}">${l === 'MS' ? '💪 Je m\'entraîne encore' : '🔁 Je refais ces exercices'}</a>`;
       return `<li><span class="lv lv-${tone[l] || 'none'}">${l || '?'}</span> <b>${esc(lab)}</b> <span class="small muted">${l ? LEVEL_TXT[l] : ''}</span> ${act}</li>`;
     }).join('')}</ul>
     <p class="small muted">Les exercices s'ouvrent comme un devoir : écris ton prénom au début, ton professeur verra que tu les as faits.</p></div>
@@ -4994,5 +5158,5 @@ function routeRetour(spec) {
     } else fb.innerHTML = res.msg ? '<strong>Correction :</strong> ' + res.msg : '';
     if (!fb.innerHTML) fb.remove();
   });
-  return GENS[keys.find((k) => GENS[k])]?.ch || '';
+  return GENS[ctlSubs(keys.find((k) => ctlSubs(k).length))[0]]?.ch || '';
 }

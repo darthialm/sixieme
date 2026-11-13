@@ -792,6 +792,8 @@ table.bilan td:first-child { white-space: normal; }
 #ctl-work { position: absolute; left: -10000px; top: 0; width: 900px; }
 .ctl-studs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 10px; }
 .ctl-studs label { white-space: nowrap; }
+.ctl-chs { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0; }
+.ctl-chs label { white-space: nowrap; }
 .ctl-res select { padding: 2px 4px; border-radius: 6px; }
 .ctl-res select.lv-TB, .ctl-res select.lv-MS { background: var(--ok-soft, #e4f4e8); }
 .ctl-res select.lv-MF { background: var(--warn-soft, #fff3df); }

@@ -166,8 +166,13 @@ body.projo-mode main { padding-top: 8px; padding-bottom: 8px; }
 /* ---------- Sur la copie (contrôle papier) ---------- */
 .ctl-sheet .p2-grid { font-size: 1.15em; padding: 1mm 3mm 1.5mm; margin: 1mm 0; border-color: #999; }
 .ctl-sheet .p2-grid .blank { min-width: 0; width: 1.2em; height: 1.3em; margin: 0; border-width: 1.5px; }
-.ctl-sheet .p2-grid .g-C .blank { width: 1.1em; height: 1.1em; }
+/* ligne des retenues : assez grande pour qu'on écrive dedans, au-dessus de sa colonne */
+.ctl-sheet .p2-grid .g-C { font-size: .8em; color: #000; min-height: 0; }
+.ctl-sheet .p2-grid .g-C .g-c { width: calc(1.45em / .8); height: 1.45em; }
+.ctl-sheet .p2-grid .g-C .g-comma { width: calc(.55em / .8); }
+.ctl-sheet .p2-grid .g-C .blank { width: 1.25em; height: 1.25em; border-style: dashed; }
 .ctl-sheet .p2-grid .p2-z { color: #000; }
+.ctl-sheet .p2-carry-note { color: #000; font-size: .9em; margin: .5mm 0 0; }
 .ctl-sheet .p2-vline .vgap { display: inline-block; width: .55em; }
 .ctl-sheet .p2-vline .vgap::after { background: #888; }
 .ctl-sheet .yt { display: none; }

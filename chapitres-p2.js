@@ -196,6 +196,31 @@ function genOpPar2() {
   };
 }
 
+/* ---------- 2 + 3 + 4 réunis (contrôles papier) : priorités de calcul en un seul exercice ----------
+   Trois calculs : de gauche à droite, avec parenthèses, avec parenthèses doubles (étapes dans le cadre).
+   Une seule question (juste si les trois calculs sont justes). */
+function genOpPrio() {
+  const draw = (f) => { for (let i = 0; i < 40; i++) { const o = f(); if (o._correct === undefined) return o; } return f(); };
+  let parts;
+  for (let i = 0; i < 40; i++) {
+    parts = [draw(genOpGauche), draw(genOpPar), genOpPar2()];
+    const names = parts.map((o) => (o.q.match(/<p class="big">([A-E]) =/) || [])[1]);
+    if (new Set(names).size === 3) break;
+  }
+  const big = (o) => (o.q.match(/<p class="big">[\s\S]*?<\/p>/) || [''])[0];
+  const each = (r, fn) => [...r.querySelectorAll('.cmb-p')].map((el, i) => fn(parts[i], el));
+  return {
+    hints: ['D\'abord les calculs entre parenthèses (les plus intérieures en premier) ; sans parenthèses, avec seulement + et −, on calcule de gauche à droite.', 'Exemple : 60 − (25 − (4 + 6)) = 60 − (25 − 10) = 60 − 15 = 45.'],
+    q: `<p class="statement">Calcule en respectant les priorités de calcul. Pour le dernier calcul, écris les étapes sur ton cahier.</p>${parts.map((o) => `<div class="cmb-p">${big(o)}</div>`).join('')}`,
+    remediate(r) { return each(r, (o, el) => o.remediate?.(el) || null).find(Boolean) || null; },
+    check(r) {
+      const res = each(r, (o, el) => o.check(el));
+      if (res.some((x) => !x)) return null;
+      return { ok: res.every((x) => x.ok), msg: res.map((x) => x.msg).join('') };
+    },
+  };
+}
+
 /* ---------- Opérations posées (affichage) ---------- */
 /** nombre décimal {m, k} : valeur m / 10^k */
 const dv = (m, k) => ({ m, k });
@@ -275,7 +300,8 @@ function opPuzzle(a, b, op, hard) {
   const target = (hard ? 6 : 4) - (op === '+' ? 1 : 0);
   for (const c of shuffle([...Array(S.R.length).keys()])) { if ([...holes.keys()].filter((k) => !k.startsWith('C')).length >= target) break; if (!used.has(c)) put('R', c, 'res'); }
   // 4. addition : une case de retenue (au-dessus d'une colonne), qui vaut 1 ou 0
-  if (op === '+') { const cs = [...Array(W).keys()].filter((c) => c >= 1 && (dig('A', c) !== null || dig('B', c) !== null)); const c = pick(cs.filter((x) => cin[x]).length && Math.random() < 0.7 ? cs.filter((x) => cin[x]) : cs); if (c !== undefined) put('C', c, 'carry'); }
+  //    (pas sur un contrôle papier : on n'y demande pas d'écrire une retenue dans une case)
+  if (op === '+' && !CTL_PAPER) { const cs = [...Array(W).keys()].filter((c) => c >= 1 && (dig('A', c) !== null || dig('B', c) !== null)); const c = pick(cs.filter((x) => cin[x]).length && Math.random() < 0.7 ? cs.filter((x) => cin[x]) : cs); if (c !== undefined) put('C', c, 'carry'); }
   return { K, W, S, dig, cin, pad, holes, R };
 }
 /** HTML de la grille. full : on montre tout (correction), les trous sont surlignés. */
@@ -297,7 +323,7 @@ function puzzleHTML(P, op, full = false) {
     cols.forEach((c) => { h += cell(row, c); if (K && c === K) h += `<span class="g-comma">${row === 'C' ? '' : ','}</span>`; });
     return `<div class="g-row g-${row}">${h}</div>`;
   };
-  const html = `<div class="p2-grid">${op === '+' ? line('C', '') : ''}${line('A', '')}${line('B', op)}${line('R', '')}</div>`;
+  const html = `<div class="p2-grid">${op === '+' && !(CTL_PAPER && !full) ? line('C', '') : ''}${line('A', '')}${line('B', op)}${line('R', '')}</div>`;
   idx = H.length;
   return { html, H };
 }
@@ -315,8 +341,8 @@ function genOpPoseAdd(hard = false) {
   const res = (op === '+' ? A.m + B.m : A.m - B.m) / P10(K);
   const expr = `${dNice(a)} ${op} ${dNice(b)}`;
   const vid = op === '+' ? 'add' : 'sub';
-  if (!hard && Math.random() < 0.3) {
-    // QCM : quelle opération est bien posée ?
+  if (!CTL_PAPER && !hard && Math.random() < 0.3) {
+    // QCM : quelle opération est bien posée ? (pas sur un contrôle papier)
     const good = poseAddHTML(a, b, op, false, true);
     const right = `<div class="p2-pose p2-right"><div><span class="p2-op"></span>${dStr(a)}</div><div><span class="p2-op">${op}</span>${dStr(b)}</div><div class="p2-res">&nbsp;</div></div>`;
     const left = `<div class="p2-pose p2-left"><div><span class="p2-op"></span>${dStr(a)}</div><div><span class="p2-op">${op}</span>${dStr(b)}</div><div class="p2-res">&nbsp;</div></div>`;
@@ -1300,6 +1326,7 @@ Object.assign(GENS, {
   'o-gauche': { ch: 'operations', f: genOpGauche, label: 'Calculer de gauche à droite' },
   'o-par': { ch: 'operations', f: genOpPar, label: 'Calculer avec des parenthèses' },
   'o-par2': { ch: 'operations', f: genOpPar2, label: 'Parenthèses « doubles »' },
+  'o-prio': { ch: 'operations', f: genOpPrio, label: 'Priorités de calcul (gauche à droite, parenthèses)', hidden: true, t: 5 }, // contrôles papier seulement
   'o-add': { ch: 'operations', f: genOpPoseAdd, label: 'Poser une addition, une soustraction', hard: true, t: 3 },
   'o-mul': { ch: 'operations', f: genOpPoseMul, label: 'Poser une multiplication', hard: true, t: 2.5 },
   'o-pb': { ch: 'operations', f: genOpProbleme, label: 'Résoudre un problème' },

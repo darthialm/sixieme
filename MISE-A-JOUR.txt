@@ -1,3 +1,39 @@
+MISE À JOUR 2026-11-13.7 : contrôles par chapitre, priorités de calcul en un seul exercice
+
+CE QUI CHANGE (contrôles papier) :
+- On choisit le chapitre : le contrôle reprend tout ce qu'il faut, sans cocher les types un par un
+  (les types cochés ne servent que si aucun chapitre n'est choisi).
+- Opérations : « de gauche à droite », « parenthèses » et « parenthèses doubles » sont réunis en un seul
+  exercice « Priorités de calcul » (trois calculs, étapes du dernier dans le cadre).
+- Plus de question « Quelle opération est bien posée ? » dans les contrôles.
+- Opération à compléter : plus de case de retenue ni de consigne sur la retenue.
+- Page « Mon contrôle » : si les priorités sont ratées, les exercices proposés sont les trois exercices du site.
+
+Les contrôles déjà créés ne changent pas.
+
+=========================================================
+
+MISE À JOUR 2026-11-13.6 : contrôles regroupés par compétences, PDF fidèle
+
+CE QUI CHANGE :
+- Contrôles papier : les types d'exercices cochés sont regroupés par compétence (3 ou 4 par chapitre),
+  au lieu d'une compétence par type. Ex. Opérations : « Vocabulaire et priorités de calcul »,
+  « Calculs posés », « Résoudre un problème ».
+- Chaque type coché a au moins une question, même en version aménagée. Avec les 10 types d'Opérations,
+  la copie tient sur une page (≈ 30 min).
+- Chapitres de géométrie : si tous les tracés sont cochés, ils ne tiennent pas sur une page en vraie
+  grandeur ; le site le signale.
+- Page « Mon contrôle » (QR code) : les exercices proposés sont ceux des types ratés.
+- Opération à compléter : la case de retenue est plus grande (en pointillés) et la consigne est écrite
+  pour le papier.
+- Version aménagée : les aides imprimées ne renvoient plus à la fiche ni aux vidéos.
+- « Télécharger le PDF » : chaque page est dessinée comme à l'impression (avant, la grille des
+  opérations à compléter pouvait sortir vide).
+
+Les contrôles déjà créés ne changent pas.
+
+=========================================================
+
 MISE À JOUR 2026-11-13.5 : sujets de contrôle en fichier PDF
 
 CE QUI CHANGE :
