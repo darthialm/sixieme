@@ -1,3 +1,18 @@
+MISE À JOUR 2026-11-14.7 : Le Pont des Fractions, le pilier et les rochers cachés dans les nuages
+
+À DÉPOSER : le dossier jeu-fractions/ (ses 3 fichiers)
+
+- Le pont qui s'arrêtait au milieu du vide a maintenant une raison : le gouffre est trop large, le pont a besoin
+  d'un pilier. Sous les ponts, une mer de nuages cache des rochers (on ne les voit jamais). Le renard plante
+  le pilier au bout du pont, et le pilier descend dans les nuages :
+  · pile sur la fraction, il tombe sur un rocher caché et s'arrête net (« toc », bouffée de nuage) ; le pont se termine ;
+  · ailleurs, il disparaît dans les nuages, le pont bascule et le renard tombe (avec son ombrelle).
+- Les ponts déjà franchis gardent leur pilier, planté pile sous chaque fraction.
+- Message d'erreur : « Trop court : pas de rocher sous le pilier ! … ».
+- Décor : les îles flottent maintenant sur une mer de nuages.
+
+=========================================================
+
 MISE À JOUR 2026-11-14.6 : Le Pont des Fractions, progression plus douce en 13 niveaux, coup de pouce
 
 À DÉPOSER : le dossier jeu-fractions/ (ses 3 fichiers) et README.md
