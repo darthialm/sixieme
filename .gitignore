@@ -1,0 +1,7 @@
+# Code source du jeu 3D et ses outils (227 Mo) : seul le dossier jeu-fractions/ fabriqué sert au site
+jeu-fractions-src/
+# Corrigés et fiches enseignant : le dépôt est public, les élèves pourraient les trouver
+pour-le-cloud/
+Claude outputs/
+# Réglages locaux de Claude Code
+.claude/
