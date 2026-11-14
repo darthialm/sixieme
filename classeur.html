@@ -315,21 +315,31 @@ const SEANCES=[
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : définitions, propriétés et constructions.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier toutes les constructions du cours.</p><p><b>Apporter : tout le matériel de géométrie (règle, équerre, rapporteur, compas).</b></p>"},
  {id:"S20",chap:"Triangles",k:"Triangles · évaluation",t:"Évaluation Triangles (45 min), puis remédiation",cours:"—",docs:["evalT","evalTc"],act:"",eval:true,dev:""},
 ];
-/* Cahier Mission Indigo 6e (chap. 9 Angles) différencié : A essentiels (tous), B entraînement, C défi.
-   Corrigés du cahier en libre-service : un PDF par séance dans pour-le-cloud/Cahier_Angles (hors dépôt, à déposer sur le cloud). */
+/* Cahier Mission Indigo 6e (chap. 9 Angles) différencié. Les élèves écrivent dans le cahier : chaque exercice n'est donné qu'une fois.
+   - sans billet récent sur la notion (S6, S7, S14) : progression pour tous, A essentiels → B entraînement → C défi ;
+   - après un billet sur la notion (S8 et S9 : billet n°3 ; S15 : billet n°5) : programme par groupe du billet (R, E, D),
+     liste des élèves à annoncer à l'oral, programme à projeter (sans les noms).
+   Corrigés en libre-service : bouton « Corrigés cahier » de la séance (documents.bin), un PDF par séance. */
 const CAHIER={
- S6:{A:"ex. 1 p. 84 (nommer un angle) ; ex. 6 p. 85 (aigu ou obtus)",B:"ex. 3 p. 84 (angles dans une figure) ; ex. 7 p. 85 (proches de 90°)",C:"ex. 5 p. 84 (classer sans mesurer)",
+ S6:{t:"Nommer un angle, nature des angles",A:"ex. 1 p. 84 (nommer un angle) ; ex. 6 p. 85 (aigu ou obtus, sans mesurer)",B:"ex. 3 p. 84 (angles dans une figure) ; ex. 7 p. 85 (proches de 90°)",C:"ex. 5 p. 84 (classer sans mesurer)",
   pg:"sur l'ex. 1 : sommet, côtés, les deux notations"},
- S7:{A:"ex. 8 p. 85 (lire le rapporteur) ; ex. 9 p. 85 (aigu ou obtus, puis mesurer)",B:"ex. 10 p. 85 (les 4 angles d'un quadrilatère)",C:"ex. 11 p. 85 (angles d'une horloge)",
-  pg:"sur l'ex. 8 : quelle graduation lire (0 sur quel côté ?)"},
- S8:{apres:true,A:"finir les ex. 8 et 9 p. 85",B:"ex. 10 p. 85",C:"ex. 11 p. 85, puis « Le défi » p. 91 (la pendule à 10 h 12)",
-  pg:"le groupe « Je reprends » du billet n°3 commence son parcours au tableau avec toi"},
- S9:{A:"ex. 12 p. 86 (75°, rapporteur placé) ; ex. 13 p. 86 (tracer le 2e côté)",B:"ex. 14 p. 86 (reproduire un quadrilatère) ; ex. 16 p. 86 (partager 150°)",C:"ex. 17 p. 86 (deux angles de 132°) ; ex. 29 p. 89 (points alignés ?)",
-  pg:"sur l'ex. 13 : où placer le centre, de quel côté lire"},
- S14:{A:"ex. 18 p. 87 (deux côtés et l'angle compris, figure à main levée) ; ex. 19 p. 87 (même chose, énoncé écrit)",B:"ex. 21 p. 87 (un côté et deux angles)",C:"ex. 22 p. 87 (un côté et deux angles, sans figure ni côté tracé)",
+ S7:{t:"Mesurer un angle",A:"ex. 8 p. 85 (lire la bonne graduation)",B:"ex. 9 p. 85 (aigu ou obtus, puis mesurer)",C:"",
+  pg:"sur l'ex. 8 : le 0 sur quel côté, quelle graduation lire"},
+ S8:{t:"Mesurer un angle",pt:3,fiche:true,
+  R:"ta fiche « Je reprends », au tableau avec le professeur ; puis ex. 10 p. 85 (les 4 angles d'un quadrilatère)",
+  E:"ta fiche « Je m'entraîne » ; à l'étape 3 (cahier) : ex. 10 p. 85, puis ex. 11 p. 85 (l'horloge)",
+  D:"ta fiche « Je relève un défi » ; puis ex. 11 p. 85 (l'horloge) et « Le défi » p. 91 (la pendule à 10 h 12)"},
+ S9:{t:"Construire un angle",pt:3,
+  R:"ex. 12 p. 86 au tableau avec le professeur (rapporteur déjà placé), puis ex. 13 p. 86 seul",
+  E:"ex. 13 p. 86, ex. 14 p. 86 (reproduire la figure), puis ex. 16 p. 86 (partager 150°)",
+  D:"ex. 16 p. 86 (partager 150°), ex. 17 p. 86, puis ex. 29 p. 89 (points alignés ?)"},
+ S14:{t:"Construire un triangle",A:"ex. 18 p. 87 (deux côtés et l'angle, figure à main levée) ; ex. 21 p. 87 (un côté et deux angles)",B:"ex. 19 p. 87 (deux côtés et l'angle, énoncé écrit)",C:"ex. 22 p. 87 (un côté et deux angles, sans figure)",
   pg:"sur l'ex. 18 : l'ordre côté, angle, côté"},
- S15:{apres:true,A:"finir les ex. 18 et 19 p. 87",B:"ex. 20 p. 87 (triangle isocèle)",C:"ex. 23 p. 87 (trois triangles accolés) ⚠ son corrigé place l'angle de 100° en B au lieu de A : à vérifier avant de le mettre dans la pochette",
-  pg:"le groupe « Je reprends » du billet n°5 commence son parcours au tableau avec toi"},
+ S15:{t:"Construire un triangle",pt:5,fiche:true,
+  R:"ta fiche « Je reprends », au tableau avec le professeur ; puis finir ex. 19 p. 87",
+  E:"ta fiche « Je m'entraîne » ; puis ex. 20 p. 87 (triangle isocèle)",
+  D:"ta fiche « Je relève un défi » ; puis ex. 23 p. 87 (trois triangles accolés)",
+  warn:"le corrigé de l'ex. 23 place l'angle de 100° en B au lieu de A : à vérifier avant de le mettre dans la pochette"},
 };
 const G={R:"Je reprends",E:"Je m'entraîne",D:"Je relève un défi"};
 const CYCLE=["","R","E","D"];
@@ -344,15 +354,15 @@ const BLOCS={
  S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Horloges folles (2) : l'horloge décimale, en binôme"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 ; ticket de caisse pour ceux qui ont fini","p")],
  S5:[BL(45,"Évaluation Opérations","v"),BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
  S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(30,"Cahier différencié : A pour tous (ex. 1 p. 84, ex. 6 p. 85), petit groupe au tableau, les autres enchaînent B puis C ; corrigés en libre-service","e",15),BL(10,"Bilan (un A corrigé au tableau, l'idée du défi) ; donner la chasse photo","e",5)],
- S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier différencié : A pour tous (ex. 8 et 9 p. 85), puis B (ex. 10) et C (ex. 11) ; corrigés en libre-service","e"),BL(5,"Billet de sortie n°3","b")],
- S8:[BL(10,"L'estimathon (à projeter)"),BL(15,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(45,"Parcours point 3 (groupe « Je reprends » au tableau avec toi) ; ceux qui ont fini : cahier B puis C, permis rapporteur ; bilan 5 min","p")],
- S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(30,"Cahier différencié : A pour tous (ex. 12 et 13 p. 86), petit groupe au tableau, les autres enchaînent B puis C ; corrigés en libre-service, bilan","e",20),BL(30,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
+ S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier pour tous : A ex. 8 p. 85, puis B ex. 9 ; corrigés en libre-service","e"),BL(5,"Billet de sortie n°3","b")],
+ S8:[BL(10,"L'estimathon (à projeter)"),BL(15,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(45,"Groupes du billet n°3 (annoncés à l’oral, programme projeté) : fiches vierges du point 3 puis cahier ; « Je reprends » au tableau ; permis rapporteur ; bilan 5 min","p")],
+ S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(30,"Cahier par groupes du billet n°3 (annoncés à l’oral, programme projeté) : « Je reprends » au tableau sur l’ex. 12 ; corrigés en libre-service, bilan","e",20),BL(30,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
  S10:[BL(10,"Questions flash : compléments à 90 et à 180"),BL(20,"Découverte : deux droites sécantes, mesurer les 4 angles"),BL(20,"Cours : tableau des relations, propriété"),BL(20,"Cours : méthode « Reconnaître et utiliser les relations »"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°4","b")],
  S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 ; chasse au trésor pour ceux qui ont fini","p")],
  S12:[BL(45,"Révisions : cahier d'activités, méthodes du cours","e",20),BL(45,"Évaluation Angles","v")],
  S13:[BL(10,"Questions flash : angles (mesurer, nommer)"),BL(20,"Recherche en binôme : triangle de côtés 6 ; 3,5 et 5 cm"),BL(20,"Cours : définition, vocabulaire, rappel, méthode"),BL(20,"Cahier d'activités","e"),BL(20,"Défi : un triangle 3, 4, 8 cm est-il possible ? Bilan","e")],
- S14:[BL(10,"Questions flash : construire un angle"),BL(20,"Cours : méthode « deux côtés et l'angle compris »"),BL(20,"Cours : méthode « un côté et deux angles »"),BL(20,"Cahier différencié : A pour tous (ex. 18 et 19 p. 87), puis B (ex. 21) et C (ex. 22) ; corrigés en libre-service","e"),BL(15,"Dictée de construction en binôme","e"),BL(5,"Billet de sortie n°5","b")],
- S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Parcours point 5 (groupe « Je reprends » au tableau avec toi) ; ceux qui ont fini : cahier B (ex. 20) puis C (ex. 23), carte au trésor","p")],
+ S14:[BL(10,"Questions flash : construire un angle"),BL(20,"Cours : méthode « deux côtés et l'angle compris »"),BL(20,"Cours : méthode « un côté et deux angles »"),BL(20,"Cahier pour tous : A ex. 18 et 21 p. 87, puis B ex. 19 et C ex. 22 ; corrigés en libre-service","e"),BL(15,"Dictée de construction en binôme","e"),BL(5,"Billet de sortie n°5","b")],
+ S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Groupes du billet n°5 (annoncés à l’oral, programme projeté) : fiches vierges du point 5 puis cahier ; « Je reprends » au tableau ; carte au trésor","p")],
  S16:[BL(10,"Questions flash : tracer une perpendiculaire"),BL(20,"Cours : définition, méthode « côtés de l'angle droit »"),BL(20,"Cours : méthode « avec l'hypoténuse »"),BL(20,"Cahier d'activités","e"),BL(20,"Figures à décrire, bilan","e")],
  S17:[BL(10,"Questions flash : compléments à 180"),BL(20,"Pliage d'un triangle découpé"),BL(20,"Cours : la règle des 180°, méthode rédigée"),BL(20,"Cahier d'activités","e"),BL(15,"Débat : un triangle peut-il avoir deux angles droits ?","e"),BL(5,"Billet de sortie n°6","b")],
  S18:[BL(10,"Questions flash : calcul du troisième angle"),BL(20,"Mesurer les angles des triangles particuliers déjà construits"),BL(20,"Cours : propriétés, méthode"),BL(40,"Parcours point 6 ; Qui est-ce ? pour ceux qui ont fini","p")],
@@ -587,6 +597,7 @@ function renderCreneaux(c){
             return `<div><b>${esc(chapPos(s))}</b>${estPerso(s.id)?` <span class="tag perso">Modifiée</span>`:""}<br><span class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</span><br><button class="btn small" data-edit="${s.id}" data-editc="${x.id}" style="margin-top:4px">✏️ Modifier les textes de cette séance</button></div>`}).join("")||`<p class="hint">—</p>`}
             ${parcs.map(s=>{const n=POINTS.find(q=>q.p===s).n;return `<div><button class="btn small" data-goparc="${n}">Préparer les parcours du point ${n}</button></div>`}).join("")}
             ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">Billet n°${n} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
+            ${[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")}
           </div>
           <div class="box"><h3>Documents</h3><div class="docs">${docs.map(docBtn).join("")||`<span class="hint">—</span>`}${parcs.map(sid=>parcVierges(POINTS.find(q=>q.p===sid).n)).join("")}</div></div>
         </div>
@@ -1286,16 +1297,54 @@ function renderSeances(c){
   }
   return html;
 }
-/* encadré « Cahier différencié » d'une séance (exercices A/B/C, petit groupe, corrigés en libre-service) */
+/* encadré « Cahier différencié » d'une séance : progression A/B/C, ou groupes du billet (liste à dire à l'oral) ; bouton de projection */
+const GCL={R:"c-R",E:"c-E",D:"c-D"};
+function groupesBillet(c,pt){
+  const r={R:[],E:[],D:[]};if(!c)return r;
+  c.eleves.forEach(e=>{const v=(c.g[e.id]||{})[pt];r[v==="R"||v==="D"?v:"E"].push(e.nom)});// sans groupe : « Je m'entraîne » d'office
+  return r;
+}
 function cahierHtml(sid){
   const x=CAHIER[sid];if(!x)return "";
-  const li=(n,cl,lab,t)=>`<li><span class="niv ${cl}">${n} · ${lab}</span>${esc(t)}</li>`;
-  return `<div class="cahier"><b>📘 Cahier d'activités différencié</b> <span class="hint">(Mission Indigo, chap. 9)</span>${x.apres?`<div class="hint">Pour ceux qui ont fini leur parcours :</div>`:""}
+  const proj=`<button class="btn small" data-projcahier="${sid}">📽 Projeter le programme</button>`;
+  const pied=`<li>Pochette de corrigés : bouton <b>Corrigés cahier ${sid}</b> dans Documents, à imprimer ou à déposer sur ton cloud${x.fiche?` (corrigés des fiches : « Parcours point ${x.pt} »)`:""}. Un défi ne se corrige qu'après une trace écrite.</li>
+    ${x.warn?`<li class="warn">⚠ ${esc(x.warn)}</li>`:""}
+    <li>Bilan : un exercice corrigé au tableau par un élève du groupe « Je reprends », une idée de défi expliquée par celui qui l'a trouvée.</li>`;
+  if(x.pt){
+    const c=cur(),g=groupesBillet(c,x.pt),b=POINTS.find(p=>p.n===x.pt);
+    const vide=!g.R.length&&!g.D.length;
+    return `<div class="cahier"><b>📘 Travail par groupes du billet n°${x.pt}</b> <span class="hint">(fin de ${b.b} · cahier Mission Indigo, chap. 9)</span>
+      <ul>${["R","E","D"].map(k=>`<li><span class="niv ${GCL[k]}">${G[k]}</span>${esc(x[k])}<br><span class="hint">À dire : ${g[k].length?esc(g[k].join(", ")):"personne"}</span></li>`).join("")}</ul>
+      ${vide?`<p class="hint">Aucun groupe noté pour le billet n°${x.pt} : tout le monde serait en « Je m'entraîne ». <button class="btn small" data-goparc="${x.pt}">Noter les groupes</button></p>`:""}
+      <ol><li>Annonce les groupes à l'oral (liste ci-dessus) et projette le programme : les noms ne sont pas projetés.</li>
+      ${x.fiche?`<li>Fiches : imprime les fiches vierges du point ${x.pt} (boutons « Parcours point ${x.pt} · vierge » dans Documents), ${g.R.length} « Je reprends », ${g.E.length} « Je m'entraîne », ${g.D.length} « Je relève un défi » : pas de PDF nominatif à préparer.</li>`:""}
+      <li>« Je reprends » avec toi au tableau les 15 premières minutes ; les autres avancent seuls et se corrigent à la pochette.</li>${pied}</ol>
+      <div class="row">${proj}</div></div>`;
+  }
+  const li=(n,cl,lab,t)=>t?`<li><span class="niv ${cl}">${n} · ${lab}</span>${esc(t)}</li>`:"";
+  return `<div class="cahier"><b>📘 Cahier d'activités différencié</b> <span class="hint">(Mission Indigo, chap. 9 · pour tous, dans l'ordre)</span>
     <ul>${li("A","c-R","Essentiels",x.A)}${li("B","c-E","Entraînement",x.B)}${li("C","c-D","Défi",x.C)}</ul>
-    <ol>${x.apres?`<li>Le parcours imprimé reste le travail principal : ${esc(x.pg)}, les autres avancent seuls.</li>`
-      :`<li>Tous commencent les A, puis se corrigent seuls à la pochette (stylo vert).</li><li>Petit groupe au tableau (10-15 min), ${esc(x.pg)} : les élèves qui bloquent ou « Je reprends » au dernier billet. Les autres enchaînent B puis C sans t'attendre.</li>`}
-    <li>Pochette de corrigés : bouton <b>Corrigés cahier ${sid}</b> dans Documents, à imprimer ou à déposer sur ton cloud. Un défi C ne se corrige qu'après une trace écrite.</li>
-    <li>Bilan : un A corrigé au tableau par un élève du petit groupe, une idée de défi expliquée par celui qui l'a trouvée.</li></ol></div>`;
+    <ol><li>Tous commencent les A, se corrigent seuls à la pochette (stylo vert), puis passent au niveau suivant si c'est juste.</li>
+    <li>Petit groupe au tableau (10-15 min), ${esc(x.pg)} : les élèves que tu vois bloquer. Les autres continuent sans t'attendre.</li>${pied}</ol>
+    <div class="row">${proj}</div></div>`;
+}
+/* page à projeter : le programme de la séance, sans aucun nom d'élève */
+function projeterCahier(sid){
+  const w=window.open("","_blank");if(!CAHIER[sid]||!w)return;
+  w.document.write(projHtml(sid));w.document.close();
+}
+function projHtml(sid){
+  const x=CAHIER[sid];
+  const col={R:"#1e7f45",E:"#0b4f8a",D:"#6c3483"};
+  const carte=(k,titre,txt)=>txt?`<section style="border-top:10px solid ${col[k]}"><h2 style="color:${col[k]}">${titre}</h2><p>${esc(txt)}</p></section>`:"";
+  const cartes=x.pt?carte("R",G.R,x.R)+carte("E",G.E,x.E)+carte("D",G.D,x.D)
+    :carte("R","A · Essentiels (tout le monde)",x.A)+carte("E","B · Entraînement",x.B)+carte("D","C · Défi",x.C);
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(sid+" · "+x.t)}</title>
+<style>body{margin:0;font-family:system-ui,"Segoe UI",sans-serif;background:#fff;color:#1b2430;padding:3vh 3vw}h1{font-size:4.2vh;margin:0 0 3vh}
+main{display:grid;grid-template-columns:repeat(auto-fit,minmax(28vw,1fr));gap:2.5vw}section{background:#f4f6f9;border-radius:14px;padding:2.5vh 2vw}
+h2{font-size:3.6vh;margin:0 0 1.5vh}p{font-size:3.3vh;line-height:1.4;margin:0}footer{margin-top:4vh;font-size:2.8vh;color:#3b4656}</style></head>
+<body><h1>📘 ${esc(x.t)} · cahier d'activités${x.pt?" · par groupes":""}</h1><main>${cartes}</main>
+<footer>${x.pt?"":"Je commence par les A. "}Je termine l'exercice en entier, puis je vais à la pochette de corrigés et je corrige au stylo vert, sans effacer. Pour un défi, j'écris ma recherche avant de regarder.</footer></body></html>`;
 }
 function renderGroupes(c){
   const p=POINTS.find(x=>x.n===ui.point)||POINTS[0];
@@ -1384,6 +1433,7 @@ document.addEventListener("click",ev=>{
     saveUi();persist();render();return}
   if(t.dataset.edtmode!==undefined){const c=cur();c.edt=t.dataset.edtmode==="1"?(c.edt||{hebdo:[{j:1,d:90},{j:3,d:90},{j:5,d:90}],extra:{on:false,j:2,d:90,first:PERIODE.debut,every:3}}):null;persist();render();return}
   if(t.dataset.hdel!==undefined){const c=cur();c.edt.hebdo.splice(+t.dataset.hdel,1);persist();render();return}
+  if(t.dataset.projcahier){projeterCahier(t.dataset.projcahier);return}
   if(t.dataset.goparc){ui.tab="groupes";ui.point=+t.dataset.goparc;saveUi();render();window.scrollTo({top:0});return}
   const c=cur();
   switch(t.id){
