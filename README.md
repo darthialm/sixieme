@@ -190,7 +190,7 @@ Le bouton **🎮 Jeux**, en haut de chaque page, ouvre la salle de jeux (`#/jeux
 - **Droite parfaite** et **Estimangle** : dans `jeux.js`.
 - **Le Pont des Fractions** (chapitre 4) : jeu 3D affiché dans un cadre. Le site n'a besoin que du dossier `jeu-fractions/` (`index.html`, `jeu.js`, `jeu.css`). Le jeu n'est chargé que quand sa page est ouverte.
 - Le code source est dans `jeu-fractions-src/` (React, TypeScript, Vite, Three.js) : **ne pas le déposer sur GitHub Pages**. Pour modifier le jeu : `npm install` (une fois), puis `npm run build` dans ce dossier ; le dossier `jeu-fractions/` est refabriqué.
-  - `src/core/levels.ts` : les 10 niveaux (fractions, graduations) ;
+  - `src/core/levels.ts` : les 13 niveaux (fractions, graduations, Découpeur Laser) ;
   - `src/core/mathEngine.ts` : les calculs (fractions égales, écriture décimale finie ou non) ;
   - `src/core/hints.ts` : les messages d'aide ;
   - `src/core/soundEngine.ts` : musique et bruitages ;

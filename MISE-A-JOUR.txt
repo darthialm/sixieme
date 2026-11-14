@@ -1,3 +1,24 @@
+MISE À JOUR 2026-11-14.6 : Le Pont des Fractions, progression plus douce en 13 niveaux, coup de pouce
+
+À DÉPOSER : le dossier jeu-fractions/ (ses 3 fichiers) et README.md
+
+- 13 niveaux au lieu de 10, avec de plus petites marches, et le Découpeur Laser (l'élève coupe lui-même l'unité)
+  qui revient régulièrement au lieu d'apparaître une seule fois :
+   1. Premier pont : 2/5, 6/5 (unité en 5)            2. Compter depuis 0 : 1/4, 6/4, 9/4 (unité en 4)
+   3. Je découpe moi-même (laser) : 1/3, 5/4          4. Plus grand que 1 : 4/3 (entre 0 et 2), 5/2 (entre 2 et 4)
+   5. Graduations trompeuses : 1/2 sur des quarts, 5/4 sur des huitièmes, 8/3 sur des sixièmes
+   6. Découpe et place (laser) : 2/3, 9/4, 11/3       7. Grand canyon (laser) : 7/5, 8/3, 9/2
+   Puis avec l'écriture décimale à la loupe :
+   8. Dixièmes : 1/2, 13/10, 12/5                     9. Centièmes : 1/4, 7/4, 13/4
+  10. Je découpe, puis la loupe (laser) : 3/5, 5/4, 5/2
+  11. Pas possible ? : 1/3, 3/2, 8/3                 12. Millièmes : 1/8, 13/8, 5/2
+  13. Le grand final (laser) : 5/6, 9/4, 19/5
+- Coup de pouce : après 2 chutes sur le même pont, chaque graduation affiche sa fraction (1/5, 2/5…, ou 6/5, 7/5…
+  après 1), comptée depuis 0. L'élève perd déjà des étoiles avec ses chutes, mais il n'est plus bloqué.
+- La progression enregistrée repart du niveau 1 (les niveaux ont changé).
+
+=========================================================
+
 MISE À JOUR 2026-11-14.5 : Le Pont des Fractions, plus de mondes, 10 niveaux à la suite, loupe décimale
 
 À DÉPOSER : index.html et le dossier jeu-fractions/ (ses 3 fichiers : index.html, jeu.js, jeu.css)
