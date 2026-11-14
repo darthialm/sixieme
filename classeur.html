@@ -101,6 +101,10 @@ details.seance>summary::-webkit-details-marker{display:none}
 .now b{color:var(--accent)}
 .repere{font-weight:700;color:var(--accent)}
 .profnote{margin-top:6px;padding:8px 10px;border-left:4px solid var(--ok);background:var(--accent-soft);border-radius:6px;line-height:1.45}
+.cahier{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;line-height:1.45}
+.cahier ul{margin:6px 0;padding-left:0;list-style:none}.cahier li{margin:3px 0}
+.cahier .niv{display:inline-block;min-width:96px;padding:1px 7px;border-radius:6px;font-weight:700;font-size:.85em;margin-right:6px}
+.cahier ol{margin:6px 0 0;padding-left:20px}
 .tag.extra{color:var(--accent)}
 ol.deroule{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 ol.deroule li{display:flex;gap:10px;align-items:baseline;padding:4px 8px;border-radius:8px;border-left:4px solid var(--line);background:var(--bg)}
@@ -241,12 +245,16 @@ const DOCS={
  rappo:D("Le rapporteur","docs/Le_rapporteur.pdf","ton document"),
  oeuvre:D("Crée ton œuvre d'art","docs/Cree_ton_oeuvre_d_art.pdf","ton document"),
  multcur:D("Multiplications curieuses","docs/Multiplications_curieuses.pdf","ton document"),
+ corC6:D("Corrigés cahier S6","docs/Corrige_cahier_S6.pdf","libre-service"),corC7:D("Corrigés cahier S7","docs/Corrige_cahier_S7.pdf","libre-service"),
+ corC8:D("Corrigés cahier S8","docs/Corrige_cahier_S8.pdf","libre-service"),corC9:D("Corrigés cahier S9","docs/Corrige_cahier_S9.pdf","libre-service"),
+ corC14:D("Corrigés cahier S14","docs/Corrige_cahier_S14.pdf","libre-service"),corC15:D("Corrigés cahier S15","docs/Corrige_cahier_S15.pdf","libre-service"),
 };
 const DOC_GROUPS=[
  ["Cours à trous",["coursO","coursOp","coursA","coursAp","coursT","coursTp"]],
  ["Activités",["actO","actOc","actA","actAc","actT","actTc","rappo","oeuvre","multcur"]],
  ["Écrans à projeter",["projO","projA"]],
  ["Différenciation",["billets","billetsC","corP1","corP2","corP3","corP4","corP5","corP6"]],
+ ["Corrigés du cahier (libre-service)",["corC6","corC7","corC8","corC9","corC14","corC15"]],
  ["Évaluations",["evalO","evalOc","evalA","evalAc","evalT","evalTc"]],
 ];
 const POINTS=[
@@ -277,13 +285,13 @@ const SEANCES=[
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p>"},
  {id:"S5",chap:"Opérations",k:"Évaluation Opérations, puis Angles · séance 1",t:"Évaluation Opérations (45 min) · Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["evalO","evalOc","coursA","coursAp","actA","actAc"],act:"Découverte « le plus grand angle »",eval:true,
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les angles (définition et notation).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Tracer trois angles sur le cahier et les nommer.</p><p><b>Apporter : équerre et ciseaux.</b></p>"},
- {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Nommer un angle, nature des angles",cours:"Partie 1.2 (nature) et les méthodes « Nommer » et « Nature »",docs:["coursA","coursAp","actA","actAc"],act:"Trier les angles",
+ {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Nommer un angle, nature des angles",cours:"Partie 1.2 (nature) et les méthodes « Nommer » et « Nature »",docs:["coursA","coursAp","actA","actAc","corC6"],act:"Trier les angles",
   dev:"<p><b>Apprendre la partie 1.2 du cours : la nature des angles.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p><b>Chasse aux angles : photographier un angle aigu, un droit, un obtus et un plat (aucune personne sur les photos), et les déposer ici avant la séance du [date]. Sans appareil, dessiner les 4 objets.</b></p><p>Refaire seul la méthode « Nommer un angle ».</p><p><b>Apporter : rapporteur, papier calque et ciseaux.</b></p>"},
- {id:"S7",chap:"Angles",k:"Angles · séance 3",t:"Mesurer un angle (1)",cours:"Partie 2 et méthode « Mesurer un angle »",docs:["coursA","coursAp","rappo","billets","billetsC"],act:"Le rapporteur (ton activité)",billet:3,
+ {id:"S7",chap:"Angles",k:"Angles · séance 3",t:"Mesurer un angle (1)",cours:"Partie 2 et méthode « Mesurer un angle »",docs:["coursA","coursAp","rappo","billets","billetsC","corC7"],act:"Le rapporteur (ton activité)",billet:3,
   dev:"<p><b>Apprendre les 4 étapes pour mesurer un angle (partie 2).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur.</b></p>"},
- {id:"S8",chap:"Angles",k:"Angles · séance 4",t:"Mesurer un angle (2)",cours:"Pas de nouvelle partie : entraînement sur la partie 2",docs:["coursA","coursAp","projA","actA","actAc","corP3"],act:"Estimathon (écrans), photos de la chasse, permis rapporteur",parcours:3,
+ {id:"S8",chap:"Angles",k:"Angles · séance 4",t:"Mesurer un angle (2)",cours:"Pas de nouvelle partie : entraînement sur la partie 2",docs:["coursA","coursAp","projA","actA","actAc","corP3","corC8"],act:"Estimathon (écrans), photos de la chasse, permis rapporteur",parcours:3,
   dev:"<p><b>Revoir la partie 2 du cours : mesurer un angle.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur, règle, crayons de couleur et calculatrice.</b></p>"},
- {id:"S9",chap:"Angles",k:"Angles · séance 5",t:"Construire un angle",cours:"Partie 3 (construction dans le cahier)",docs:["coursA","coursAp","oeuvre"],act:"Crée ton œuvre d'art (ton activité)",
+ {id:"S9",chap:"Angles",k:"Angles · séance 5",t:"Construire un angle",cours:"Partie 3 (construction dans le cahier)",docs:["coursA","coursAp","oeuvre","corC9"],act:"Crée ton œuvre d'art (ton activité)",
   dev:"<p><b>Apprendre la partie 3 : construire un angle.</b></p><p><b>Finir « Crée ton œuvre d'art ».</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Construire sur le cahier un angle de 75° et un angle de 140°.</p><p><b>Apporter : rapporteur et règle.</b></p>"},
  {id:"S10",chap:"Angles",k:"Angles · séance 6",t:"Relations entre deux angles",cours:"Partie 4 et sa méthode",docs:["coursA","coursAp","actA","actAc","billets","billetsC"],act:"Découverte « deux droites sécantes »",billet:4,
   dev:"<p><b>Apprendre la partie 4 : le tableau des relations entre angles et la propriété.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Reconnaître et utiliser les relations entre deux angles ».</p><p><b>Apporter : rapporteur, règle et ciseaux.</b></p>"},
@@ -293,9 +301,9 @@ const SEANCES=[
   dev:"<p><b>Apporter : compas et règle.</b></p>"},
  {id:"S13",chap:"Triangles",k:"Triangles · séance 1",t:"Vocabulaire, construction à partir des trois côtés",cours:"Partie 1.1, rappel, méthode des 3 côtés",docs:["coursT","coursTp","actT","actTc"],act:"Défi du compas",
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les triangles et le rappel.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier la construction du triangle ABC (6 cm, 4 cm, 5 cm).</p><p><b>Apporter : compas, rapporteur et règle.</b></p>"},
- {id:"S14",chap:"Triangles",k:"Triangles · séance 2",t:"Construction à partir de côtés et d'angles",cours:"Partie 1.2 et ses deux méthodes",docs:["coursT","coursTp","actT","actTc","billets","billetsC"],act:"Dictée de construction",billet:5,
+ {id:"S14",chap:"Triangles",k:"Triangles · séance 2",t:"Construction à partir de côtés et d'angles",cours:"Partie 1.2 et ses deux méthodes",docs:["coursT","coursTp","actT","actTc","billets","billetsC","corC14"],act:"Dictée de construction",billet:5,
   dev:"<p><b>Apprendre la partie 1.2 : construire un triangle avec des angles.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier la construction du triangle KLM.</p><p><b>Apporter : compas, règle et ciseaux.</b></p>"},
- {id:"S15",chap:"Triangles",k:"Triangles · séance 3",t:"Triangles isocèle et équilatéral",cours:"Parties 2.1 et 2.2",docs:["coursT","coursTp","actT","actTc","corP5"],act:"Trier les triangles, carte au trésor",parcours:5,
+ {id:"S15",chap:"Triangles",k:"Triangles · séance 3",t:"Triangles isocèle et équilatéral",cours:"Parties 2.1 et 2.2",docs:["coursT","coursTp","actT","actTc","corP5","corC15"],act:"Trier les triangles, carte au trésor",parcours:5,
   dev:"<p><b>Apprendre les définitions du triangle isocèle et du triangle équilatéral.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier la construction du triangle isocèle MNP.</p><p><b>Apporter : équerre, compas et règle.</b></p>"},
  {id:"S16",chap:"Triangles",k:"Triangles · séance 4",t:"Le triangle rectangle",cours:"Partie 2.3 et ses deux méthodes",docs:["coursT","coursTp","actT","actTc"],act:"Figures à décrire",
   dev:"<p><b>Apprendre la partie 2.3 : le triangle rectangle et l'hypoténuse.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier une des deux constructions du triangle rectangle.</p><p><b>Apporter : ciseaux et rapporteur.</b></p>"},
@@ -307,6 +315,22 @@ const SEANCES=[
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : définitions, propriétés et constructions.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier toutes les constructions du cours.</p><p><b>Apporter : tout le matériel de géométrie (règle, équerre, rapporteur, compas).</b></p>"},
  {id:"S20",chap:"Triangles",k:"Triangles · évaluation",t:"Évaluation Triangles (45 min), puis remédiation",cours:"—",docs:["evalT","evalTc"],act:"",eval:true,dev:""},
 ];
+/* Cahier Mission Indigo 6e (chap. 9 Angles) différencié : A essentiels (tous), B entraînement, C défi.
+   Corrigés du cahier en libre-service : un PDF par séance dans pour-le-cloud/Cahier_Angles (hors dépôt, à déposer sur le cloud). */
+const CAHIER={
+ S6:{A:"ex. 1 p. 84 (nommer un angle) ; ex. 6 p. 85 (aigu ou obtus)",B:"ex. 3 p. 84 (angles dans une figure) ; ex. 7 p. 85 (proches de 90°)",C:"ex. 5 p. 84 (classer sans mesurer)",
+  pg:"sur l'ex. 1 : sommet, côtés, les deux notations"},
+ S7:{A:"ex. 8 p. 85 (lire le rapporteur) ; ex. 9 p. 85 (aigu ou obtus, puis mesurer)",B:"ex. 10 p. 85 (les 4 angles d'un quadrilatère)",C:"ex. 11 p. 85 (angles d'une horloge)",
+  pg:"sur l'ex. 8 : quelle graduation lire (0 sur quel côté ?)"},
+ S8:{apres:true,A:"finir les ex. 8 et 9 p. 85",B:"ex. 10 p. 85",C:"ex. 11 p. 85, puis « Le défi » p. 91 (la pendule à 10 h 12)",
+  pg:"le groupe « Je reprends » du billet n°3 commence son parcours au tableau avec toi"},
+ S9:{A:"ex. 12 p. 86 (75°, rapporteur placé) ; ex. 13 p. 86 (tracer le 2e côté)",B:"ex. 14 p. 86 (reproduire un quadrilatère) ; ex. 16 p. 86 (partager 150°)",C:"ex. 17 p. 86 (deux angles de 132°) ; ex. 29 p. 89 (points alignés ?)",
+  pg:"sur l'ex. 13 : où placer le centre, de quel côté lire"},
+ S14:{A:"ex. 18 p. 87 (deux côtés et l'angle compris, figure à main levée) ; ex. 19 p. 87 (même chose, énoncé écrit)",B:"ex. 21 p. 87 (un côté et deux angles)",C:"ex. 22 p. 87 (un côté et deux angles, sans figure ni côté tracé)",
+  pg:"sur l'ex. 18 : l'ordre côté, angle, côté"},
+ S15:{apres:true,A:"finir les ex. 18 et 19 p. 87",B:"ex. 20 p. 87 (triangle isocèle)",C:"ex. 23 p. 87 (trois triangles accolés) ⚠ son corrigé place l'angle de 100° en B au lieu de A : à vérifier avant de le mettre dans la pochette",
+  pg:"le groupe « Je reprends » du billet n°5 commence son parcours au tableau avec toi"},
+};
 const G={R:"Je reprends",E:"Je m'entraîne",D:"Je relève un défi"};
 const CYCLE=["","R","E","D"];
 const EXEMPLE=["Adam B.","Alice M.","Amir K.","Chloé D.","Emma L.","Enzo R.","Inès T.","Jade P.","Léo G.","Lina S.","Louis F.","Lucas V.","Manon C.","Nathan H.","Noah A.","Rose N.","Sacha J.","Tom E.","Yanis O.","Zoé W."];
@@ -319,16 +343,16 @@ const BLOCS={
  S3:[BL(10,"Rappel : Le compte est bon (à projeter)"),BL(35,"Parcours point 1","p"),BL(20,"Cours : partie 3.1, poser une addition et une soustraction"),BL(5,"Billet de sortie n°2","b")],
  S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Horloges folles (2) : l'horloge décimale, en binôme"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 ; ticket de caisse pour ceux qui ont fini","p")],
  S5:[BL(45,"Évaluation Opérations","v"),BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
- S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(20,"Cahier d'activités : ex. 1, 2 et 3 p. 84 (nommer), ex. 6 et 7 p. 85 (aigu, obtus)","e"),BL(20,"Repérer des angles dans la classe ; donner la chasse photo, bilan","e")],
- S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier d'activités : ex. 8 à 11 p. 85 (mesurer avec le rapporteur)","e"),BL(5,"Billet de sortie n°3","b")],
- S8:[BL(10,"L'estimathon (à projeter)"),BL(20,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(40,"Parcours point 3 ; permis rapporteur pour ceux qui ont fini","p")],
- S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(20,"Cahier d'activités : ex. 12 à 17 p. 86","e"),BL(40,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
+ S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(30,"Cahier différencié : A pour tous (ex. 1 p. 84, ex. 6 p. 85), petit groupe au tableau, les autres enchaînent B puis C ; corrigés en libre-service","e",15),BL(10,"Bilan (un A corrigé au tableau, l'idée du défi) ; donner la chasse photo","e",5)],
+ S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier différencié : A pour tous (ex. 8 et 9 p. 85), puis B (ex. 10) et C (ex. 11) ; corrigés en libre-service","e"),BL(5,"Billet de sortie n°3","b")],
+ S8:[BL(10,"L'estimathon (à projeter)"),BL(15,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(45,"Parcours point 3 (groupe « Je reprends » au tableau avec toi) ; ceux qui ont fini : cahier B puis C, permis rapporteur ; bilan 5 min","p")],
+ S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(30,"Cahier différencié : A pour tous (ex. 12 et 13 p. 86), petit groupe au tableau, les autres enchaînent B puis C ; corrigés en libre-service, bilan","e",20),BL(30,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
  S10:[BL(10,"Questions flash : compléments à 90 et à 180"),BL(20,"Découverte : deux droites sécantes, mesurer les 4 angles"),BL(20,"Cours : tableau des relations, propriété"),BL(20,"Cours : méthode « Reconnaître et utiliser les relations »"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°4","b")],
  S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 ; chasse au trésor pour ceux qui ont fini","p")],
  S12:[BL(45,"Révisions : cahier d'activités, méthodes du cours","e",20),BL(45,"Évaluation Angles","v")],
  S13:[BL(10,"Questions flash : angles (mesurer, nommer)"),BL(20,"Recherche en binôme : triangle de côtés 6 ; 3,5 et 5 cm"),BL(20,"Cours : définition, vocabulaire, rappel, méthode"),BL(20,"Cahier d'activités","e"),BL(20,"Défi : un triangle 3, 4, 8 cm est-il possible ? Bilan","e")],
- S14:[BL(10,"Questions flash : construire un angle"),BL(20,"Cours : méthode « deux côtés et l'angle compris »"),BL(20,"Cours : méthode « un côté et deux angles »"),BL(20,"Cahier d'activités","e"),BL(15,"Dictée de construction en binôme","e"),BL(5,"Billet de sortie n°5","b")],
- S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Parcours point 5 ; carte au trésor pour ceux qui ont fini","p")],
+ S14:[BL(10,"Questions flash : construire un angle"),BL(20,"Cours : méthode « deux côtés et l'angle compris »"),BL(20,"Cours : méthode « un côté et deux angles »"),BL(20,"Cahier différencié : A pour tous (ex. 18 et 19 p. 87), puis B (ex. 21) et C (ex. 22) ; corrigés en libre-service","e"),BL(15,"Dictée de construction en binôme","e"),BL(5,"Billet de sortie n°5","b")],
+ S15:[BL(10,"Questions flash : vocabulaire du triangle"),BL(20,"Trier des triangles en mesurant leurs côtés"),BL(20,"Cours : triangles isocèle et équilatéral"),BL(40,"Parcours point 5 (groupe « Je reprends » au tableau avec toi) ; ceux qui ont fini : cahier B (ex. 20) puis C (ex. 23), carte au trésor","p")],
  S16:[BL(10,"Questions flash : tracer une perpendiculaire"),BL(20,"Cours : définition, méthode « côtés de l'angle droit »"),BL(20,"Cours : méthode « avec l'hypoténuse »"),BL(20,"Cahier d'activités","e"),BL(20,"Figures à décrire, bilan","e")],
  S17:[BL(10,"Questions flash : compléments à 180"),BL(20,"Pliage d'un triangle découpé"),BL(20,"Cours : la règle des 180°, méthode rédigée"),BL(20,"Cahier d'activités","e"),BL(15,"Débat : un triangle peut-il avoir deux angles droits ?","e"),BL(5,"Billet de sortie n°6","b")],
  S18:[BL(10,"Questions flash : calcul du troisième angle"),BL(20,"Mesurer les angles des triangles particuliers déjà construits"),BL(20,"Cours : propriétés, méthode"),BL(40,"Parcours point 6 ; Qui est-ce ? pour ceux qui ont fini","p")],
@@ -1245,6 +1269,7 @@ function renderSeances(c){
               ${(()=>{const i=SEANCES.indexOf(s),pv=i>0?SEANCES[i-1].id:null,l=pv&&projoLink(pv);return l?`<div><a class="btn small" href="${esc(l)}" target="_blank" rel="noopener">📽 Questions flash au vidéoprojecteur</a> <span class="hint">sur la séance précédente</span></div>`:""})()}
               ${s.parcours?`<div><b>Parcours :</b> ${BLOCS[s.id].find(b=>b.y==="p").m} min, d'après le billet de la séance précédente. <button class="btn small" data-goparc="${s.parcours}">Préparer les parcours du point ${s.parcours}</button></div>`:""}
               ${s.billet?`<div><b>Billet de sortie n°${s.billet}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
+              ${cahierHtml(s.id)}
             </div>
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}${s.parcours?parcVierges(s.parcours):""}</div></div>
           </div>
@@ -1260,6 +1285,17 @@ function renderSeances(c){
     html+=`</div>`;
   }
   return html;
+}
+/* encadré « Cahier différencié » d'une séance (exercices A/B/C, petit groupe, corrigés en libre-service) */
+function cahierHtml(sid){
+  const x=CAHIER[sid];if(!x)return "";
+  const li=(n,cl,lab,t)=>`<li><span class="niv ${cl}">${n} · ${lab}</span>${esc(t)}</li>`;
+  return `<div class="cahier"><b>📘 Cahier d'activités différencié</b> <span class="hint">(Mission Indigo, chap. 9)</span>${x.apres?`<div class="hint">Pour ceux qui ont fini leur parcours :</div>`:""}
+    <ul>${li("A","c-R","Essentiels",x.A)}${li("B","c-E","Entraînement",x.B)}${li("C","c-D","Défi",x.C)}</ul>
+    <ol>${x.apres?`<li>Le parcours imprimé reste le travail principal : ${esc(x.pg)}, les autres avancent seuls.</li>`
+      :`<li>Tous commencent les A, puis se corrigent seuls à la pochette (stylo vert).</li><li>Petit groupe au tableau (10-15 min), ${esc(x.pg)} : les élèves qui bloquent ou « Je reprends » au dernier billet. Les autres enchaînent B puis C sans t'attendre.</li>`}
+    <li>Pochette de corrigés : bouton <b>Corrigés cahier ${sid}</b> dans Documents, à imprimer ou à déposer sur ton cloud. Un défi C ne se corrige qu'après une trace écrite.</li>
+    <li>Bilan : un A corrigé au tableau par un élève du petit groupe, une idée de défi expliquée par celui qui l'a trouvée.</li></ol></div>`;
 }
 function renderGroupes(c){
   const p=POINTS.find(x=>x.n===ui.point)||POINTS[0];
