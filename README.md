@@ -183,3 +183,15 @@ Par défaut, le classeur (`classeur.html`) garde les classes sur l'appareil. En 
 
 Dans l'onglet Séances, le bouton **✏️ Modifier les textes de cette séance** permet de changer le titre, le cours, l'activité, le texte des étapes du déroulé (repris dans le contenu de séance pour École Directe) et les devoirs. Ces textes sont rangés dans `data.perso` (par séance, seulement ce qui diffère de l'original de `SEANCES` / `BLOCS`). Ils sont donc enregistrés et synchronisés avec les classes. Les durées et la planification ne changent pas.
 
+## Jeux (14/11/2026)
+
+Le bouton **🎮 Jeux**, en haut de chaque page, ouvre la salle de jeux (`#/jeux`). Elle liste les pages `data-game="1"` qui ont un `data-game-name` (plus `data-game-icon` et `data-game-desc`), pour les chapitres ouverts aux élèves.
+
+- **Droite parfaite** et **Estimangle** : dans `jeux.js`.
+- **Le Pont des Fractions** (chapitre 4) : jeu 3D affiché dans un cadre. Le site n'a besoin que du dossier `jeu-fractions/` (`index.html`, `jeu.js`, `jeu.css`). Le jeu n'est chargé que quand sa page est ouverte.
+- Le code source est dans `jeu-fractions-src/` (React, TypeScript, Vite, Three.js) : **ne pas le déposer sur GitHub Pages**. Pour modifier le jeu : `npm install` (une fois), puis `npm run build` dans ce dossier ; le dossier `jeu-fractions/` est refabriqué.
+  - `src/core/levels.ts` : les 10 niveaux (fractions, graduations) ;
+  - `src/core/mathEngine.ts` : les calculs (fractions égales, écriture décimale finie ou non) ;
+  - `src/core/hints.ts` : les messages d'aide ;
+  - `src/core/soundEngine.ts` : musique et bruitages ;
+  - `src/scene/` : le décor 3D ; `src/App.tsx` et `src/ui/` : les boutons et les fenêtres.

@@ -420,8 +420,28 @@
     }
   }
 
+  /* ---------- Jeu intégré dans un cadre (Le Pont des Fractions, dossier jeu-fractions/) ----------
+     Le jeu n'est chargé que quand sa page est affichée, et déchargé quand on la quitte (la musique s'arrête). */
+  function syncFrames() {
+    document.querySelectorAll('.game-frame[data-frame]').forEach((box) => {
+      const f = box.querySelector('iframe'), on = box.closest('.page').classList.contains('active');
+      if (on && !f.getAttribute('src')) f.src = box.dataset.frame;
+      else if (!on && f.getAttribute('src')) { f.src = 'about:blank'; f.removeAttribute('src'); }
+    });
+  }
+  function fullScreen(box) {
+    const el = document.fullscreenElement || document.webkitFullscreenElement;
+    if (el) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    const go = box.requestFullscreen || box.webkitRequestFullscreen;
+    if (go) Promise.resolve(go.call(box)).then(() => box.querySelector('iframe').focus()).catch(() => window.open(box.dataset.frame, '_blank'));
+    else window.open(box.dataset.frame, '_blank'); // iPhone : pas de plein écran pour un cadre, on ouvre le jeu seul
+  }
+
   const GAMES = { estimangle: ESTIMANGLE, droite: DROITE };
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.game[data-game]').forEach((el) => { const G = GAMES[el.dataset.game]; if (G) arcade(el, G); });
+    document.querySelectorAll('.game-frame .game-full').forEach((b) => b.addEventListener('click', () => fullScreen(b.closest('.game-frame'))));
+    window.addEventListener('hashchange', () => setTimeout(syncFrames, 0));
+    setTimeout(syncFrames, 0);
   });
 })();

@@ -1,3 +1,78 @@
+MISE À JOUR 2026-11-14.5 : Le Pont des Fractions, plus de mondes, 10 niveaux à la suite, loupe décimale
+
+À DÉPOSER : index.html et le dossier jeu-fractions/ (ses 3 fichiers : index.html, jeu.js, jeu.css)
+
+- Plus de « Monde 1 / Monde 2 » : une seule carte avec 10 niveaux à la suite (le renard marche de l'un à l'autre).
+  · Niveaux 1 à 5 (inchangés) : placer la fraction sur la droite graduée avec le pont.
+  · Niveaux 6 à 10 : placer la fraction, puis trouver son écriture décimale. Une fois le pont verrouillé, une loupe
+    s'ouvre au-dessus de l'unité qui contient la fraction (un faisceau la relie à la droite). Elle montre l'unité en
+    dixièmes, avec la fraction marquée en rose. L'élève se place sur une graduation (« 🎯 Pile dessus ! ») ou entre
+    deux (« 🔍 Zoomer ici » : la case s'agrandit ×10, en centièmes, puis millièmes…). Le bouton « 🚫 Pas possible »
+    est toujours là : juste pour 1/3, 8/3, 5/6 (on garde la fraction), compté comme une erreur sinon.
+  · Fractions : 6) 1/2, 8/5, 27/10 · 7) 1/4, 7/4, 17/5 · 8) 1/3, 3/2, 8/3 · 9) 1/8, 13/8, 5/2 · 10) 5/6, 9/4, 19/5.
+- Décor : les montagnes du fond sont retirées (il reste le ciel, le soleil et les nuages).
+- Les étoiles des niveaux 1 à 5 sont gardées ; l'ancien Monde 2 n'existe plus.
+
+=========================================================
+
+MISE À JOUR 2026-11-14.4 : Le Pont des Fractions, nouveau Monde 2, renard, carte continue, jeu fluide
+
+À DÉPOSER : index.html et le dossier jeu-fractions/ (ses 3 fichiers : index.html, jeu.js, jeu.css)
+
+- Le personnage est maintenant un petit renard explorateur (écharpe, sac à dos ; une ombrelle quand il tombe).
+- Chaque monde est une seule grande carte : « Niveau suivant » fait marcher le renard jusqu'au niveau d'après,
+  la scène n'est plus rechargée. Une île avec un drapeau sépare deux niveaux.
+- Monde 1 : le message « Verrouillé ! … » disparaît quand le renard arrive au gouffre suivant.
+- Monde 2 refait entièrement : « Le Canyon des Joyaux ». Plus de pavé numérique ni de « cherche une fraction égale ».
+  Un joyau (la fraction) flotte au-dessus d'une droite graduée en dixièmes. L'élève place le renard pile sous le joyau
+  (« 💎 Pile dessus ! ») ou entre deux graduations (« 🔍 Zoomer ici ») : la case s'agrandit ×10 et se recoupe
+  en 10 (centièmes, millièmes…). L'écriture décimale se construit chiffre à chiffre (0,2… puis 0,25).
+  Pour 1/3, 2/3, 5/6, 2/7, le joyau ne tombe jamais pile : après 2 zooms apparaît « ∞ Jamais pile, garder la fraction ».
+  Niveaux : 1/2, 3/5, 7/10 · 1/4, 3/4, 7/20 · 1/8, 23/100, 9/1000, 5/8 · 1/3, 2/5, 2/3, 3/20 · 5/6, 9/4, 2/7, 3/8, 6/15.
+- Fluidité : plus d'effet de flou derrière les panneaux, plus d'ombres portées, éclairage plus léger, animations
+  plus rapides (pont, traversée, chute).
+- Les étoiles déjà gagnées au Monde 2 restent, mais ses niveaux ont changé.
+
+=========================================================
+
+MISE À JOUR 2026-11-14.3 : Le Pont des Fractions, corrections après test
+
+À DÉPOSER : le dossier jeu-fractions/ (ses 3 fichiers : index.html, jeu.js, jeu.css)
+
+- Monde 1 : le pont part maintenant de longueur 0. Il faut le régler avant de « Déployer » (sinon un message le rappelle,
+  sans compter d'erreur). Avant, le 2e pont du niveau 1 était gagné en appuyant directement sur « Déployer ».
+- Monde 1 : la bonne réponse n'est plus jamais la dernière graduation possible. Avant, pousser le curseur à fond
+  suffisait pour 7 ponts sur 14. Nouvelles cibles : niveau 1 : 3/5 et 5/4 ; niveau 2 : 2/5, 7/4 (entre 1 et 3), 10/3 ;
+  niveau 4 : 2/3 (entre 0 et 2), 9/4, 11/3 ; niveau 5 : 7/5, 8/3 (entre 2 et 4), 9/2 (entre 4 et 6).
+- Monde 2 : la 2e aide pour 7/10, 23/100, 9/1000 n'affiche plus « 7/10 = 7/10 » : elle indique le rang du dernier chiffre.
+
+=========================================================
+
+MISE À JOUR 2026-11-14.2 : nouveau jeu 3D « Le Pont des Fractions », bouton « Jeux », cartes de chapitres allégées
+
+À DÉPOSER : index.html, script.js, style.css, jeux.js
+  et le NOUVEAU DOSSIER : jeu-fractions/ (3 fichiers : index.html, jeu.js, jeu.css)
+  Sur GitHub : « Add file → Upload files », puis glisser le dossier jeu-fractions en entier.
+NE PAS DÉPOSER : jeu-fractions-src/ (c'est le code source du jeu, avec ses outils ; il ne sert qu'à le modifier).
+
+- Chapitre 4, Nombres décimaux (partie 2) : nouvelle page 🎮 Jeux avec « Le Pont des Fractions », un jeu en 3D.
+  · Monde 1, Les Vallées Graduées (5 niveaux) : régler un pont télescopique pour l'arrêter pile sur une fraction
+    de la droite graduée (3/5, 7/4, 5/3…). À partir du niveau 4, l'élève découpe lui-même l'unité (Découpeur Laser).
+    Si c'est faux : le robot tombe en parachute et un message explique l'erreur.
+  · Monde 2, L'Usine Décimale (5 niveaux) : écrire la fraction en nombre à virgule (1/4 → 0,25), ou appuyer sur
+    « Écriture décimale impossible, garder la fraction » (1/3, 5/6, 2/7…). Si l'élève tape 0,33 pour 1/3, un
+    microscope zoome sur les dixièmes, centièmes, millièmes : 1/3 tombe toujours entre deux graduations.
+  · Clavier (flèches, Espace, Entrée, chiffres) ou tactile. Musique et bruitages fabriqués par le navigateur
+    (aucun fichier son), bouton pour couper le son. Étoiles gardées sur l'appareil.
+- En haut de chaque page, à côté de « Espace prof » : bouton « 🎮 Jeux ». Il ouvre la salle de jeux, avec les
+  trois jeux du site : Droite parfaite, Le Pont des Fractions, Estimangle (seulement ceux des chapitres ouverts).
+- Accueil : les cartes des chapitres n'affichent plus que le titre (plus de description).
+
+PROGRESSION DES ÉLÈVES, SUJETS IMPRIMÉS, ÉTIQUETTES QR : inchangés.
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-14.1 : nouveau jeu « Droite parfaite » (chapitre Droites), corrections d'Estimangle
 
 À DÉPOSER : jeux.js, style.css, index.html, script.js

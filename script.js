@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-14.1';
+const SITE_VERSION = '2026-11-14.2';
 
 /* =========================================================
    Outils
@@ -2945,7 +2945,7 @@ function renderChapters() {
   document.getElementById('chapters').innerHTML = CHAPTERS.map((c) => {
     if (c.locked) return `<div class="chapter-card locked" data-ch="${c.id}" aria-disabled="true">
       <span class="symbol">🔒</span><span class="num">Chapitre ${c.num}</span><h2>${c.title}</h2>
-      <p>${c.desc}</p><span class="stat">Bientôt : on le verra d'abord en classe.</span></div>`;
+      <span class="stat">Bientôt : on le verra d'abord en classe.</span></div>`;
     const s = chapterStats(c.id);
     const pct = s.total ? Math.round((s.ok / s.total) * 100) : 0;
     const parts = [];
@@ -2956,10 +2956,20 @@ function renderChapters() {
       <span class="symbol">${c.symbol}</span>
       <span class="num">Chapitre ${c.num}</span>
       <h2>${c.title}</h2>
-      <p>${c.desc}</p>
       <div class="bar"><span style="width:${pct}%"></span></div>
       <span class="stat">${parts.length ? parts.join(' · ') : 'Pas encore commencé'}</span>${c.hiddenNote ? `<span class="hidden-note">${c.hiddenNote}</span>` : ''}</a>`;
   }).join('');
+}
+/** Salle de jeux (#/jeux) : une carte par jeu, pour les chapitres ouverts aux élèves */
+function renderGamesHub() {
+  const pages = [...document.querySelectorAll('.page[data-game][data-game-name]')]
+    .map((p) => ({ p, c: CHAPTERS.find((x) => x.id === p.dataset.ch) })).filter((x) => x.c && !x.c.locked);
+  document.getElementById('games-hub').innerHTML = pages.map(({ p, c }) => `<a class="chapter-card game-card" data-ch="${c.id}" href="#/${c.id}/${p.dataset.p}">
+      <span class="symbol">${p.dataset.gameIcon || '🎮'}</span>
+      <span class="num">Chapitre ${c.num} · ${c.title}</span>
+      <h2>${p.dataset.gameName}</h2>
+      <p>${p.dataset.gameDesc || ''}</p>
+      <span class="stat">Jouer →</span></a>`).join('') || '<p class="muted">Aucun jeu n’est ouvert pour l’instant.</p>';
 }
 function renderChapterHome(ch) {
   const host = document.querySelector(`.page[data-ch="${ch}"][data-p="accueil"] .ch-cards`);
@@ -2974,7 +2984,7 @@ function renderChapterHome(ch) {
       cls += n ? ' tile-weak' : '';
       body = n ? `<div class="stat"><b>📌 ${n} point${n > 1 ? 's' : ''} à retravailler</b></div>${weakListHTML(ch)}` : '<div class="stat">Aucun point faible pour l\'instant 🎉</div>';
     } else if (p.dataset.game) {
-      body = '<div class="stat">Pour entraîner ton œil, en t’amusant →</div>';
+      body = '<div class="stat">Pour t’entraîner en t’amusant →</div>';
     } else if (p.dataset.exam) {
       const c = stats[ch + ':controle'];
       body = `<div class="bar"><span style="width:${c ? Math.round((c.best / 20) * 100) : 0}%"></span></div><div class="stat">${c ? `Meilleure note : ${fmt(c.best)} / 20` : 'Pas encore fait'}</div>`;
@@ -3834,6 +3844,7 @@ function route() {
   if (h === 'prof') { renderProfLock(); special('prof', '', 'Espace professeur'); return; }
   if (h.startsWith('projo')) { const ch = routeProjo(h.split('/')[1] || ''); special('projo', ch, 'Vidéoprojecteur'); return; }
   if (h === 'auto') { routeAuto(); special('auto', '', 'Automatismes du jour'); return; }
+  if (h === 'jeux') { renderGamesHub(); special('salle-jeux', '', 'Jeux'); return; }
   if (h.startsWith('r/')) { const ch = routeRetour(h.slice(2)); special('retour', ch, 'Mon contrôle'); return; }
   if (h === 'accueil') h = '';
   let [ch, p] = h.split('/');

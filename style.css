@@ -954,13 +954,28 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 @media screen { body.no-corr .tr-corr { display: none; } }
 
 /* ============ Lien rapide vers l'Espace professeur (en haut à droite) ============ */
+.top-links { margin-left: auto; flex: none; display: flex; gap: 6px; }
 .prof-link {
-  margin-left: auto; flex: none;
+  flex: none;
   font-size: .82rem; font-weight: 700; text-decoration: none; white-space: nowrap;
   color: var(--muted, #64748b); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
 }
 .prof-link:hover, .prof-link:focus-visible { color: var(--accent); border-color: var(--accent); }
-@media (max-width: 720px) { .prof-link { position: absolute; top: 10px; right: 12px; } .top { position: sticky; } }
+.games-link { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+.games-link:hover, .games-link:focus-visible { color: var(--warn); border-color: var(--warn); }
+@media (max-width: 720px) { .top-links { position: absolute; top: 10px; right: 12px; } .top { position: sticky; } }
+
+/* ============ Salle de jeux et jeu intégré (Le Pont des Fractions) ============ */
+.game-card .symbol { font-size: 1.7rem; }
+.game-card .stat { font-weight: 700; color: var(--c); font-size: .9rem; }
+.game-frame { border-radius: 18px; overflow: hidden; background: #1c2647; box-shadow: var(--shadow); border: 1px solid var(--line); }
+.game-frame-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding: 8px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.game-frame-bar .btn { padding: 6px 12px; font-size: .88rem; }
+.game-frame iframe { display: block; width: 100%; height: min(78vh, max(520px, 60vw)); border: 0; }
+.game-frame:fullscreen { border-radius: 0; border: 0; display: flex; flex-direction: column; }
+.game-frame:fullscreen iframe { flex: 1; height: auto; }
+.game-frame:-webkit-full-screen { border-radius: 0; border: 0; display: flex; flex-direction: column; }
+.game-frame:-webkit-full-screen iframe { flex: 1; height: auto; }
 
 /* ============ Jeux (Estimangle) ============ */
 #nav a.nav-game:not([aria-current="page"]) { background: var(--warn-soft); color: var(--warn); font-weight: 700; }
