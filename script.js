@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-15.2';
+const SITE_VERSION = '2026-11-15.3';
 
 /* =========================================================
    Outils
@@ -3282,10 +3282,18 @@ function renderProfLock() {
   if (lock.dataset.ready) return;
   lock.dataset.ready = '1';
   const inpC = lock.querySelector('#prof-code'), msg = lock.querySelector('.lock-msg');
-  const tryCode = () => {
+  const tryCode = async () => {
     if (normName(inpC.value) && inpC.value.trim().toLowerCase() === CODE_PROF.trim().toLowerCase()) {
       try { localStorage.setItem(PROF_KEY, normName(CODE_PROF) + ':ok'); } catch (e) { /* rien */ }
       inpC.value = ''; msg.textContent = ''; renderProfLock();
+      return;
+    }
+    // Code d'accès (partout) : configure aussi la synchronisation et le classeur sur cet appareil
+    msg.textContent = 'Vérification…';
+    if (inpC.value.trim().length >= 12 && await accesOuvrir(inpC.value)) {
+      try { localStorage.setItem(PROF_KEY, normName(CODE_PROF) + ':ok'); } catch (e) { /* rien */ }
+      inpC.value = ''; msg.textContent = ''; renderProfLock();
+      psStatus('Accès configuré sur cet appareil : Espace professeur et classeur synchronisés.');
     } else { msg.textContent = 'Code incorrect.'; inpC.classList.add('wrong'); inpC.select(); }
   };
   lock.querySelector('#prof-unlock').addEventListener('click', tryCode);
@@ -3336,6 +3344,25 @@ async function psGet(cfg) {
   const j = await r.json(); let b64 = j.content;
   if (!b64 || j.encoding !== 'base64') { const r2 = await psFetch(cfg, '/git/blobs/' + j.sha); if (!r2.ok) throw new Error('GitHub ' + r2.status); b64 = (await r2.json()).content; }
   return { sha: j.sha, file: JSON.parse(decodeURIComponent(escape(atob(String(b64).replace(/\s/g, ''))))) };
+}
+/* Accès partout avec un code : acces.json (public) contient, chiffrés avec une clé tirée du CODE D'ACCÈS
+   (PBKDF2, 600 000 itérations), le dépôt privé, le jeton GitHub, la clé de synchronisation et la clé des
+   documents du classeur. Taper ce code sur un nouvel appareil ouvre l'Espace professeur et configure la
+   synchronisation (classeur + Espace professeur). Une synchronisation déjà réglée n'est pas modifiée. */
+async function accesOuvrir(code) {
+  let r; try { r = await fetch('acces.json', { cache: 'no-store' }); } catch (e) { return false; }
+  if (!r.ok) return false;
+  try {
+    const a = await r.json();
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(code.trim()), 'PBKDF2', false, ['deriveKey']);
+    const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: psU8(a.salt), iterations: a.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const u = psU8(a.data);
+    const d = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.slice(0, 12) }, k, u.slice(12))));
+    const cur = psCfg();
+    if (!cur || cur.repo !== d.repo || cur.key !== d.key) localStorage.setItem('revisions6e-classeur-sync', JSON.stringify({ repo: d.repo, token: d.token, salt: d.salt, key: d.key, sha: null, dirty: false, last: 0 }));
+    if (d.docKey) localStorage.setItem('revisions6e-classeur-cle', d.docKey);
+    return true;
+  } catch (e) { return false; }
 }
 function psStatus(t) { const el = document.getElementById('prof-sync'); if (el) el.textContent = t; }
 /** Synchronise l'Espace professeur ; renvoie true si des données en ligne ont été appliquées (il faut recharger). */

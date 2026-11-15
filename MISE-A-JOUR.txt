@@ -1,3 +1,17 @@
+MISE À JOUR 2026-11-15.3 : accès partout avec un code
+
+À DÉPOSER : index.html, script.js, classeur.html, acces.json
+
+- Un code d'accès, tapé à l'entrée de l'Espace professeur ou du classeur sur n'importe quel appareil, configure
+  tout d'un coup : Espace professeur ouvert, classeur déverrouillé (documents), synchronisation du classeur et
+  de l'Espace professeur active. Une synchronisation déjà réglée sur l'appareil n'est pas modifiée.
+- acces.json (public) contient, chiffrés avec une clé tirée de ce code (PBKDF2, 600 000 itérations) : le dépôt
+  privé, le jeton GitHub, la clé de synchronisation et la clé des documents. Pour changer le code : relancer
+  « node scripts/create-site-access.ts » dans l'API, puis publier le nouveau acces.json.
+- L'ancien code de l'Espace professeur (CODE_PROF) ouvre toujours l'espace, sans rien configurer.
+
+=========================================================
+
 MISE À JOUR 2026-11-15.2 : Espace professeur sauvegardé en ligne
 
 À DÉPOSER : index.html, script.js

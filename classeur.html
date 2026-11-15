@@ -700,9 +700,27 @@ async function deriveKey(code){
 }
 async function decryptBytes(key,u){return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:u.slice(0,12)},key,u.slice(12)))}
 async function testKey(key){const info=await loadInfo();try{return new TextDecoder().decode(await decryptBytes(key,b64u8(info.test)))==="classeur-ok"}catch(e){return false}}
+/* Accès partout avec un code : acces.json contient, chiffrés avec une clé tirée du CODE D'ACCÈS (PBKDF2),
+   le dépôt privé, le jeton GitHub, la clé de synchronisation et la clé des documents. Le même code ouvre aussi
+   l'Espace professeur (index.html). Une synchronisation déjà réglée sur cet appareil n'est pas modifiée. */
+async function accesOuvrir(code){
+  let r;try{r=await fetch("acces.json",{cache:"no-store"})}catch(e){return false}
+  if(!r.ok)return false;
+  try{
+    const a=await r.json();
+    const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(code.trim()),"PBKDF2",false,["deriveKey"]);
+    const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64u8(a.salt),iterations:a.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+    const d=JSON.parse(new TextDecoder().decode(await decryptBytes(k,b64u8(a.data))));
+    let cur=null;try{cur=JSON.parse(localStorage.getItem("revisions6e-classeur-sync")||"null")}catch(e){}
+    if(!cur||cur.repo!==d.repo||cur.key!==d.key)localStorage.setItem("revisions6e-classeur-sync",JSON.stringify({repo:d.repo,token:d.token,salt:d.salt,key:d.key,sha:null,dirty:false,last:0}));
+    if(d.docKey)localStorage.setItem(KEYSTORE,d.docKey);
+    if(d.prof)localStorage.setItem("revisions6e-prof",d.prof);
+    return true;
+  }catch(e){return false}
+}
 async function unlock(code){
   const k=await deriveKey(code.trim());
-  if(!(await testKey(k)))return false;
+  if(!(await testKey(k)))return (await accesOuvrir(code))&&(await restoreKey());
   cryptoKey=k;
   try{const raw=new Uint8Array(await crypto.subtle.exportKey("raw",k));localStorage.setItem(KEYSTORE,btoa(String.fromCharCode(...raw)))}catch(e){}
   return true;
