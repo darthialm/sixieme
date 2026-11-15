@@ -346,6 +346,19 @@ const EXEMPLE=["Adam B.","Alice M.","Amir K.","Chloé D.","Emma L.","Enzo R.","I
 
 /* ======================= EMPLOI DU TEMPS ET PLANIFICATION ======================= */
 const BL=(m,t,y,min)=>({m,t,y:y||"r",min:min==null?(y==="e"?10:m):min});
+/* Billets de sortie : numérotés DANS LE CHAPITRE pour les élèves (« Angles · billet n°1 ») ; le numéro global
+   reste celui du point (onglet Groupes). Chaque séance ne donne que la page de SON billet (voir billetPdf). */
+function billetInfo(n){const s=SEANCES.find(x=>x.billet===n);if(!s)return null;
+  return {n,chap:s.chap,k:SEANCES.filter(x=>x.billet&&x.chap===s.chap&&x.billet<=n).length,sid:s.id}}
+const billetNom=n=>{const b=billetInfo(n);return b?`${b.chap} · billet n°${b.k}`:`billet n°${n}`};
+const bTxt=t=>String(t).replace(/([Bb]illet(?: de sortie)?) n°(\d+)/g,(m,w,n)=>{const b=billetInfo(+n);return b?`${w} ${b.chap} n°${b.k}`:m});
+SEANCES.forEach(s=>{
+  if(!s.billet)return;
+  const b=billetInfo(s.billet),nom=`Billet de sortie ${b.chap} n°${b.k}`;
+  DOCS["billet"+s.billet]=Object.assign(D(nom,"docs/Billets_eleve.pdf","à couper"),{billet:s.billet});
+  DOCS["billet"+s.billet+"C"]=Object.assign(D(nom,"docs/Billets_enseignant.pdf","corrigé"),{billet:s.billet});
+  s.docs=s.docs.map(k=>k==="billets"?"billet"+s.billet:k==="billetsC"?"billet"+s.billet+"C":k);
+});
 const BLOCS={
  S1:[BL(10,"Questions flash : tables de multiplication"),BL(20,"Activité « Qui suis-je ? » en binôme"),BL(20,"Cours : tableau du vocabulaire, méthode « Utiliser le vocabulaire »"),BL(20,"Cahier d'activités","e"),BL(20,"Suite du cahier d'activités, bilan","e")],
  S2:[BL(10,"Questions flash : vocabulaire des opérations"),BL(15,"Débat : deux résultats pour 20 − 5 + 3"),BL(30,"Cours : règles 1, 2 et 3, méthodes"),BL(10,"Cahier d'activités","e"),BL(20,"Horloges folles (1) en binôme","e"),BL(5,"Billet de sortie n°1","b")],
@@ -368,6 +381,7 @@ const BLOCS={
  S19:[BL(10,"Questions flash : rappel de la médiatrice"),BL(20,"Problème : un point à égale distance de trois villages"),BL(20,"Cours : cercle circonscrit, définition, propriété, méthode"),BL(20,"Exercices du cahier d'activités","e"),BL(20,"Révisions du chapitre","e")],
  S20:[BL(45,"Évaluation Triangles","v"),BL(45,"Remédiation à partir des évaluations","e",0)],
 };
+for(const k in BLOCS)BLOCS[k].forEach(b=>{b.t=bTxt(b.t)});
 const PERIODE={debut:"2026-11-02",fin:"2026-12-18",feries:["2026-11-11"]};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const pdate=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d,12)};
@@ -548,7 +562,7 @@ function devoirsCreneau(c,P,i){
   const nx=P.cr.slice(i+1).find(z=>z.cap>0&&z.pieces.some(p=>!p.marge));
   if(nx){
     const items=[];new Set(nx.pieces.filter(p=>!p.marge).map(p=>p.sid)).forEach(sid=>MAT[sid].split(", ").forEach(m=>{if(m&&!items.includes(m))items.push(m)}));
-    if(items.length)parts.push(`<p><b>Pour le ${fmtJ(nx.date,{weekday:"long",day:"numeric",month:"long"})}, apporter : ${items.join(", ")}.</b></p>`);
+    if(items.length)parts.push(`<p><b>Apporter : ${items.join(", ")}.</b></p>`);
   }
   return {html:parts.join(""),ended:list.map(s=>s.id)};
 }
@@ -591,7 +605,7 @@ function renderCreneaux(c){
       x.extra?`<span class="tag extra">Créneau en plus</span>`:"",
       ...evals.map(()=>`<span class="tag eval">Évaluation</span>`),
       ...parcs.map(s=>`<span class="tag parc">Parcours point ${POINTS.find(q=>q.p===s).n}</span>`),
-      ...billets.map(s=>`<span class="tag billet">Billet n°${POINTS.find(q=>q.b===s).n}</span>`)].join("");
+      ...billets.map(s=>`<span class="tag billet">Billet ${billetNom(POINTS.find(q=>q.b===s).n).replace(" · billet","")}</span>`)].join("");
     const open=ui.openC&&P.cr.some(z=>z.id===ui.openC)?ui.openC===x.id:(nx&&nx.id===x.id);
     const dv=devoirsCreneau(c,P,i);
     const docs=[];x.pieces.filter(p=>!p.marge).forEach(p=>SEANCES.find(s=>s.id===p.sid).docs.forEach(d=>{if(!docs.includes(d))docs.push(d)}));
@@ -617,7 +631,7 @@ function renderCreneaux(c){
           <div class="box"><h3>Repère</h3>${[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))].map(sid=>{const s=SEANCES.find(q=>q.id===sid);
             return `<div><b>${esc(chapPos(s))}</b>${estPerso(s.id)?` <span class="tag perso">Modifiée</span>`:""}<br><span class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</span><br><button class="btn small" data-edit="${s.id}" data-editc="${x.id}" style="margin-top:4px">✏️ Modifier les textes de cette séance</button></div>`}).join("")||`<p class="hint">—</p>`}
             ${parcs.map(s=>{const n=POINTS.find(q=>q.p===s).n;return `<div><button class="btn small" data-goparc="${n}">Préparer les parcours du point ${n}</button></div>`}).join("")}
-            ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">Billet n°${n} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
+            ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
             ${[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")}
           </div>
           <div class="box"><h3>Documents</h3><div class="docs">${docs.map(docBtn).join("")||`<span class="hint">—</span>`}${parcs.map(sid=>parcVierges(POINTS.find(q=>q.p===sid).n)).join("")}</div></div>
@@ -1131,9 +1145,24 @@ iframe{display:block;border:0;width:100%;height:calc(100% - 48px)}</style></head
   return true;
 }
 function save(filename,bytes,win,titre){return show(win||null,filename,bytes,titre)}
+/* Billet d'une séance : la page de ce billet seulement (4 exemplaires à couper), et le titre imprimé
+   « Billet de sortie n°5 · Fin de S14 » remplacé par « Billet de sortie Triangles n°1 » (pas de numéro global pour les élèves). */
+async function billetPdf(bytes,n){
+  const {PDFDocument,StandardFonts,rgb}=PDFLib;
+  const src=await PDFDocument.load(bytes,{ignoreEncryption:true}),out=await PDFDocument.create();
+  const [pg]=await out.copyPages(src,[n-1]);out.addPage(pg);
+  const f=await out.embedFont(StandardFonts.HelveticaBold),b=billetInfo(n),t=`Billet de sortie ${b.chap} n°${b.k}`;
+  for(const x of [21.5,319.1])for(const y of [808.5,387.5]){
+    pg.drawRectangle({x:x-2,y:y-6,width:272,height:22,color:rgb(1,1,1)});
+    pg.drawText(t,{x,y,size:14.3,font:f,color:rgb(11/255,79/255,138/255)});
+  }
+  return out.save({useObjectStreams:false});
+}
 async function telecharger(key,win){
   const d=DOCS[key];if(!d)return;
-  try{setStatus("Préparation de « "+d.label+" »…");const b=await getBytes(d.path);await show(win,d.path.split("/").pop(),b,d.label+(d.sub?" ("+d.sub+")":""))}
+  try{setStatus("Préparation de « "+d.label+" »…");let b=await getBytes(d.path),fn=d.path.split("/").pop();
+    if(d.billet){if(!window.PDFLib)throw new Error("pdflib");b=await billetPdf(b,d.billet);const x=billetInfo(d.billet);fn=`Billet_${x.chap}_${x.k}${d.sub==="corrigé"?"_corrige":""}.pdf`}
+    await show(win,fn,b,d.label+(d.sub?" ("+d.sub+")":""))}
   catch(e){if(win)win.close();setStatus(docErr(e,d.label))}
 }
 function docErr(e,label){
@@ -1315,7 +1344,7 @@ function renderSeances(c){
       const tags=[pr.done?`<span class="tag fait">Faite${pr.date?" le "+new Date(pr.date+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""}</span>`:"",
         s.eval?`<span class="tag eval">Évaluation</span>`:"",
         s.parcours?`<span class="tag parc">Parcours point ${s.parcours}</span>`:"",
-        s.billet?`<span class="tag billet">Billet n°${s.billet} en fin de séance</span>`:"",
+        s.billet?`<span class="tag billet">${billetNom(s.billet)} en fin de séance</span>`:"",
         estPerso(s.id)?`<span class="tag perso">Modifiée</span>`:""].join("");
       html+=`<details class="seance${pr.done?" done":""}" data-sid="${s.id}" ${open===s.id?"open":""}>
         <summary><span class="sid">${s.id}</span><span class="stitle">${esc(s.t)}<small>${esc(s.k)}</small></span>${tags}</summary>
@@ -1330,7 +1359,7 @@ function renderSeances(c){
               ${s.prof?`<div class="profnote"><b>💡 À dire en classe :</b> ${s.prof}</div>`:""}
               ${(()=>{const i=SEANCES.indexOf(s),pv=i>0?SEANCES[i-1].id:null,l=pv&&projoLink(pv);return l?`<div><a class="btn small" href="${esc(l)}" target="_blank" rel="noopener">📽 Questions flash au vidéoprojecteur</a> <span class="hint">sur la séance précédente</span></div>`:""})()}
               ${s.parcours?`<div><b>Parcours :</b> ${BLOCS[s.id].find(b=>b.y==="p").m} min, d'après le billet de la séance précédente. <button class="btn small" data-goparc="${s.parcours}">Préparer les parcours du point ${s.parcours}</button></div>`:""}
-              ${s.billet?`<div><b>Billet de sortie n°${s.billet}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
+              ${s.billet?`<div><b>Billet de sortie ${billetNom(s.billet)}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
               ${cahierHtml(s.id)}
             </div>
             <div class="box"><h3>Documents</h3><div class="docs">${s.docs.map(docBtn).join("")}${s.parcours?parcVierges(s.parcours):""}</div></div>
@@ -1364,9 +1393,9 @@ function cahierHtml(sid){
   if(x.pt){
     const c=cur(),g=groupesBillet(c,x.pt),b=POINTS.find(p=>p.n===x.pt);
     const vide=!g.R.length&&!g.D.length;
-    return `<div class="cahier"><b>📘 Travail par groupes du billet n°${x.pt}</b> <span class="hint">(fin de ${b.b} · cahier Mission Indigo, chap. 9)</span>
+    return `<div class="cahier"><b>📘 Travail par groupes du ${billetNom(x.pt)}</b> <span class="hint">(fin de ${b.b} · cahier Mission Indigo, chap. 9)</span>
       <ul>${["R","E","D"].map(k=>`<li><span class="niv ${GCL[k]}">${G[k]}</span>${esc(x[k])}<br><span class="hint">À dire : ${g[k].length?esc(g[k].join(", ")):"personne"}</span></li>`).join("")}</ul>
-      ${vide?`<p class="hint">Aucun groupe noté pour le billet n°${x.pt} : tout le monde serait en « Je m'entraîne ». <button class="btn small" data-goparc="${x.pt}">Noter les groupes</button></p>`:""}
+      ${vide?`<p class="hint">Aucun groupe noté pour le ${billetNom(x.pt)} : tout le monde serait en « Je m'entraîne ». <button class="btn small" data-goparc="${x.pt}">Noter les groupes</button></p>`:""}
       <ol><li>Annonce les groupes à l'oral (liste ci-dessus) et projette le programme : les noms ne sont pas projetés.</li>
       ${x.fiche?`<li>Fiches : imprime les fiches vierges du point ${x.pt} (boutons « Parcours point ${x.pt} · vierge » dans Documents), ${g.R.length} « Je reprends », ${g.E.length} « Je m'entraîne », ${g.D.length} « Je relève un défi » : pas de PDF nominatif à préparer.</li>`:""}
       <li>« Je reprends » avec toi au tableau les 15 premières minutes ; les autres avancent seuls et se corrigent à la pochette.</li>${pied}</ol>

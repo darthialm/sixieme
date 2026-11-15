@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-15.3';
+const SITE_VERSION = '2026-11-15.4';
 
 /* =========================================================
    Outils
@@ -4837,11 +4837,11 @@ function printSheets(c) {
   const ord = po.plan ? `Ordre de distribution : plan de classe${c.c ? ' de la ' + esc(c.c) : ''} (${po.placed} copie${po.placed > 1 ? 's' : ''}${po.rest.length ? ` ; hors plan, à la fin : ${po.rest.map(esc).join(', ')}` : ''})${seatGet(c.c).rev ? ', en ordre inverse' : ''}.` : 'Ordre alphabétique (pas de plan de classe pour cette classe).';
   const bar = `<div class="no-print ctl-bar"><p id="ctl-fit" class="small">Vérification de la mise en page…</p><p class="small">${ord}</p><p><button type="button" class="btn primary" id="ctl-go" onclick="print()">🖨️ Imprimer</button> <button type="button" class="btn" id="ctl-pdf">📄 Télécharger le PDF</button> <span class="small muted">Recto seul, marges : aucune, échelle 100 %. Si l'adresse du site apparaît encore en bas, décoche « En-têtes et pieds de page » dans la fenêtre d'impression.</span></p></div>`;
   const body = bar + `<div class="${CTL_MODE}">` + renderSheets(c, po.order).join('') + '</div>';
-  printWindow(`Sujets ${c.id} — ${c.t}`, body, PRINT_CSS, async (w) => {
+  printWindow(`${c.c ? c.c + ' — ' : ''}${c.t} — sujets ${c.id}`, body, PRINT_CSS, async (w) => {
     // Une copie = une page : on attend la police, puis on resserre les rares copies qui dépasseraient
     const btn = w.document.getElementById('ctl-go'); if (btn) btn.disabled = true;
     const pb = w.document.getElementById('ctl-pdf');
-    if (pb) { pb.disabled = true; pb.addEventListener('click', () => savePdf(w, pdfName(`Sujets ${c.id} ${c.t}`), pb)); }
+    if (pb) { pb.disabled = true; pb.addEventListener('click', () => savePdf(w, pdfName(`${c.c ? c.c + ' ' : ''}${c.t} sujets ${c.id}`), pb)); }
     try { await Promise.race([w.document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* rien */ }
     const bad = fitSheets(w.document), tight = w.document.querySelectorAll('.ctl-sheet[data-fit]').length;
     const el = w.document.getElementById('ctl-fit');
@@ -4917,7 +4917,7 @@ function printCorrige(c) {
       return `<li><span class="small muted">C${x.ci + 1}${x.hard ? ' ★' : ''}</span> ${a.good ? `<b>${esc(a.good)}</b> — ` : ''}${String(a.msg).replace(/<table[\s\S]*?<\/table>/g, '')}${fig ? `<div class="ctl-corr-fig">${fig}</div>` : ''}</li>`;
     }).join('')}</ol></section>`;
   }).join('');
-  printWindow(`Corrigé ${c.id}`, `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer le corrigé</button></p></div><h1>Corrigé — ${esc(c.t)}${c.c ? ` (${esc(c.c)})` : ''}</h1>${parts}`, '@page { size: A4; margin: 10mm; } .ctl-corr { break-inside: avoid; }');
+  printWindow(`${c.c ? c.c + ' — ' : ''}Corrigé ${c.id}`, `<div class="no-print ctl-bar"><p><button type="button" class="btn primary" onclick="print()">🖨️ Imprimer le corrigé</button></p></div><h1>Corrigé — ${esc(c.t)}${c.c ? ` (${esc(c.c)})` : ''}</h1>${parts}`, '@page { size: A4; margin: 10mm; } .ctl-corr { break-inside: avoid; }');
 }
 function aiText(c) {
   const L = [];

@@ -1,3 +1,18 @@
+MISE À JOUR 2026-11-15.4 : billets par séance, devoirs, PDF des contrôles
+
+À DÉPOSER : index.html, script.js, classeur.html
+
+- Classeur : chaque séance ne donne plus le PDF de tous les billets, mais seulement la page de SON billet
+  (4 exemplaires à couper), et son corrigé. Le PDF complet reste dans l'onglet Documents.
+- Les billets sont numérotés dans le chapitre pour les élèves : « Billet de sortie Angles n°1 » au lieu de
+  « Billet de sortie n°3 · Fin de S7 » (titre réécrit sur la page). Le numéro de point reste dans l'onglet Groupes.
+  L'évaluation créée par l'API dans École Directe porte aussi ce nom ; les anciens noms sont toujours reconnus.
+- Devoirs : plus de « Pour le mardi 17 novembre » dans le texte (la date est celle de la case École Directe) :
+  simplement « Apporter : … ».
+- Espace professeur : le PDF et la fenêtre des sujets de contrôle portent le nom de la classe.
+
+=========================================================
+
 MISE À JOUR 2026-11-15.3 : accès partout avec un code
 
 À DÉPOSER : index.html, script.js, classeur.html, acces.json
