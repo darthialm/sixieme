@@ -1,3 +1,15 @@
+MISE À JOUR 2026-11-15.6 : classeur plus simple
+
+À DÉPOSER : index.html, script.js, classeur.html
+
+- Séances : un seul encadré en haut, pour le prochain cours (ou un des 3 suivants, en un clic sur la date),
+  avec 4 onglets : À imprimer · Documents · Contenu (déroulé, groupes du cahier, contenu École Directe) · Devoirs.
+  En bas : « Fait / Pas tout fini / Annulé ».
+- Tout le reste est replié : « Tout le planning » (progression, tous les créneaux) et « Sauvegarde,
+  synchronisation, verrouillage ».
+
+=========================================================
+
 MISE À JOUR 2026-11-15.5 : cahiers différenciés étoffés (Angles, Triangles)
 
 À DÉPOSER : index.html, script.js, classeur.html, documents.bin

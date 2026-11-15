@@ -75,6 +75,20 @@ textarea{min-height:220px;resize:vertical}
 .meter i{display:block;height:100%;background:var(--done)}
 .chap{display:flex;flex-direction:column;gap:8px}
 .imprimer{border-color:var(--accent);border-width:2px}
+.ess{border-color:var(--accent);border-width:2px;gap:10px}
+.ess h2{margin:0;font-size:1.25rem}
+.ess .quoi{margin:0;font-weight:600}
+.esschoix{display:flex;gap:6px;flex-wrap:wrap}
+.esschoix button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.esschoix button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.ess-tabs{flex-wrap:wrap}
+.esscorps{min-height:60px}
+.essfin{display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+.essfin button[aria-pressed="true"]{outline:2px solid var(--accent)}
+details.tous{border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+details.reglages>summary{cursor:pointer;font-weight:700}
+details.tous>summary{cursor:pointer;font-weight:700;padding:4px 0}
+details.tous[open]{display:flex;flex-direction:column;gap:10px}
 .imprimer h2{margin:0;font-size:1.1rem}
 .imprimer .quoi{margin:0;font-weight:600}
 ul.aimp{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -224,14 +238,14 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
   <div id="manage" class="panel" hidden></div>
   <div class="tabs" role="tablist" id="tabs"></div>
   <div id="main"></div>
-  <div class="panel" style="margin-top:8px">
-    <h2>Sauvegarde</h2>
+  <details class="panel reglages" style="margin-top:8px">
+    <summary>⚙️ Sauvegarde, synchronisation, verrouillage</summary>
     <p class="hint">Tes classes, groupes et progressions sont enregistrés <b>sur cet appareil</b>. Sans la synchronisation (plus bas), rien n'est envoyé sur Internet. Fais de temps en temps une sauvegarde dans un fichier : si le navigateur efface ses données, tu pourras tout restaurer.</p>
     <div class="row"><button class="btn" id="btnExport">💾 Sauvegarder dans un fichier</button>
     <label class="btn filebtn">📂 Restaurer une sauvegarde<input type="file" id="fileImport" accept="application/json,.json"></label>
     <button class="btn danger" id="btnLock">🔒 Verrouiller (oublier le code sur cet appareil)</button></div>
     <div class="sync" id="syncBox"></div>
-  </div>
+  </details>
   </div>
 </div>
 
@@ -675,20 +689,53 @@ function imprimerHtml(c,P,i,titre){
     ${a.projeter.length?`<details class="proj"><summary>À projeter / pour toi (${a.projeter.length})</summary><div class="docs">${a.projeter.map(e=>docBtn(e.k)).join("")}</div></details>`:""}
   </div>`;
 }
+/* L'essentiel du cours choisi (par défaut le prochain) : à imprimer, documents, contenu, devoirs */
+function essentielHtml(c,P){
+  const nx=prochainCreneau(P);if(!nx)return `<div class="panel"><p class="now">Tous les créneaux de la période sont passés.</p></div>`;
+  const ni=P.cr.indexOf(nx),choix=P.cr.slice(ni,ni+4).filter(x=>x.cap>0||!x.st);
+  const x=choix.find(z=>z.id===ui.essC)||choix[0],i=P.cr.indexOf(x);
+  const tab=ui.essT||"imp";
+  const sids=[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))];
+  const parcs=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="p").map(p=>POINTS.find(q=>q.p===p.sid).n);
+  const a=aImprimer(c,P,i),n=c.eleves.length||0,dv=devoirsCreneau(c,P,i);
+  const nImp=a.eleve.length+a.fiche.length+a.pochette.length+a.parc.length;
+  const li=(arr,qte)=>arr.map(e=>`<li>${docPagesBtn(e)}${qte?` <span class="qte">${qte}</span>`:""}</li>`).join("");
+  let corps="";
+  if(tab==="imp")corps=nImp?`<ul class="aimp">${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page)":"")}
+      ${a.parc.map(pt=>`<li><button class="btn small" data-goparc="${pt}">Parcours du point ${pt} avec les prénoms</button></li>`).join("")}
+      ${a.pochette.length?`<li class="sous">Pochette de corrigés</li>${li(a.pochette,"× 2")}`:""}</ul>`:`<p class="hint">Rien de nouveau à imprimer pour ce cours.</p>`;
+  if(tab==="doc")corps=`<div class="docs">${docsBox(sids,parcs)}</div>`;
+  if(tab==="cont"){
+    corps=`<ol class="deroule">${x.pieces.map(p=>{const t=`${p.t0}–${p.t0+p.m}`;
+      if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier d'activités ou rattrapage</span></li>`;
+      const b=BLOCS[p.sid][p.i];return `<li class="y-${b.y}"><span class="tps">${t}</span><span>${esc(b.t)}${p.suite?" (suite)":""}${p.coupe?" (à finir au cours suivant)":""}</span></li>`}).join("")}</ol>`
+      +[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")
+      +`<details class="plus"><summary>Contenu de séance pour École Directe</summary><div class="devoir" id="ess-ct">${contenuHtml(x.pieces.filter(p=>!p.marge))}</div>
+        <div class="row"><button class="btn small" data-essct="${i}">Copier</button></div></details>`;
+  }
+  if(tab==="dev")corps=dv.html?`<div class="devoir" id="ess-dev">${dv.html}</div><div class="row"><button class="btn primary small" data-essdev="${i}">Copier les devoirs</button></div>`
+      :`<p class="hint">Pas de devoirs à donner à la fin de ce cours (le suivant est trop proche, ou rien de prévu).</p>`;
+  const tabs=[["imp","🖨️ À imprimer"+(nImp?` (${nImp})`:"")],["doc","📄 Documents"],["cont","📝 Contenu"],["dev","🏠 Devoirs"+(dv.html?"":" (aucun)")]];
+  return `<div class="panel ess">
+    <div class="esschoix" role="group" aria-label="Choisir le cours">${choix.map((z,k)=>`<button data-essc="${z.id}" aria-pressed="${z.id===x.id}">${k===0?"Prochain · ":""}${esc(fmtJ(z.date,{weekday:"short",day:"numeric",month:"short"}))}</button>`).join("")}</div>
+    <h2>${esc(fmtJ(x.date,{weekday:"long",day:"numeric",month:"long"}))} <span class="hint">· ${fmtD(x.d)}</span></h2>
+    <p class="quoi">${esc(resumeCreneau(x))}</p>
+    <div class="seg ess-tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" data-esst="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>
+    <div class="esscorps">${corps}</div>
+    <div class="essfin"><span class="hint">Après le cours :</span>${[["fait","Fait"],["partiel","Pas tout fini"],["annule","Annulé"]].map(([k,l])=>`<button class="btn small" data-cst="${k}" data-c="${x.id}" aria-pressed="${(x.st||"")===k}">${l}</button>`).join("")}</div>
+  </div>`;
+}
 function renderCreneaux(c){
   const P=plan(c);
   const nfait=P.cr.filter(x=>x.st).length;
   const nx=prochainCreneau(P);
-  let h=`<div class="panel"><div class="progress"><h2>${nfait} créneau${nfait>1?"x":""} passé${nfait>1?"s":""} sur ${P.cr.length}</h2>
+  let h=`<details class="tous"${ui.tous||ui.edit?" open":""}><summary>Tout le planning (${nfait} créneau${nfait>1?"x":""} passé${nfait>1?"s":""} sur ${P.cr.length})</summary><div class="panel"><div class="progress"><h2>${nfait} créneau${nfait>1?"x":""} passé${nfait>1?"s":""} sur ${P.cr.length}</h2>
     <div class="meter" role="img" aria-label="${nfait} sur ${P.cr.length}"><i style="width:${Math.round(nfait/Math.max(1,P.cr.length)*100)}%"></i></div></div>
     ${nx?"":`<p class="now">Tous les créneaux de la période sont passés.</p>`}
     <details class="aide"><summary>Comment ça marche</summary><p class="hint">La progression est calculée sur l'emploi du temps de la classe. Après chaque cours, indique « Fait », « Pas tout fini » ou « Annulé » : la suite se recalcule. Une évaluation n'est jamais coupée, et un parcours tombe toujours au moins un créneau après son billet.${coupe(P)?` Pour tout faire tenir, les temps de cahier d'activités sont raccourcis de ${fmtD(coupe(P))} au total.`:""}</p></details>
     ${P.manque.length?`<p class="warn">Ne tient plus avant les vacances : ${esc([...new Set(P.manque.map(u=>labPiece(u.sid,u.i)))].join(", "))}. Raccourcis une activité ou ajoute un créneau.</p>`:""}
   </div>`;
-  const ni=nx?P.cr.indexOf(nx):-1;
-  if(ni>=0){
-    h=imprimerHtml(c,P,ni,"Prochain cours")+(P.cr[ni+1]?imprimerHtml(c,P,ni+1,"Cours suivant"):"")+h;
-  }
+  h=essentielHtml(c,P)+h;
   const passes=P.cr.filter(x=>x.st).length;
   let semaine="",dansPasses=false;
   if(passes){h+=`<details class="passes"${ui.passes?" open":""}><summary>Créneaux passés (${passes})</summary>`;dansPasses=true}
@@ -748,7 +795,7 @@ function renderCreneaux(c){
   });
   if(semaine)h+=`</div>`;
   if(dansPasses)h+=`</details>`;
-  return h;
+  return h+`</details>`;
 }
 function renderEdt(c){
   const e=c.edt||{hebdo:[{j:1,d:90},{j:3,d:90},{j:5,d:90}],extra:{on:false,j:2,d:90,first:PERIODE.debut,every:3}};
@@ -782,7 +829,7 @@ const pdfCache={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
-function saveUi(){try{localStorage.setItem("revisions6e-classeur-ui",JSON.stringify({cls:ui.cls,tab:ui.tab,point:ui.point,mode:ui.mode,open:ui.open,openC:ui.openC,vue:ui.vue}))}catch(e){}}
+function saveUi(){try{localStorage.setItem("revisions6e-classeur-ui",JSON.stringify({cls:ui.cls,tab:ui.tab,point:ui.point,mode:ui.mode,open:ui.open,openC:ui.openC,vue:ui.vue,essT:ui.essT,essC:ui.essC}))}catch(e){}}
 function cur(){return data.classes.find(c=>c.id===ui.cls)||data.classes[0]||null}
 function setStatus(t){$("#status").textContent=t}
 function norm(d){
@@ -1599,6 +1646,7 @@ function render(){
 }
 
 /* ======================= ÉVÉNEMENTS ======================= */
+document.addEventListener("toggle",ev=>{const d=ev.target;if(!d.classList)return;if(d.classList.contains("tous"))ui.tous=d.open;if(d.classList.contains("passes"))ui.passes=d.open},true);
 document.addEventListener("click",ev=>{
   const t=ev.target.closest("button");if(!t)return;
   if(t.dataset.cls){ui.cls=t.dataset.cls;ui.confirmDel=false;ui.open=null;saveUi();render();return}
@@ -1621,6 +1669,10 @@ document.addEventListener("click",ev=>{
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}
   if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i}))),t,"ct-"+sid);return}
   if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ctc-"+x.id);return}
+  if(t.dataset.essc){ui.essC=t.dataset.essc;saveUi();render();return}
+  if(t.dataset.esst){ui.essT=t.dataset.esst;saveUi();render();return}
+  if(t.dataset.essct){const P=plan(cur()),x=P.cr[+t.dataset.essct];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ess-ct");return}
+  if(t.dataset.essdev){const c=cur(),i=+t.dataset.essdev,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"ess-dev");return}
   if(t.dataset.copyc){const c=cur(),i=+t.dataset.copyc,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"devc-"+P.cr[i].id);return}
   if(t.dataset.vue){ui.vue=t.dataset.vue;saveUi();render();return}
   if(t.dataset.cst!==undefined){const c=cur(),id=t.dataset.c,v=t.dataset.cst;
