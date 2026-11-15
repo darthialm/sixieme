@@ -94,6 +94,7 @@ details.tous[open]{display:flex;flex-direction:column;gap:10px}
 ul.aimp{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 ul.aimp li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 ul.aimp li.sous{font-weight:700;margin-top:4px}
+ul.aimp li.evalli{display:block;line-height:1.9}
 .docs .dsec{flex-basis:100%;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-top:4px}
 ul.aimp .qte{font-weight:700;color:var(--accent)}
 details.passes,details.proj,details.aide,details.plus{border:1px dashed var(--line);border-radius:12px;padding:6px 10px}
@@ -316,7 +317,7 @@ const SEANCES=[
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p>"},
  {id:"S5",chap:"Angles",k:"Angles · séance 1",t:"Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["coursA","coursAp"],act:"",
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les angles (définition et notation).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Tracer trois angles sur le cahier et les nommer.</p><p><b>Apporter : équerre et ciseaux.</b></p>"},
- {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Évaluation Opérations, puis mesurer un angle",cours:"Partie 2 (mesurer un angle), début",docs:["evalO","evalOc","coursA","coursAp"],act:"Jeu estimangles",
+ {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Évaluation Opérations, puis mesurer un angle",cours:"Partie 2 (mesurer un angle), début",docs:["coursA","coursAp"],act:"Jeu estimangles",
   dev:"<p><b>Apprendre la partie 1.2 du cours : la nature des angles.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p><b>Chasse aux angles : photographier un angle aigu, un droit, un obtus et un plat (aucune personne sur les photos), et les déposer ici avant la séance du [date]. Sans appareil, dessiner les 4 objets.</b></p><p>Refaire seul la méthode « Nommer un angle ».</p><p><b>Apporter : rapporteur, papier calque et ciseaux.</b></p>"},
  {id:"S7",chap:"Angles",k:"Angles · séance 3",t:"Mesurer un angle (1)",cours:"Partie 2 et méthode « Mesurer un angle »",docs:["coursA","coursAp","billets","billetsC","corC7"],act:"",billet:3,
   dev:"<p><b>Apprendre les 4 étapes pour mesurer un angle (partie 2).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur.</b></p>"},
@@ -328,7 +329,7 @@ const SEANCES=[
   dev:"<p><b>Apprendre la partie 4 : le tableau des relations entre angles et la propriété.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Reconnaître et utiliser les relations entre deux angles ».</p><p><b>Apporter : rapporteur, règle et ciseaux.</b></p>"},
  {id:"S11",chap:"Angles",k:"Angles · séance 7",t:"La bissectrice",cours:"Partie 5, fin du cours",docs:["coursA","coursAp","corP4","ourse","ourseC"],act:"Pliage, La Grande Ourse",parcours:4,
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : définitions, propriétés et méthodes.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours.</p><p><b>Apporter : rapporteur, règle et équerre.</b></p>"},
- {id:"S12",chap:"Angles",k:"Angles · évaluation",t:"Révisions (45 min) et évaluation Angles (45 min)",cours:"—",docs:["evalA","evalAc"],act:"",eval:true,
+ {id:"S12",chap:"Angles",k:"Angles · évaluation",t:"Révisions (45 min) et évaluation Angles (45 min)",cours:"—",docs:[],act:"",eval:true,
   dev:"<p><b>Apporter : compas et règle.</b></p>"},
  {id:"S13",chap:"Triangles",k:"Triangles · séance 1",t:"Vocabulaire, construction à partir des trois côtés",cours:"Partie 1.1, rappel, méthode des 3 côtés",docs:["coursT","coursTp"],act:"Défi du compas (au tableau)",
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les triangles et le rappel.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier la construction du triangle ABC (6 cm, 4 cm, 5 cm).</p><p><b>Apporter : compas, rapporteur et règle.</b></p>"},
@@ -344,7 +345,7 @@ const SEANCES=[
   dev:"<p><b>Apprendre les propriétés des angles des triangles particuliers.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Trouver la nature d'un triangle à partir de ses angles ».</p><p><b>Apporter : compas, équerre et règle.</b></p>"},
  {id:"S19",chap:"Triangles",k:"Triangles · séance 7",t:"Le cercle circonscrit, révisions",cours:"Partie 4, fin du cours",docs:["coursT","coursTp"],act:"",
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : définitions, propriétés et constructions.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire sur le cahier toutes les constructions du cours.</p><p><b>Apporter : tout le matériel de géométrie (règle, équerre, rapporteur, compas).</b></p>"},
- {id:"S20",chap:"Triangles",k:"Triangles · évaluation",t:"Évaluation Triangles (45 min), puis remédiation",cours:"—",docs:["evalT","evalTc"],act:"",eval:true,dev:""},
+ {id:"S20",chap:"Triangles",k:"Triangles · évaluation",t:"Évaluation Triangles (45 min), puis remédiation",cours:"—",docs:[],act:"",eval:true,dev:""},
 ];
 /* Cahier Mission Indigo 6e (chap. 9 Angles) différencié. Les élèves écrivent dans le cahier : chaque exercice n'est donné qu'une fois.
    - sans billet récent sur la notion (S7, S14) : progression pour tous, A essentiels → B entraînement → C défi ;
@@ -634,12 +635,26 @@ function prochainCreneau(P){
   const today=iso(new Date());
   return P.cr.find(x=>!x.st&&x.date>=today)||P.cr.find(x=>!x.st)||null;
 }
+/* Évaluations du créneau (blocs « v ») : les sujets sont générés dans l'Espace professeur (contrôles),
+   on rappelle lesquels existent déjà sur cet appareil (même site, même mémoire). */
+function evalsCreneau(x){return [...new Set(x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="v").map(p=>BLOCS[p.sid][p.i].t.replace(/^Évaluation\s*/,"")))]}
+function ctlsPour(chap){
+  let l=[];try{l=JSON.parse(localStorage.getItem("revisions6e-controles")||"[]")}catch(e){l=[]}
+  const n=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  return l.filter(c=>c&&n(c.t).includes(n(chap))).sort((a,b)=>(b.d||0)-(a.d||0)).slice(0,3);
+}
+function evalHtml(chap){
+  const l=ctlsPour(chap);
+  return `<li class="evalli">📝 <b>Évaluation ${esc(chap)}</b> : sujets du contrôle généré dans l'Espace professeur
+    <a class="btn small" href="index.html#/prof" target="_blank" rel="noopener">Ouvrir l'Espace professeur</a>
+    ${l.length?`<span class="hint">Déjà généré : ${l.map(c=>`« ${esc(c.t)} »${c.c?" ("+esc(c.c)+")":""}${Array.isArray(c.s)?", "+c.s.length+" copies":""}`).join(" ; ")}</span>`:`<span class="hint">Pas encore généré sur cet appareil.</span>`}</li>`;
+}
 /* Ce qu'il faut imprimer pour le créneau i : pages nouvelles des documents élèves, billets, fiches, pochette */
 function aImprimer(c,P,i){
   const x=P.cr[i],avant=P.cr.slice(0,i);
   const sids=[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))];
   const vus=new Set(avant.flatMap(z=>z.pieces.filter(p=>!p.marge).map(p=>p.sid)));
-  const out={eleve:[],fiche:[],pochette:[],projeter:[],parc:[]};
+  const out={eleve:[],fiche:[],pochette:[],projeter:[],parc:[],evals:evalsCreneau(x)};
   const pagesVues=k=>new Set([...vus].flatMap(sid=>(PAGES[k]||{})[sid]||[]));
   sids.forEach(sid=>{
     const s=SEANCES.find(q=>q.id===sid);
@@ -698,13 +713,13 @@ function essentielHtml(c,P){
   const sids=[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))];
   const parcs=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="p").map(p=>POINTS.find(q=>q.p===p.sid).n);
   const a=aImprimer(c,P,i),n=c.eleves.length||0,dv=devoirsCreneau(c,P,i);
-  const nImp=a.eleve.length+a.fiche.length+a.pochette.length+a.parc.length;
+  const nImp=a.eleve.length+a.fiche.length+a.pochette.length+a.parc.length+a.evals.length;
   const li=(arr,qte)=>arr.map(e=>`<li>${docPagesBtn(e)}${qte?` <span class="qte">${qte}</span>`:""}</li>`).join("");
   let corps="";
-  if(tab==="imp")corps=nImp?`<ul class="aimp">${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page)":"")}
+  if(tab==="imp")corps=nImp?`<ul class="aimp">${a.evals.map(evalHtml).join("")}${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page)":"")}
       ${a.parc.map(pt=>`<li><button class="btn small" data-goparc="${pt}">Parcours du point ${pt} avec les prénoms</button></li>`).join("")}
       ${a.pochette.length?`<li class="sous">Pochette de corrigés</li>${li(a.pochette,"× 2")}`:""}</ul>`:`<p class="hint">Rien de nouveau à imprimer pour ce cours.</p>`;
-  if(tab==="doc")corps=`<div class="docs">${docsBox(sids,parcs)}</div>`;
+  if(tab==="doc")corps=(a.evals.length?`<ul class="aimp">${a.evals.map(evalHtml).join("")}</ul>`:"")+`<div class="docs">${docsBox(sids,parcs)}</div>`;
   if(tab==="cont"){
     corps=`<ol class="deroule">${x.pieces.map(p=>{const t=`${p.t0}–${p.t0+p.m}`;
       if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier d'activités ou rattrapage</span></li>`;

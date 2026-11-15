@@ -1,3 +1,13 @@
+MISE À JOUR 2026-11-15.7 : évaluations = contrôles de l'Espace professeur
+
+À DÉPOSER : index.html, script.js, classeur.html
+
+- Pour un cours avec évaluation, « À imprimer » ne propose plus le PDF d'évaluation : il renvoie aux sujets du
+  contrôle généré dans l'Espace professeur (bouton pour l'ouvrir) et rappelle les contrôles déjà générés pour
+  ce chapitre sur l'appareil (titre, classe, nombre de copies).
+
+=========================================================
+
 MISE À JOUR 2026-11-15.6 : classeur plus simple
 
 À DÉPOSER : index.html, script.js, classeur.html
