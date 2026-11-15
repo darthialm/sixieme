@@ -1,3 +1,30 @@
+MISE À JOUR 2026-11-15 : classeur, évaluation Opérations déplacée en S6, devoirs jamais du jour au lendemain, liens de devoir courts
+
+À DÉPOSER : classeur.html, script.js
+
+- Devoirs (mode créneaux, toutes les classes) : des devoirs ne sont donnés en fin de créneau que si le cours
+  suivant avec la classe a lieu au moins 2 jours plus tard. Sinon, ils sont reportés (avec leurs liens) au
+  premier créneau suivi de 2 jours ou plus. « Réviser pour l'évaluation » est donné au dernier créneau qui le
+  permet avant l'évaluation. Le rappel « Pour le …, apporter : … » reste affiché la veille.
+- Devoirs : un seul lien d'exercices en ligne par créneau, qui regroupe les notions de toutes les séances dont
+  les devoirs tombent ce jour-là (questions additionnées, 20 au plus, consigne « faire les N questions » ; une seule séance : son lien personnel s'il
+  existe). Les lignes « Apprendre / Refaire / Revoir / Relire » ne sont plus données ; le matériel à apporter oui.
+- Notions en ligne de la S6 : « mesurer un angle » (au lieu de « nommer / nature », déjà travaillées).
+- Liens de devoir courts : le formulaire Grist du professeur est enregistré dans le site (GRIST_SITE dans
+  script.js et classeur.html). Les liens se terminent par « /g=1 » au lieu d'environ 200 caractères.
+  Les anciens liens longs restent valables.
+
+- S5 devient « Angles · séance 1 » seule (découverte « le plus grand angle », définition et notation) :
+  l'évaluation Opérations n'y est plus.
+- S6 « Évaluation Opérations, puis mesurer un angle » : évaluation Opérations (30 min, jamais coupée entre deux
+  créneaux), correction d'un exercice supplémentaire, jeu « estimangles », suite du chapitre (feuille 2) mesurer
+  un angle, billet de sortie. Documents : évaluation Opérations (élève et corrigé) et cours / activités Angles.
+  Le devoir « réviser pour l'évaluation » est donc donné avant la S6. Matériel à apporter pour la S6 : rapporteur.
+- Plus de cahier différencié en S6 (pas de billet avant, peu d'exercices, notion « nommer / nature » déjà faite) :
+  programme S6 et « Corrigés cahier S6 » retirés.
+
+=========================================================
+
 MISE À JOUR 2026-11-14.7 : Le Pont des Fractions, le pilier et les rochers cachés dans les nuages
 
 À DÉPOSER : le dossier jeu-fractions/ (ses 3 fichiers)

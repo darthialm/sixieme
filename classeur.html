@@ -245,7 +245,7 @@ const DOCS={
  rappo:D("Le rapporteur","docs/Le_rapporteur.pdf","ton document"),
  oeuvre:D("Crée ton œuvre d'art","docs/Cree_ton_oeuvre_d_art.pdf","ton document"),
  multcur:D("Multiplications curieuses","docs/Multiplications_curieuses.pdf","ton document"),
- corC6:D("Corrigés cahier S6","docs/Corrige_cahier_S6.pdf","libre-service"),corC7:D("Corrigés cahier S7","docs/Corrige_cahier_S7.pdf","libre-service"),
+ corC7:D("Corrigés cahier S7","docs/Corrige_cahier_S7.pdf","libre-service"),
  corC8:D("Corrigés cahier S8","docs/Corrige_cahier_S8.pdf","libre-service"),corC9:D("Corrigés cahier S9","docs/Corrige_cahier_S9.pdf","libre-service"),
  corC14:D("Corrigés cahier S14","docs/Corrige_cahier_S14.pdf","libre-service"),corC15:D("Corrigés cahier S15","docs/Corrige_cahier_S15.pdf","libre-service"),
 };
@@ -254,7 +254,7 @@ const DOC_GROUPS=[
  ["Activités",["actO","actOc","actA","actAc","actT","actTc","rappo","oeuvre","multcur"]],
  ["Écrans à projeter",["projO","projA"]],
  ["Différenciation",["billets","billetsC","corP1","corP2","corP3","corP4","corP5","corP6"]],
- ["Corrigés du cahier (libre-service)",["corC6","corC7","corC8","corC9","corC14","corC15"]],
+ ["Corrigés du cahier (libre-service)",["corC7","corC8","corC9","corC14","corC15"]],
  ["Évaluations",["evalO","evalOc","evalA","evalAc","evalT","evalTc"]],
 ];
 const POINTS=[
@@ -269,7 +269,7 @@ const NOM={R:{x:381,y:381.5},E:{x:381,y:381.5},D:{x:381,y:381.5}},NOM_LARG=122;
 const LIEN="{{LIEN}}";
 /* Notions du site travaillées à chaque séance (pour le lien du devoir et les questions flash au vidéoprojecteur) */
 const NOTIONS={S1:["o-voc"],S2:["o-gauche","o-par","o-par2"],S3:["o-add"],S4:["o-voc","o-gauche","o-par","o-par2","o-add","o-mul","o-pb"],
- S5:["a-nom"],S6:["a-nom","a-nature"],S7:["a-mesure"],S8:["a-mesure","a-nature"],S9:["a-construire"],S10:["a-reco","a-calcul"],
+ S5:["a-nom"],S6:["a-mesure"],S7:["a-mesure"],S8:["a-mesure","a-nature"],S9:["a-construire"],S10:["a-reco","a-calcul"],
  S11:["a-nom","a-nature","a-mesure","a-construire","a-reco","a-calcul","a-biss"],S12:["a-nom","a-nature","a-mesure","a-reco","a-calcul"],
  S13:["t-voc","t-3cotes"],S14:["t-angles"],S15:["t-nature","t-iso"],S16:["t-rect"],S17:["t-180"],S18:["t-natang"],
  S19:["t-voc","t-nature","t-3cotes","t-angles","t-iso","t-180","t-natang","t-cercle"],S20:["t-180","t-natang","t-voc"]};
@@ -283,9 +283,9 @@ const SEANCES=[
   dev:"<p><b>Apprendre la partie 3.1 du cours (poser une addition, une soustraction).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Poser une addition et une soustraction ».</p><p><b>Apporter : ciseaux et colle.</b></p>"},
  {id:"S4",chap:"Opérations",k:"Opérations · séance 4",t:"La multiplication posée",cours:"Partie 3.2, fin du cours",docs:["coursO","coursOp","actO","actOc","projO","corP2","multcur"],act:"Horloges folles (2), Ticket de caisse, Les élèves corrigent le prof (écrans)",parcours:2,
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : les règles et les méthodes du cours.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours, puis vérifier avec les corrections.</p>"},
- {id:"S5",chap:"Opérations",k:"Évaluation Opérations, puis Angles · séance 1",t:"Évaluation Opérations (45 min) · Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["evalO","evalOc","coursA","coursAp","actA","actAc"],act:"Découverte « le plus grand angle »",eval:true,
+ {id:"S5",chap:"Angles",k:"Angles · séance 1",t:"Qu'est-ce qu'un angle ?",cours:"Angles : partie 1.1 (définition, notation)",docs:["coursA","coursAp","actA","actAc"],act:"Découverte « le plus grand angle »",
   dev:"<p><b>Apprendre la partie 1.1 du cours sur les angles (définition et notation).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Tracer trois angles sur le cahier et les nommer.</p><p><b>Apporter : équerre et ciseaux.</b></p>"},
- {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Nommer un angle, nature des angles",cours:"Partie 1.2 (nature) et les méthodes « Nommer » et « Nature »",docs:["coursA","coursAp","actA","actAc","corC6"],act:"Trier les angles",
+ {id:"S6",chap:"Angles",k:"Angles · séance 2",t:"Évaluation Opérations, puis mesurer un angle",cours:"Partie 2 (mesurer un angle), début",docs:["evalO","evalOc","coursA","coursAp","actA","actAc"],act:"Jeu estimangles",
   dev:"<p><b>Apprendre la partie 1.2 du cours : la nature des angles.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p><b>Chasse aux angles : photographier un angle aigu, un droit, un obtus et un plat (aucune personne sur les photos), et les déposer ici avant la séance du [date]. Sans appareil, dessiner les 4 objets.</b></p><p>Refaire seul la méthode « Nommer un angle ».</p><p><b>Apporter : rapporteur, papier calque et ciseaux.</b></p>"},
  {id:"S7",chap:"Angles",k:"Angles · séance 3",t:"Mesurer un angle (1)",cours:"Partie 2 et méthode « Mesurer un angle »",docs:["coursA","coursAp","rappo","billets","billetsC","corC7"],act:"Le rapporteur (ton activité)",billet:3,
   dev:"<p><b>Apprendre les 4 étapes pour mesurer un angle (partie 2).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur.</b></p>"},
@@ -316,13 +316,12 @@ const SEANCES=[
  {id:"S20",chap:"Triangles",k:"Triangles · évaluation",t:"Évaluation Triangles (45 min), puis remédiation",cours:"—",docs:["evalT","evalTc"],act:"",eval:true,dev:""},
 ];
 /* Cahier Mission Indigo 6e (chap. 9 Angles) différencié. Les élèves écrivent dans le cahier : chaque exercice n'est donné qu'une fois.
-   - sans billet récent sur la notion (S6, S7, S14) : progression pour tous, A essentiels → B entraînement → C défi ;
+   - sans billet récent sur la notion (S7, S14) : progression pour tous, A essentiels → B entraînement → C défi ;
+     (pas de cahier différencié en S6 : séance d'évaluation Opérations, notion « nommer / nature » déjà faite) ;
    - après un billet sur la notion (S8 et S9 : billet n°3 ; S15 : billet n°5) : programme par groupe du billet (R, E, D),
      liste des élèves à annoncer à l'oral, programme à projeter (sans les noms).
    Corrigés en libre-service : bouton « Corrigés cahier » de la séance (documents.bin), un PDF par séance. */
 const CAHIER={
- S6:{t:"Nommer un angle, nature des angles",A:"ex. 1 p. 84 (nommer un angle) ; ex. 6 p. 85 (aigu ou obtus, sans mesurer)",B:"ex. 3 p. 84 (angles dans une figure) ; ex. 7 p. 85 (proches de 90°)",C:"ex. 5 p. 84 (classer sans mesurer)",
-  pg:"sur l'ex. 1 : sommet, côtés, les deux notations"},
  S7:{t:"Mesurer un angle",A:"ex. 8 p. 85 (lire la bonne graduation)",B:"ex. 9 p. 85 (aigu ou obtus, puis mesurer)",C:"",
   pg:"sur l'ex. 8 : le 0 sur quel côté, quelle graduation lire"},
  S8:{t:"Mesurer un angle",pt:3,fiche:true,
@@ -352,8 +351,8 @@ const BLOCS={
  S2:[BL(10,"Questions flash : vocabulaire des opérations"),BL(15,"Débat : deux résultats pour 20 − 5 + 3"),BL(30,"Cours : règles 1, 2 et 3, méthodes"),BL(10,"Cahier d'activités","e"),BL(20,"Horloges folles (1) en binôme","e"),BL(5,"Billet de sortie n°1","b")],
  S3:[BL(10,"Rappel : Le compte est bon (à projeter)"),BL(35,"Parcours point 1","p"),BL(20,"Cours : partie 3.1, poser une addition et une soustraction"),BL(5,"Billet de sortie n°2","b")],
  S4:[BL(10,"Questions flash : additions et soustractions de décimaux"),BL(20,"Horloges folles (2) : l'horloge décimale, en binôme"),BL(20,"Cours : partie 3.2, méthode « Poser une multiplication »"),BL(20,"Les élèves corrigent le prof (à projeter)"),BL(40,"Parcours point 2 ; ticket de caisse pour ceux qui ont fini","p")],
- S5:[BL(45,"Évaluation Opérations","v"),BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
- S6:[BL(10,"Questions flash : calcul mental"),BL(20,"Cours : méthode « Nommer un angle »"),BL(20,"Classer des angles avec le coin de l'équerre, puis tableau des natures"),BL(30,"Cahier différencié : A pour tous (ex. 1 p. 84, ex. 6 p. 85), petit groupe au tableau, les autres enchaînent B puis C ; corrigés en libre-service","e",15),BL(10,"Bilan (un A corrigé au tableau, l'idée du défi) ; donner la chasse photo","e",5)],
+ S5:[BL(20,"Angles : découverte « le plus grand angle »"),BL(20,"Cours : définition et notation d'un angle"),BL(5,"Bilan, devoirs","e",0)],
+ S6:[BL(30,"Évaluation Opérations","v"),BL(10,"Correction d'un exercice supplémentaire d'opérations"),BL(10,"Jeu « estimangles »"),BL(20,"Suite du chapitre (feuille 2) : mesurer un angle"),BL(10,"Billet de sortie : mesurer un angle ; donner la chasse photo","e",5)],
  S7:[BL(10,"Questions flash : nature d'angles"),BL(40,"Activité « Le rapporteur » (les portes, le gabarit)"),BL(20,"Cours : les 4 étapes, méthode"),BL(15,"Cahier pour tous : A ex. 8 p. 85, puis B ex. 9 ; corrigés en libre-service","e"),BL(5,"Billet de sortie n°3","b")],
  S8:[BL(10,"L'estimathon (à projeter)"),BL(15,"Chasse photo : projection des photos des élèves"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(45,"Groupes du billet n°3 (annoncés à l’oral, programme projeté) : fiches vierges du point 3 puis cahier ; « Je reprends » au tableau ; permis rapporteur ; bilan 5 min","p")],
  S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(30,"Cahier par groupes du billet n°3 (annoncés à l’oral, programme projeté) : « Je reprends » au tableau sur l’ex. 12 ; corrigés en libre-service, bilan","e",20),BL(30,"Crée ton œuvre d'art (à finir à la maison)","e",20)],
@@ -445,7 +444,7 @@ function planifier(cr,us,depart){
   }
   return secours;
 }
-const MAT={S1:"ciseaux",S2:"ciseaux, colle",S3:"",S4:"ciseaux, colle",S5:"",S6:"équerre, ciseaux",
+const MAT={S1:"ciseaux",S2:"ciseaux, colle",S3:"",S4:"ciseaux, colle",S5:"",S6:"rapporteur",
  S7:"rapporteur, papier calque, ciseaux",S8:"rapporteur",S9:"rapporteur, règle, crayons de couleur, calculatrice",S10:"rapporteur, règle",
  S11:"rapporteur, règle, ciseaux",S12:"rapporteur, règle, équerre",S13:"compas, règle",S14:"compas, rapporteur, règle",S15:"compas, règle, ciseaux",
  S16:"équerre, compas, règle",S17:"ciseaux, rapporteur",S18:"rapporteur, règle",S19:"compas, équerre, règle",S20:"règle, équerre, rapporteur, compas"};
@@ -456,7 +455,7 @@ const fmtJ=(s,o)=>pdate(s).toLocaleDateString("fr-FR",o||{weekday:"short",day:"n
 const fmtD=m=>m>=60?(Math.floor(m/60)+"h"+(m%60?String(m%60).padStart(2,"0"):"")):m+" min";
 function numChap(s){const m=/séance (\d+)/.exec(s.k);return m?+m[1]:null}
 function chapPos(s){
-  if(s.id==="S5")return "Fin du chapitre 5 · Opérations (évaluation), puis chapitre 6 · Angles, séance 1 sur 7";
+  if(s.id==="S6")return "Évaluation du chapitre 5 · Opérations, puis chapitre 6 · Angles, séance 2 sur 7";
   const [c,n]=CHN[s.chap];
   if(s.eval)return `Chapitre ${c} · ${s.chap}, évaluation`;
   return `Chapitre ${c} · ${s.chap}, séance ${numChap(s)} sur ${n}, puis l'évaluation`;
@@ -464,7 +463,7 @@ function chapPos(s){
 // étiquette courte d'un morceau de séance
 function labPiece(sid,i){
   const s=SEANCES.find(x=>x.id===sid);
-  if(sid==="S5")return i===0?"Évaluation Opérations":"Angles · séance 1";
+  if(sid==="S6")return i===0?"Évaluation Opérations":"Angles · séance 2";
   if(s.eval)return s.chap+" · "+(BLOCS[sid][i]&&BLOCS[sid][i].y==="v"?"évaluation":sid==="S12"?"révisions":"remédiation");
   return s.chap+" · séance "+numChap(s);
 }
@@ -498,18 +497,29 @@ function seanceFaite(c,sid){
   if(!c.edt)return !!(c.prog[sid]||{}).done;
   const P=c._plan||(c._plan=planClasse(c));return P.fige.k>P.lu[sid];
 }
+// Devoirs seulement si le cours suivant avec la classe est au moins DEV_GAP jours plus tard
+// (jamais de devoirs du jour au lendemain). Sinon, ils sont reportés au premier créneau qui le permet.
+const DEV_GAP=2;
+function devoirPossible(P,i){
+  const x=P.cr[i];if(!x||x.cap===0)return false;
+  const nx=P.cr.slice(i+1).find(z=>z.cap>0);
+  return !nx||Math.round((pdate(nx.date)-pdate(x.date))/864e5)>=DEV_GAP;
+}
 // devoirs d'un créneau : séances terminées ici (hors « Apporter ») + matériel du créneau suivant
 function creneauDonne(P){
   if(P.give)return P.give;
   const idx=sid=>SEANCES.findIndex(q=>q.id===sid);
+  const premierPossible=from=>{for(let i=Math.max(0,from);i<P.cr.length;i++)if(devoirPossible(P,i))return i;return -1};
   const g={};
   SEANCES.forEach(s=>{
-    let end=P.cr.findIndex(z=>z.fin.k>P.lu[s.id]);
+    const end=P.cr.findIndex(z=>z.fin.k>P.lu[s.id]);
+    let i=end<0?-1:premierPossible(end);
     if(REVISE[s.id]){
+      // « réviser pour l'évaluation » : au plus tard au dernier créneau qui le permet avant l'évaluation
       const ev=P.cr.findIndex(z=>z.pieces.some(p=>!p.marge&&BLOCS[p.sid][p.i].y==="v"&&idx(p.sid)>idx(s.id)));
-      if(ev>0&&(end<0||ev-1<end))end=ev-1;
+      if(ev>0&&(i<0||i>ev-1)){i=-1;for(let j=ev-1;j>=0;j--)if(devoirPossible(P,j)){i=j;break}}
     }
-    g[s.id]=end;
+    g[s.id]=i;
   });
   return P.give=g;
 }
@@ -517,14 +527,25 @@ function devoirsCreneau(c,P,i){
   const x=P.cr[i],g=creneauDonne(P),parts=[];
   const list=SEANCES.filter(s=>s.dev&&g[s.id]===i);
   const photo=P.cr.find(z=>z.pieces.some(p=>p.sid==="S8"&&p.i===1));
+  // Un seul lien d'exercices en ligne, qui regroupe les notions de toutes les séances données ici ;
+  // pas de lignes « apprendre / refaire / revoir / relire » ; le matériel est rappelé plus bas.
+  const enLigne=list.filter(s=>s.dev.includes(LIEN));
   list.forEach(s=>{
-    let h=devoirHtml(s);
+    let h=s.dev;
     if(photo)h=h.split("[date]").join(fmtJ(photo.date,{weekday:"long",day:"numeric",month:"long"}));
     const tmp=document.createElement("div");tmp.innerHTML=h;
-    [...tmp.querySelectorAll("p")].forEach(p=>{if(!/^\s*Apporter/.test(p.textContent))parts.push(p.outerHTML)});
+    [...tmp.querySelectorAll("p")].forEach(p=>{
+      if(p.outerHTML.includes(LIEN))return;
+      if(/^\s*(Apporter|Apprendre|Refaire|Revoir|Relire)\b/i.test(p.textContent))return;
+      parts.push(p.outerHTML);
+    });
   });
+  if(enLigne.length){
+    const l=lienDevoirs(c,enLigne.map(s=>s.id));
+    const nq=(/#\/devoir\/[^/]+\/(\d+)/.exec(l||"")||[])[1];
+    if(l)parts.push(`<p><b>Exercices en ligne${nq?` : faire les ${nq} questions`:""} : <a href="${esc(l)}">${esc(l)}</a></b></p>`);
+  }
   const nx=P.cr.slice(i+1).find(z=>z.cap>0&&z.pieces.some(p=>!p.marge));
-  if(!parts.length&&nx&&x.pieces.some(p=>!p.marge&&BLOCS[p.sid][p.i].y!=="v"))parts.push("<p><b>Relire dans le cours ce qui a été fait aujourd'hui.</b></p>");
   if(nx){
     const items=[];new Set(nx.pieces.filter(p=>!p.marge).map(p=>p.sid)).forEach(sid=>MAT[sid].split(", ").forEach(m=>{if(m&&!items.includes(m))items.push(m)}));
     if(items.length)parts.push(`<p><b>Pour le ${fmtJ(nx.date,{weekday:"long",day:"numeric",month:"long"})}, apporter : ${items.join(", ")}.</b></p>`);
@@ -1024,7 +1045,7 @@ function contenuHtml(pieces){
   const out=[];let last="";
   pieces.forEach(p=>{
     const l=ctLigne(BLOCS[p.sid][p.i]);if(!l)return;
-    const s=SEANCES.find(q=>q.id===p.sid),lab=labPiece(p.sid,p.i),tete=lab+(s.eval||p.sid==="S5"?"":" : "+s.t);
+    const s=SEANCES.find(q=>q.id===p.sid),lab=labPiece(p.sid,p.i),tete=lab+(s.eval||(p.sid==="S6"&&p.i===0)?"":" : "+s.t);
     if(tete!==last){out.push(`<p><b>${esc(tete)}</b></p>`);last=tete}
     out.push(`<p>- ${esc(l)}${p.suite?" (suite)":""}${p.coupe?" (début)":""}</p>`);
   });
@@ -1108,7 +1129,10 @@ function parsePrefill(url){const m=String(url).match(/forms\/d\/e\/([\w-]+)\/(?:
 const formToSeg=(f)=>`/f=${f.id}~${f.entries.join("~")}`;
 function parseGristUrl(url){const m=String(url).trim().match(/^(https:\/\/[^\s?#]+?)\/forms\/([A-Za-z0-9]+)\/(\d+)/);return m?{a:m[1],k:m[2],v:m[3]}:null}
 const b64e=(t)=>btoa(unescape(encodeURIComponent(t))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-const gristToSeg=(g)=>"/g="+b64e(JSON.stringify(g));
+/* même formulaire Grist que GRIST_SITE dans script.js : lien court « /g=1 » (le site le reconnaît) */
+const GRIST_SITE={a:"https://grist.numerique.gouv.fr/o/docs",k:"1CSVewczBDMwLGG3cFYgyA",v:"5",t:"Table1",c:["Prenom","Code","Classe","Devoir","Score","Detail"]};
+const estGristSite=(g)=>!!g&&g.a===GRIST_SITE.a&&g.k===GRIST_SITE.k&&String(g.v)===GRIST_SITE.v&&g.t===GRIST_SITE.t&&JSON.stringify(g.c)===JSON.stringify(GRIST_SITE.c);
+const gristToSeg=(g)=>estGristSite(g)?"/g=1":"/g="+b64e(JSON.stringify(g));
 function destSeg(){
   let f="",g=null;try{f=localStorage.getItem("revisions6e-form")||"";g=JSON.parse(localStorage.getItem("revisions6e-grist")||"null")}catch(e){}
   const pf=parsePrefill(f);if(pf&&pf.entries.length===6)return formToSeg(pf);
@@ -1120,6 +1144,15 @@ function autoLink(c,sid){
   const ks=NOTIONS[sid];if(!ks)return "";
   const cl=c?(c.nom||"").trim().replace(/\//g,"-").replace(/,/g," "):"";
   return siteBase()+`#/devoir/${ks.join(",")}/${NB_Q[sid]||10}`+(cl?"/c="+encodeURIComponent(cl):"")+destSeg();
+}
+/** Un seul lien pour les devoirs de plusieurs séances : toutes leurs notions, questions additionnées (20 au plus).
+    Une seule séance : son lien personnel s'il existe, sinon le lien automatique. */
+function lienDevoirs(c,sids){
+  if(sids.length===1)return (data.liens||{})[sids[0]]||autoLink(c,sids[0]);
+  const ks=[...new Set(sids.flatMap(sid=>NOTIONS[sid]||[]))];if(!ks.length)return "";
+  const n=Math.min(20,sids.reduce((a,sid)=>a+(NOTIONS[sid]?(NB_Q[sid]||10):0),0));
+  const cl=c?(c.nom||"").trim().replace(/\//g,"-").replace(/,/g," "):"";
+  return siteBase()+`#/devoir/${ks.join(",")}/${n}`+(cl?"/c="+encodeURIComponent(cl):"")+destSeg();
 }
 const projoLink=(sid)=>{const ks=NOTIONS[sid];return ks?siteBase()+"#/projo/"+ks.join(","):""};
 function nomPDF(font,s){

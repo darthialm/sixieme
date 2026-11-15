@@ -3035,8 +3035,13 @@ function parseGristUrl(url) {
 const gristFormUrl = (g) => `${g.a}/forms/${g.k}/${g.v}`;
 const b64e = (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const b64d = (str) => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
-const gristToSeg = (g) => '/g=' + b64e(JSON.stringify(g));
+/* Formulaire Grist du professeur, enregistré dans le site : les liens l'appellent par « /g=1 »
+   au lieu de transporter toute sa configuration (liens bien plus courts). Les anciens liens « /g=… » restent valables. */
+const GRIST_SITE = { a: 'https://grist.numerique.gouv.fr/o/docs', k: '1CSVewczBDMwLGG3cFYgyA', v: '5', t: 'Table1', c: ['Prenom', 'Code', 'Classe', 'Devoir', 'Score', 'Detail'] };
+const estGristSite = (g) => !!g && g.a === GRIST_SITE.a && g.k === GRIST_SITE.k && String(g.v) === GRIST_SITE.v && g.t === GRIST_SITE.t && JSON.stringify(g.c) === JSON.stringify(GRIST_SITE.c);
+const gristToSeg = (g) => (estGristSite(g) ? '/g=1' : '/g=' + b64e(JSON.stringify(g)));
 function segToGrist(seg) {
+  if (seg === '1') return { ...GRIST_SITE };
   try { const g = JSON.parse(b64d(seg)); return g && /^https:\/\//.test(g.a) && /^[A-Za-z0-9]+$/.test(g.k) ? g : null; } catch (e) { return null; }
 }
 const GRIST_WANT = ['prenom', 'code', 'classe', 'devoir', 'score', 'detail'];
