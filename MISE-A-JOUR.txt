@@ -1,3 +1,12 @@
+MISE À JOUR 2026-11-15.1 : numéro de version du site
+
+À DÉPOSER : index.html, script.js
+
+- Version du site passée à 2026-11-15.1 (oubliée dans la mise à jour précédente) : les navigateurs rechargent
+  script.js et comprennent les liens de devoir courts « /g=1 ».
+
+=========================================================
+
 MISE À JOUR 2026-11-15 : classeur, évaluation Opérations déplacée en S6, devoirs jamais du jour au lendemain, liens de devoir courts
 
 À DÉPOSER : classeur.html, script.js
