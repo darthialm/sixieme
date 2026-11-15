@@ -1,3 +1,14 @@
+MISE À JOUR 2026-11-15.8 : pages déjà données
+
+À DÉPOSER : index.html, script.js, classeur.html
+
+- L'onglet Documents (et la case Documents de chaque créneau ou séance) ne repropose plus les pages déjà données
+  à un cours précédent : ex. lundi, « Cours Angles · page 2 » et plus « pages 1 et 2 ». Un document dont toutes les
+  pages ont déjà été données est marqué « déjà donné ». Vérifié sur toute la période pour les 3 classes (test
+  automatique dans l'API).
+
+=========================================================
+
 MISE À JOUR 2026-11-15.7 : évaluations = contrôles de l'Espace professeur
 
 À DÉPOSER : index.html, script.js, classeur.html

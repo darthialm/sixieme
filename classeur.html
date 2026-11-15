@@ -649,6 +649,7 @@ function evalHtml(chap){
     <a class="btn small" href="index.html#/prof" target="_blank" rel="noopener">Ouvrir l'Espace professeur</a>
     ${l.length?`<span class="hint">Déjà généré : ${l.map(c=>`« ${esc(c.t)} »${c.c?" ("+esc(c.c)+")":""}${Array.isArray(c.s)?", "+c.s.length+" copies":""}`).join(" ; ")}</span>`:`<span class="hint">Pas encore généré sur cet appareil.</span>`}</li>`;
 }
+const avantSids=(P,i)=>[...new Set(P.cr.slice(0,i).flatMap(z=>z.pieces.filter(p=>!p.marge).map(p=>p.sid)))];
 /* Ce qu'il faut imprimer pour le créneau i : pages nouvelles des documents élèves, billets, fiches, pochette */
 function aImprimer(c,P,i){
   const x=P.cr[i],avant=P.cr.slice(0,i);
@@ -680,11 +681,13 @@ function docPagesBtn(e){
   return `<button class="doc" data-docp="${e.k}" data-pages="${pg.join(",")}"><b>${esc(d.label)}</b> · page${pg.length>1?"s":""} ${pg.join(" et ")}</button>`;
 }
 /* Tous les documents des séances données : à imprimer (pages de ces séances), pochette, à projeter / pour toi, parcours */
-function docsBox(sids,parcs){
+/* avant = séances déjà commencées avant : leurs pages ont déjà été données, on ne les repropose pas */
+function docsBox(sids,parcs,avant=[]){
   const ks=[];sids.forEach(sid=>SEANCES.find(q=>q.id===sid).docs.forEach(k=>{if(DOCS[k]&&!ks.includes(k))ks.push(k)}));
   const grp={eleve:[],fiche:[],pochette:[],projeter:[]};ks.forEach(k=>(grp[docType(k)]||grp.projeter).push(k));
-  const pagesOf=k=>[...new Set(sids.flatMap(sid=>(PAGES[k]||{})[sid]||[]))].sort((a,b)=>a-b);
-  const btn=k=>{const pg=pagesOf(k);return pg.length?docPagesBtn({k,pages:pg}):docBtn(k)};
+  const deja=k=>new Set(avant.flatMap(sid=>(PAGES[k]||{})[sid]||[]));
+  const pagesOf=k=>{const d=deja(k);return [...new Set(sids.flatMap(sid=>(PAGES[k]||{})[sid]||[]))].filter(n=>!d.has(n)).sort((a,b)=>a-b)};
+  const btn=k=>{const pg=pagesOf(k);return pg.length?docPagesBtn({k,pages:pg}):PAGES[k]&&sids.some(sid=>(PAGES[k][sid]||[]).length)?`${docBtn(k)}<span class="hint">déjà donné</span>`:docBtn(k)};
   const sec=(t,arr)=>arr.length?`<div class="dsec">${t}</div>`+arr.map(btn).join(""):"";
   const h=sec("À imprimer",[...grp.eleve,...grp.fiche])+sec("Pochette de corrigés",grp.pochette)+sec("À projeter / pour toi",grp.projeter)
     +(parcs.length?`<div class="dsec">Parcours vierges (sans prénom)</div>`+parcs.map(parcVierges).join(""):"");
@@ -719,7 +722,7 @@ function essentielHtml(c,P){
   if(tab==="imp")corps=nImp?`<ul class="aimp">${a.evals.map(evalHtml).join("")}${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page)":"")}
       ${a.parc.map(pt=>`<li><button class="btn small" data-goparc="${pt}">Parcours du point ${pt} avec les prénoms</button></li>`).join("")}
       ${a.pochette.length?`<li class="sous">Pochette de corrigés</li>${li(a.pochette,"× 2")}`:""}</ul>`:`<p class="hint">Rien de nouveau à imprimer pour ce cours.</p>`;
-  if(tab==="doc")corps=(a.evals.length?`<ul class="aimp">${a.evals.map(evalHtml).join("")}</ul>`:"")+`<div class="docs">${docsBox(sids,parcs)}</div>`;
+  if(tab==="doc")corps=(a.evals.length?`<ul class="aimp">${a.evals.map(evalHtml).join("")}</ul>`:"")+`<div class="docs">${docsBox(sids,parcs,avantSids(P,i))}</div>`;
   if(tab==="cont"){
     corps=`<ol class="deroule">${x.pieces.map(p=>{const t=`${p.t0}–${p.t0+p.m}`;
       if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier d'activités ou rattrapage</span></li>`;
@@ -796,7 +799,7 @@ function renderCreneaux(c){
             ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
             ${[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")}
           </div>
-          <div class="box"><h3>Documents</h3><div class="docs">${docsBox([...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))],parcs.map(sid=>POINTS.find(q=>q.p===sid).n))}</div></div>
+          <div class="box"><h3>Documents</h3><div class="docs">${docsBox([...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))],parcs.map(sid=>POINTS.find(q=>q.p===sid).n),avantSids(P,i))}</div></div>
         </div>
         <details class="plus"><summary>Contenu de séance et devoirs (École Directe)</summary>
         ${contenuBox(contenuHtml(x.pieces.filter(p=>!p.marge)),"ctc-"+x.id,`data-copyctc="${i}"`)}
@@ -1539,7 +1542,7 @@ function renderSeances(c){
               ${s.billet?`<div><b>Billet de sortie ${billetNom(s.billet)}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
               ${cahierHtml(s.id)}
             </div>
-            <div class="box"><h3>Documents</h3><div class="docs">${docsBox([s.id],s.parcours?[s.parcours]:[])}</div></div>
+            <div class="box"><h3>Documents</h3><div class="docs">${docsBox([s.id],s.parcours?[s.parcours]:[],SEANCES.slice(0,SEANCES.indexOf(s)).map(q=>q.id))}</div></div>
           </div>
           ${ui.edit===s.id&&!ui.editC?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
           <div class="box"><h3>Déroulé (${fmtD(BLOCS[s.id].reduce((a,b)=>a+b.m,0))})</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>

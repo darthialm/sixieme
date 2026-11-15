@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
-  <meta name="site-version" content="2026-11-15.7">
-  <link rel="stylesheet" href="style.css?v=2026-11-15.7">
-  <link rel="stylesheet" href="chapitres-p2.css?v=2026-11-15.7">
+  <meta name="site-version" content="2026-11-15.8">
+  <link rel="stylesheet" href="style.css?v=2026-11-15.9">
+  <link rel="stylesheet" href="chapitres-p2.css?v=2026-11-15.8">
 </head>
 <body>
 
@@ -50,6 +50,20 @@
       <h1>🎮 Les jeux</h1>
     </div>
     <div class="chapters" id="games-hub"></div>
+  </section>
+
+  <!-- Jeux hors chapitre (listés dans la salle de jeux, adresse #/jeux/<data-p>) -->
+  <section class="page" data-ch="_" data-p="aura-rush" data-game="1" data-game-name="Aura Rush" data-game-img="jeux-img/aura-rush.jpg" data-game-desc="4 minutes pour calculer un max de vitesses (v = d ÷ t) et faire exploser ton aura.">
+    <p><a class="chap-pill" href="#/jeux">Tous les jeux</a></p>
+    <h1>⚡ Aura Rush</h1>
+    <p class="lead">Crée ton perso, puis calcule un maximum de vitesses en 4 minutes : chaque bonne réponse fait monter ton aura, chaque erreur la fait baisser !</p>
+    <div class="game-frame" data-frame="https://darthialm.github.io/calculvitesse/">
+      <div class="game-frame-bar">
+        <button type="button" class="btn game-full">⛶ Plein écran</button>
+        <a class="btn" href="https://darthialm.github.io/calculvitesse/" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet ↗</a>
+      </div>
+      <iframe title="Aura Rush" allow="fullscreen" allowfullscreen></iframe>
+    </div>
   </section>
 
   <!-- ===================================================== -->
@@ -348,7 +362,7 @@
     <div class="exercise" data-gen="d-par"></div>
   </section>
 
-  <section class="page" data-ch="droites" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Droite parfaite" data-game-icon="📐" data-game-desc="Trace une parallèle ou une perpendiculaire parfaite, sans équerre.">
+  <section class="page" data-ch="droites" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Droite parfaite" data-game-img="jeux-img/droite-parfaite.jpg" data-game-desc="Trace une parallèle ou une perpendiculaire parfaite, sans équerre.">
     <h1>Jeux — Droites</h1>
     <p class="lead">Droite parfaite : trace une parallèle ou une perpendiculaire parfaite, sans équerre.</p>
     <div class="game" data-game="droite"></div>
@@ -791,13 +805,13 @@
     <div class="exercise" data-gen="e-arrondir"></div>
   </section>
 
-  <section class="page" data-ch="decimaux2" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Le Pont des Fractions" data-game-icon="🦊" data-game-desc="Place des fractions sur la droite graduée, puis zoome à la loupe pour trouver leur écriture décimale… ou dis « pas possible ».">
+  <section class="page" data-ch="decimaux2" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Le Pont des Fractions" data-game-img="jeux-img/pont-des-fractions.jpg" data-game-desc="Place des fractions sur la droite graduée, puis zoome à la loupe pour trouver leur écriture décimale… ou dis « pas possible ».">
     <h1>Jeux — Nombres décimaux</h1>
     <p class="lead">Le Pont des Fractions : aide le petit renard à atteindre le drapeau. Place la fraction sur la droite graduée ; dans les derniers niveaux, zoome ensuite à la loupe pour trouver son écriture décimale… ou dis « pas possible » !</p>
-    <div class="game-frame" data-frame="jeu-fractions/index.html?v=2026-11-15.7">
+    <div class="game-frame" data-frame="jeu-fractions/index.html?v=2026-11-15.8">
       <div class="game-frame-bar">
         <button type="button" class="btn game-full">⛶ Plein écran</button>
-        <a class="btn" href="jeu-fractions/index.html?v=2026-11-15.7" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet ↗</a>
+        <a class="btn" href="jeu-fractions/index.html?v=2026-11-15.8" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet ↗</a>
       </div>
       <iframe title="Le Pont des Fractions" allow="fullscreen" allowfullscreen></iframe>
     </div>
@@ -1129,7 +1143,7 @@
     <div class="exercise" data-gen="a-biss"></div>
   </section>
 
-  <section class="page" data-ch="angles" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Estimangle" data-game-icon="🎯" data-game-desc="Trouve la mesure exacte d'un angle, sans rapporteur.">
+  <section class="page" data-ch="angles" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Estimangle" data-game-img="jeux-img/estimangle.jpg" data-game-desc="Trouve la mesure exacte d'un angle, sans rapporteur.">
     <h1>Jeux — Les angles</h1>
     <p class="lead">Estimangle : trouve la mesure exacte d'un angle, sans rapporteur.</p>
     <div class="game" data-game="estimangle"></div>
@@ -1310,12 +1324,12 @@
   <p>Révisions 6<sup>e</sup> — site libre, à modifier et partager. · <a href="#/prof">Espace professeur</a> · <span id="site-version" class="muted"></span></p>
 </footer>
 
-<script src="qrcode.js?v=2026-11-15.7"></script>
-<script src="script.js?v=2026-11-15.7"></script>
+<script src="qrcode.js?v=2026-11-15.8"></script>
+<script src="script.js?v=2026-11-15.9"></script>
 <script>document.write('<script src="ouverture.js?t=' + Date.now() + '"><\/script>');</script>
-<script src="chapitres-p2.js?v=2026-11-15.7"></script>
-<script src="questions-difficiles.js?v=2026-11-15.7"></script>
-<script src="poser.js?v=2026-11-15.7"></script>
-<script src="jeux.js?v=2026-11-15.7"></script>
+<script src="chapitres-p2.js?v=2026-11-15.8"></script>
+<script src="questions-difficiles.js?v=2026-11-15.8"></script>
+<script src="poser.js?v=2026-11-15.8"></script>
+<script src="jeux.js?v=2026-11-15.8"></script>
 </body>
 </html>
