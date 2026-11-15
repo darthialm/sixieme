@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-15.1';
+const SITE_VERSION = '2026-11-15.2';
 
 /* =========================================================
    Outils
@@ -3275,7 +3275,7 @@ function renderProfLock() {
   lock.hidden = open; content.hidden = !open;
   if (open) {
     const first = !document.getElementById('prof-list').dataset.ready;
-    try { renderProf(); if (!first && window._bilanAuto) window._bilanAuto(); }
+    try { renderProf(); if (!first && window._bilanAuto) window._bilanAuto(); profSyncStart(); }
     catch (e) { content.insertAdjacentHTML('afterbegin', `<p class="ex-fb ko">⚠ Problème dans l'Espace professeur : ${esc(e.message)}. Recharge la page avec <kbd>Ctrl</kbd>+<kbd>F5</kbd> ; si le message reste, envoie-le à la personne qui gère le site.</p>`); }
     return;
   }
@@ -3291,6 +3291,103 @@ function renderProfLock() {
   lock.querySelector('#prof-unlock').addEventListener('click', tryCode);
   inpC.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryCode(); });
   inpC.addEventListener('input', () => inpC.classList.remove('wrong'));
+}
+/* ---------- Sauvegarde en ligne de l'Espace professeur ----------
+   Réutilise la synchronisation du classeur (même dépôt GitHub PRIVÉ, même jeton, même clé tirée du code de
+   synchronisation) : fichier prof.json chiffré (AES-GCM), à côté de classeur.json. Il contient les données de
+   l'Espace professeur (contrôles, listes d'élèves, plans de classe, aménagements, devoirs donnés, réglages Grist)
+   et, pour chaque contrôle, le fichier pour la correction assistée (sans aucun nom).
+   Rien à régler ici : si le classeur est synchronisé sur cet appareil, l'Espace professeur l'est aussi. */
+const PSYNC_FILE = 'prof.json', PSYNC_STATE = 'revisions6e-prof-sync';
+const PSYNC_FIXED = ['revisions6e-classes', 'revisions6e-classe-choisie', 'revisions6e-plans-classe', 'revisions6e-amenages', 'revisions6e-controles',
+  'revisions6e-ctl-classe', 'revisions6e-donnes', 'revisions6e-form', 'revisions6e-grist', 'revisions6e-grist-doc', 'revisions6e-grist-key',
+  'revisions6e-bilan-link', 'revisions6e-projo-t'];
+const psSynced = (k) => PSYNC_FIXED.includes(k) || k.startsWith('revisions6e-liste-');
+let psBusy = false, psTimer = null;
+function psCfg() {
+  try { const s = JSON.parse(localStorage.getItem('revisions6e-classeur-sync') || 'null'); return s && s.repo && s.token && s.key ? s : null; } catch (e) { return null; }
+}
+const psState = () => { try { return JSON.parse(localStorage.getItem(PSYNC_STATE) || '{}'); } catch (e) { return {}; } };
+const psSetState = (s) => { try { localStorage.setItem(PSYNC_STATE, JSON.stringify(s)); } catch (e) { /* rien */ } };
+const psB64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); };
+const psU8 = (b) => Uint8Array.from(atob(b), (c) => c.charCodeAt(0));
+function psSnapshot() {
+  const keys = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (psSynced(k)) keys[k] = localStorage.getItem(k); }
+  return keys;
+}
+async function psHash(obj) {
+  const keys = Object.keys(obj).sort(), txt = JSON.stringify(keys.map((k) => [k, obj[k]]));
+  return psB64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt))));
+}
+function psAiFiles() {
+  const out = {};
+  ctlAll().forEach((c) => { try { if (ctlValid(c)) out[c.id] = aiText(c); } catch (e) { /* contrôle illisible : ignoré */ } });
+  return out;
+}
+async function psFetch(cfg, path, opt = {}) {
+  return fetch('https://api.github.com/repos/' + cfg.repo + path, { method: opt.method || 'GET', body: opt.body, cache: 'no-store',
+    headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json', ...(opt.headers || {}) } });
+}
+async function psGet(cfg) {
+  const r = await psFetch(cfg, '/contents/' + PSYNC_FILE);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('GitHub ' + r.status);
+  const j = await r.json(); let b64 = j.content;
+  if (!b64 || j.encoding !== 'base64') { const r2 = await psFetch(cfg, '/git/blobs/' + j.sha); if (!r2.ok) throw new Error('GitHub ' + r2.status); b64 = (await r2.json()).content; }
+  return { sha: j.sha, file: JSON.parse(decodeURIComponent(escape(atob(String(b64).replace(/\s/g, ''))))) };
+}
+function psStatus(t) { const el = document.getElementById('prof-sync'); if (el) el.textContent = t; }
+/** Synchronise l'Espace professeur ; renvoie true si des données en ligne ont été appliquées (il faut recharger). */
+async function profSync() {
+  const cfg = psCfg();
+  if (!cfg) { psStatus('Sauvegarde en ligne : active la synchronisation dans le classeur (même code), l\'Espace professeur suivra.'); return false; }
+  if (psBusy) return false; psBusy = true;
+  try {
+    const key = await crypto.subtle.importKey('raw', psU8(cfg.key), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+    const st = psState(), local = psSnapshot(), hLocal = await psHash(local);
+    const remote = await psGet(cfg);
+    const localChanged = hLocal !== st.hash, remoteChanged = !!remote && remote.sha !== st.sha;
+    let takeRemote = false;
+    if (remoteChanged) {
+      if (!localChanged || (!st.sha && !Object.keys(local).length)) takeRemote = true;
+      else takeRemote = !confirm('L\'Espace professeur a été modifié sur un autre appareil ET sur celui-ci.\n\nOK : garder la version de CET appareil (elle remplacera celle en ligne).\nAnnuler : prendre la version en ligne.');
+    }
+    if (takeRemote) {
+      // appliquer la version en ligne
+      const u = psU8(remote.file.data);
+      const d = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.slice(0, 12) }, key, u.slice(12))));
+      Object.keys(local).forEach((k) => { if (!(k in d.keys)) localStorage.removeItem(k); });
+      Object.entries(d.keys).forEach(([k, v]) => { if (psSynced(k)) localStorage.setItem(k, v); });
+      psSetState({ sha: remote.sha, hash: await psHash(psSnapshot()), last: Date.now() });
+      psStatus('Sauvegarde en ligne : version la plus récente récupérée (' + new Date(remote.file.date).toLocaleString('fr-FR') + ').');
+      return true;
+    }
+    if (localChanged || !remote) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify({ keys: local, ai: psAiFiles() }))));
+      const u = new Uint8Array(12 + ct.length); u.set(iv); u.set(ct, 12);
+      const file = { type: 'prof-6e-sync', v: 1, salt: cfg.salt, date: new Date().toISOString(), data: psB64(u) };
+      const body = { message: 'Espace professeur : enregistrement du ' + new Date().toLocaleString('fr-FR'), content: btoa(unescape(encodeURIComponent(JSON.stringify(file)))) };
+      if (remote) body.sha = remote.sha;
+      const r = await psFetch(cfg, '/contents/' + PSYNC_FILE, { method: 'PUT', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+      if (!r.ok) throw new Error(r.status === 409 || r.status === 422 ? 'conflit, nouvel essai bientôt' : 'GitHub ' + r.status);
+      psSetState({ sha: (await r.json()).content.sha, hash: hLocal, last: Date.now() });
+    }
+    psStatus('Sauvegardé en ligne (dépôt privé, chiffré) · ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+    return false;
+  } catch (e) {
+    psStatus('Sauvegarde en ligne impossible pour l\'instant (' + e.message + '). Nouvel essai automatique.');
+    return false;
+  } finally { psBusy = false; }
+}
+/** À l'ouverture de l'Espace professeur, puis toutes les 30 s tant qu'il est affiché, et quand on quitte la page */
+function profSyncStart() {
+  if (psTimer) return;
+  const tick = async () => { if (location.hash.startsWith('#/prof') && profOpen() && await profSync()) location.reload(); };
+  tick();
+  psTimer = setInterval(() => { if (document.visibilityState === 'visible') tick(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && profOpen()) profSync(); });
 }
 function renderProf() {
   const host = document.getElementById('prof-list');

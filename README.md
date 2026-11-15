@@ -18,6 +18,8 @@ La progression est enregistrée dans le navigateur de l'élève (aucun compte, a
 En bas de chaque page, le lien **Espace professeur** (adresse : `…/index.html#/prof`) demande un code. **Le code par défaut est `prof6e`** : change-le tout en haut de `script.js`, à la ligne `const CODE_PROF = 'prof6e';`. Une fois le code saisi, l'appareil s'en souvient ; le lien « Verrouiller cet espace » le referme (utile sur un ordinateur partagé).
 C'est une protection légère : un élève très curieux pourrait lire le fichier `script.js`.
 
+**Sauvegarde en ligne** : si la synchronisation du classeur est active sur l'appareil, l'Espace professeur est lui aussi sauvegardé, chiffré, dans le même dépôt GitHub privé (`prof.json`) : contrôles, listes d'élèves, plans de classe, aménagements, devoirs donnés, réglages Grist. Il se recharge tout seul sur les autres appareils. Le fichier pour la correction assistée de chaque contrôle y est joint (sans nom), pour que Claude puisse le récupérer.
+
 ### 1. Donner un devoir
 
 - Cocher une ou plusieurs notions (dans un ou plusieurs chapitres), choisir le nombre de questions (5, 10, 15 ou 20).

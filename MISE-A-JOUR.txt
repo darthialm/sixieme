@@ -1,3 +1,20 @@
+MISE À JOUR 2026-11-15.2 : Espace professeur sauvegardé en ligne
+
+À DÉPOSER : index.html, script.js
+
+- L'Espace professeur est sauvegardé en ligne, chiffré, dans le même dépôt GitHub privé que le classeur
+  (fichier prof.json, à côté de classeur.json), avec la même clé : rien à régler, il suffit que la
+  synchronisation du classeur soit active sur l'appareil.
+- Sont sauvegardés : contrôles papier, listes d'élèves, plans de classe, élèves en version aménagée, devoirs
+  donnés, réglages du formulaire et de Grist (y compris la clé du bilan). Restent sur l'appareil : le verrou
+  de l'espace et les statistiques d'élève.
+- Pour chaque contrôle, le fichier pour la correction assistée (sans aucun nom) est joint : Claude peut le
+  récupérer lui-même (API ÉcoleDirecte, rubrique « Contrôles ») pour corriger un PDF de copies scannées.
+- Synchronisation à l'ouverture de l'Espace professeur, toutes les 30 s pendant qu'il est ouvert, et quand on
+  quitte la page. Si l'espace a été modifié ici et sur un autre appareil, le site demande quelle version garder.
+
+=========================================================
+
 MISE À JOUR 2026-11-15.1 : numéro de version du site
 
 À DÉPOSER : index.html, script.js
