@@ -1,3 +1,31 @@
+MISE À JOUR 2026-11-15.5 : cahiers différenciés étoffés (Angles, Triangles)
+
+À DÉPOSER : index.html, script.js, classeur.html, documents.bin
+
+- Cahier différencié : beaucoup plus d'exercices par groupe, pris dans tout le chapitre 9 du cahier Mission Indigo
+  (exercices, ceintures p. 88, problèmes p. 89 à 91, défi et jeu). Chaque exercice n'est donné qu'une fois.
+- Quand le cahier n'a pas assez d'exercices pour un groupe : fiche d'exercices à l'ancienne, 2 parcours par page
+  (Je reprends / Je m'entraîne, à couper) : « Mesurer un angle » (S8), « Construire un angle » (S9),
+  « Construire un triangle » (S15). Documents de la séance et onglet Documents.
+- Corrigés en libre-service complétés (S7, S8, S9, S14, S15) : corrigé écrit avec le numéro de l'exercice pour les
+  exercices ajoutés, et corrigé des fiches (mesures exactes, figures en vraie grandeur).
+- Copies des PDF pour le cloud : pour-le-cloud/Cahier_Angles.
+- Séances (vue par créneau) plus simple : en haut, « Prochain cours » et « Cours suivant » avec ce qu'il faut
+  IMPRIMER et combien (seulement les pages nouvelles : ex. cours Angles page 2 si la page 1 a déjà servi),
+  la pochette de corrigés, et le reste (à projeter / pour toi) replié. Créneaux passés repliés ; contenu de séance
+  et devoirs repliés (l'API les saisit dans École Directe).
+- Activités Angles simplifiées : plus de « Le rapporteur » (portes, gabarit), plus de feuilles d'activités
+  (trier les angles, permis rapporteur, découvertes, chasse au trésor) ; « quel est le plus grand angle ? » au
+  tableau ; estimathon = jeu Estimangle du site (plus d'écrans à projeter). Nouvelles activités : constellation d'Orion (S9, construire un angle) et
+  la Grande Ourse avec son corrigé (S11). Triangles : carte au trésor retirée. L'idée « chasse au trésor ou
+  course d'orientation » reste dans le contenu de séance (S11 et S15).
+- Triangles : plus de feuilles d'activités non plus (dictée de construction, trier les triangles, figures à décrire,
+  qui est-ce, puits des trois villages, carte au trésor) : travail au tableau et cahier d'activités à la place.
+- Chaque créneau et chaque séance listent à droite TOUS les documents utiles, rangés : à imprimer (avec les pages
+  du cours de cette séance), pochette de corrigés, à projeter / pour toi, parcours vierges.
+
+=========================================================
+
 MISE À JOUR 2026-11-15.4 : billets par séance, devoirs, PDF des contrôles
 
 À DÉPOSER : index.html, script.js, classeur.html
