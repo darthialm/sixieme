@@ -36,7 +36,7 @@ Pour ne pas recopier les codes un par un, les résultats arrivent tout seuls dan
 
 Le test lit la structure du formulaire et envoie une ligne « TEST » dans la table.
 - Si elle arrive : « ✔ Ça marche ! ». Les liens de devoir enverront ensuite chaque résultat automatiquement.
-- Si Grist refuse les envois venant d'un autre site : le site passe en **mode manuel**. À la fin du devoir, l'élève voit un lien vers le formulaire et un bouton pour copier son code ; il y recopie prénom, score et code. On vérifie ensuite tous les codes d'un coup (partie 3).
+- Si Grist refuse les envois venant d'un autre site : le test l'indique et le formulaire n'est pas relié. Si un envoi échoue en fin de devoir, l'élève a un bouton « Réessayer ».
 - Le résultat du test peut dépendre de l'adresse du site : après avoir déplacé le site (sur la Forge par exemple), refaire « Relier et tester » depuis la nouvelle adresse.
 
 **Avec Google Forms :** créer un formulaire de 6 questions « Réponse courte » (Prénom, Code, Classe, Devoir, Score, Détail), ne pas collecter les e-mails ni limiter à l'établissement, l'associer à Sheets, puis coller son « lien prérempli » (avec `x` dans chaque réponse) dans le même champ.

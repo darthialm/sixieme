@@ -3101,7 +3101,7 @@ function routeDevoir(spec) {
   more.forEach((seg) => {
     if (seg.startsWith('c=')) { try { classe = decodeURIComponent(seg.slice(2)).slice(0, 80); } catch (e) { classe = ''; } }
     if (seg.startsWith('f=')) { const f = segToForm(seg.slice(2)); if (f) form = { kind: 'google', ...f }; }
-    if (seg.startsWith('g=')) { const g = segToGrist(seg.slice(2)); if (g) form = { kind: g.t ? 'grist' : 'manual', ...g }; }
+    if (seg.startsWith('g=')) { const g = segToGrist(seg.slice(2)); if (g && g.t) form = { kind: 'grist', ...g }; }
   });
   // plusieurs classes séparées par des virgules : l'élève choisit la sienne
   const classes = [...new Set(classe.split(',').map((x) => x.trim()).filter(Boolean))];
@@ -3119,7 +3119,7 @@ function routeDevoir(spec) {
   devoirSpec = spec;
   const title = keys.length === 1 ? GENS[keys[0]].label : 'Révisions ciblées', dLabel = devoirLabel(keys, rem);
   head.innerHTML = `<p class="kicker">Devoir</p><h1>${title}</h1>
-    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai.${once ? ' <b>Seul ton premier essai compte</b> : tu pourras ensuite refaire le devoir pour t\'entraîner.' : ''} ${form && form.kind !== 'manual' ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' : form ? 'À la fin, tu recopieras ton <b>code</b> dans le formulaire de ton professeur (un lien te sera donné).' : 'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
+    <p class="lead">${n} question${n > 1 ? 's' : ''} sur : ${keys.map((k) => `<b>${GENS[k].label}</b>`).join(', ')}. Tu as droit aux indices et à un deuxième essai.${once ? ' <b>Seul ton premier essai compte</b> : tu pourras ensuite refaire le devoir pour t\'entraîner.' : ''} ${form ? 'À la fin, ton résultat sera <b>envoyé automatiquement</b> à ton professeur.' :'À la fin, tu obtiendras ton résultat et un code pour ton professeur.'}</p>${classe ? `<p class="small">Classe : <b>${esc(classe)}</b></p>` : ''}
     <p class="small">Besoin de revoir le cours ? ${chs.map((c) => `<a href="#/${c}/fiche">Fiche « ${CHAPTERS.find((x) => x.id === c).title} »</a>`).join(' · ')}</p>`;
   ex.hidden = true; ex.innerHTML = '';
   start.hidden = false;
@@ -3153,20 +3153,13 @@ function routeDevoir(spec) {
         if (form && !training) {
           const values = [name, code, classe, dLabel, `${good}/${limit}`,
             `${helpedCount} avec aide · essai ${rec.tries} · terminé ${nowStr(d)}`];
-          const planB = (el, why, cls = 'ko') => {
-            el.className = 'rc-send ' + cls;
-            el.innerHTML = `${why} Ouvre le <a href="${gristFormUrl(form)}" target="_blank" rel="noopener"><b>formulaire de ton professeur</b></a> et recopie ton prénom, ton score (${good}/${limit}) et ton code : <b>${code}</b> <button type="button" class="mini">Copier le code</button>`;
-            el.querySelector('button').addEventListener('click', (e) => { navigator.clipboard?.writeText(code).then(() => { e.target.textContent = '✔ Copié'; }).catch(() => {}); });
-          };
           const doSend = () => {
             const el = document.getElementById('rc-send'); if (!el) return;
-            if (form.kind === 'manual') { planB(el, '📝', 'todo'); return; }
             el.className = 'rc-send'; el.textContent = '📨 Envoi du résultat à ton professeur…';
             (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
               .then(() => { el.className = 'rc-send ok'; el.textContent = '✔ Résultat envoyé à ton professeur.'; })
               .catch((e) => {
-                if (form.kind === 'grist') { planB(el, `⚠ L'envoi automatique n'a pas marché <span class="small muted">(${esc(e instanceof TypeError ? 'réponse de Grist illisible ou pas de connexion' : e.message)})</span>.`); return; }
-                el.className = 'rc-send ko'; el.innerHTML = '⚠ Envoi impossible (pas de connexion ?). <button type="button" class="mini">Réessayer</button> Sinon, fais une capture d\'écran.'; el.querySelector('button').addEventListener('click', doSend);
+                el.className = 'rc-send ko'; el.innerHTML = `⚠ Envoi impossible <span class="small muted">(${esc(e instanceof TypeError ? 'pas de connexion ou réponse de Grist illisible' : e.message)})</span>. <button type="button" class="mini">Réessayer</button> Si ça ne marche toujours pas, préviens ton professeur.`; el.querySelector('button').addEventListener('click', doSend);
               });
           };
           setTimeout(doSend, 0);
@@ -3178,7 +3171,7 @@ function routeDevoir(spec) {
           <p class="note">${good} / ${limit}</p>
           <p>${good} réussite${good > 1 ? 's' : ''} sur ${limit} question${limit > 1 ? 's' : ''}${helpedCount ? `, dont ${helpedCount} avec de l'aide` : ', sans aide'}.</p>
           <p class="rc-meta">Terminé ${nowStr(d)} · essai n° ${rec.tries}</p>
-          <p class="rc-code">Code : <b>${code}</b></p>
+          ${form ? '' : `<p class="rc-code">Code : <b>${code}</b></p>`}
           ${training ? '<p class="rc-send todo">🏋️ Essai d\'entraînement : seul ton premier essai compte, il a déjà été transmis.</p>' : form ? '<p class="rc-send" id="rc-send"></p>' : ''}
           {{LIST}}
         </div>
@@ -3251,7 +3244,7 @@ function routeDevoir(spec) {
       body.innerHTML = paperize(body.innerHTML);
     });
     const st = ex.querySelector('#paper-st');
-    if (form && form.kind !== 'manual') {
+    if (form) {
       const values = [name, `PAPIER-${n}`, classe, dLabel, 'sur papier', `déclaré ${nowStr(d)} · à vérifier sur la feuille`];
       st.className = 'paper-st'; st.textContent = '📨 J\'informe ton professeur que tu fais ce devoir sur papier…';
       (form.kind === 'grist' ? gristSend(form, values) : sendToForm(form, values))
@@ -3342,7 +3335,7 @@ function renderProf() {
     fUse.disabled = !destSeg();
     if (!v) say('muted', 'Aucun formulaire relié : les élèves te donneront leur code ou une capture d\'écran.');
     else if (pf) say(pf.entries.length === 6 ? 'ok-t' : 'ko-t', pf.entries.length === 6 ? '✔ Formulaire Google relié : 6 questions détectées.' : `Il faut exactement 6 questions remplies dans le lien prérempli (j'en trouve ${pf.entries.length}).`);
-    else if (pg && g && g.k === pg.k && g.v === pg.v) say(g.t ? 'ok-t' : 'warn-t', g.t ? '✔ Formulaire Grist relié : les résultats arriveront automatiquement dans ta table.' : '⚠ Formulaire Grist relié en <b>mode manuel</b> : à la fin du devoir, l\'élève a un lien vers ton formulaire pour y recopier son code. Tu pourras retester une fois le site en ligne.');
+    else if (pg && g && g.k === pg.k && g.v === pg.v) say(g.t ? 'ok-t' : 'warn-t', g.t ? '✔ Formulaire Grist relié : les résultats arriveront automatiquement dans ta table.' : 'Lien Grist reconnu, mais pas encore testé avec succès. Clique sur « Relier et tester ».');
     else if (pg) say('muted', 'Lien Grist reconnu. Clique sur « Relier et tester ».');
     else say('ko-t', 'Je ne reconnais pas ce lien : colle le lien du formulaire Grist publié (…/forms/…/…) ou le lien prérempli d\'un formulaire Google.');
   };
@@ -3352,8 +3345,8 @@ function renderProf() {
     let st;
     try { st = await gristStructure(pg); }
     catch (e) {
-      saveG({ ...pg }); fTest.disabled = false; showForm(); fUse.checked = true; update();
-      say('warn-t', `⚠ Grist ne laisse pas ce site lire le formulaire (${esc(e.message)}). <b>Plan B activé</b> : à la fin du devoir, l'élève aura un lien vers ton formulaire pour y recopier son code ; tu vérifieras ensuite tous les codes dans la partie 3. Si tu déplaces le site (sur la Forge par exemple), clique à nouveau sur « Relier et tester » depuis la nouvelle adresse.`);
+      saveG(null); fTest.disabled = false; showForm(); update();
+      say('ko-t', `⚠ Grist ne laisse pas ce site lire le formulaire (${esc(e.message)}). Vérifie que le formulaire est bien publié, puis reteste. Si tu déplaces le site (sur la Forge par exemple), clique à nouveau sur « Relier et tester » depuis la nouvelle adresse.`);
       return;
     }
     const missing = GRIST_WANT.filter((w, i) => !st.cols[i]);
@@ -3361,7 +3354,7 @@ function renderProf() {
     const g = { ...pg, t: st.t, c: st.cols };
     say('muted', '⏳ Envoi d\'une ligne d\'essai…');
     try { await gristSend(g, ['TEST', '—', '', 'Test de liaison du site', '', 'envoyé ' + nowStr()]); saveG(g); say('ok-t', '✔ Ça marche ! Une ligne « TEST » vient d\'arriver dans ta table Grist (tu peux la supprimer). Les liens de devoir enverront désormais les résultats automatiquement.'); }
-    catch (e) { saveG({ ...pg }); say('warn-t', `⚠ Grist a refusé la ligne d'essai (${esc(e.message)}). <b>Plan B activé</b> : l'élève aura un lien vers ton formulaire pour y recopier son code.`); }
+    catch (e) { saveG(null); fTest.disabled = false; showForm(); update(); say('ko-t', `⚠ Grist a refusé la ligne d'essai (${esc(e.message)}). Les liens de devoir n'enverront rien tant que le test ne réussit pas : vérifie le formulaire, puis reteste.`); return; }
     fTest.disabled = false; fUse.disabled = false; fUse.checked = true; update();
     if (!fSt.className.includes('ok-t') && !fSt.className.includes('warn-t')) showForm();
   });
