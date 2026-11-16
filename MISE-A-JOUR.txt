@@ -1,3 +1,15 @@
+MISE À JOUR 2026-11-16.2 : correction des contrôles, détail par calcul et par étape
+
+À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
+
+- Fichier pour la correction assistée : dans le tableau « à écrire sur les copies », chaque calcul d'une question
+  à plusieurs calculs est marqué ✓ ou ✗ (ex. « D✓ C✗ E✓ »), et chaque étape du problème aussi
+  (✓* = calcul juste avec les nombres de l'élève) : on sait quoi valider ou barrer sur la copie.
+- Niveau du problème, jugé étape par étape : démarche complète avec une seule erreur = MS ; au moins une étape juste
+  (ou juste avec les nombres de l'élève) = MF ; aucune = MI, même si la démarche est la bonne.
+
+=========================================================
+
 MISE À JOUR 2026-11-16.1 : « pas fait », étiquettes enregistrées, cours Angles
 
 À DÉPOSER : index.html, script.js, classeur.html, documents.bin

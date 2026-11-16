@@ -26,7 +26,9 @@ Quand le professeur donne un PDF de copies « Contrôle » (code de copie en hau
      (inattention : retenue, virgule, recopie ; une étape fausse puis la suite cohérente ; 2 calculs justes sur 3 ;
      problème pas terminé) garde `0` mais compte **½ pour le niveau**.
    - Niveau = (justes + ½ × en partie justes) / nombre de questions : tout = TB, ≥ 2/3 MS, ≥ 1/3 MF, sinon MI.
-     Une seule question (le problème) : juste TB, l'essentiel juste MS, un début MF, rien MI.
+     Une seule question (le problème), jugée étape par étape : tout juste TB ; démarche complète avec une seule
+     erreur (la suite cohérente) MS ; au moins une étape juste, ou juste avec les nombres de l'élève, MF ;
+     aucune MI (une bonne démarche dont aucun calcul n'est juste reste MI).
    - Le niveau écrit dans la ligne l'emporte sur les chiffres : le site le lit tel quel.
 
 4. **Répondre en 4 parties** :
@@ -36,9 +38,11 @@ Quand le professeur donne un PDF de copies « Contrôle » (code de copie en hau
       `BMG-03 C1=MF(100) C2=MF(00001) C3=MS(0)`
    3. **À écrire sur les copies** : un **tableau**, une ligne par copie dans l'**ordre des pages du scan**.
       Colonnes : n° de page · prénom (lu sur la bande ; sinon le code) · Q1, Q2… avec ✓ (juste), ½ (en partie juste)
-      ou ✗ (faux ou vide) · Remarque. Dans une case ½ ou ✗ d'une question à plusieurs calculs ou cases, préciser la
-      partie fausse en 1 ou 2 caractères (« ½ E »). Au moins une remarque par copie (si tout est juste : un mot sur
-      le travail). La remarque : 1 ou 2 phrases courtes et didactiques qui
+      ou ✗ (faux ou vide) · Remarque. Une question à plusieurs calculs (ex. priorités D, C, E) : marquer chaque
+      calcul dans l'ordre de la copie (« D✓ C✗ E✓ ») pour que le professeur valide ou barre chacun. Le problème :
+      marquer chaque étape (« Dépense✗ Reçue✓ Finale✓* », ✓* = calcul juste avec les nombres de l'élève), puis
+      le niveau. Une question à cases : préciser la case fausse (« ½ 3e case »). Au moins une remarque par copie
+      (si tout est juste : un mot sur le travail). La remarque : 1 ou 2 phrases courtes et didactiques qui
       réengagent l'élève : ce qui est réussi, une piste pour trouver soi-même l'erreur (question à se poser, ordre de
       grandeur, vérification), ou un renvoi au corrigé en ligne. Pas de correction toute faite.
    4. **Bilan pour la classe** (à dire en rendant les copies, sans nommer personne) : ce qui est réussi par la
