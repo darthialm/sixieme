@@ -1,3 +1,21 @@
+MISE À JOUR 2026-11-16.1 : correction des contrôles avec l'IA
+
+À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
+
+- Fichier pour la correction assistée : nouvelles consignes.
+  · Une question en partie juste (inattention : retenue, virgule, recopie ; une étape fausse puis la suite cohérente ;
+    problème juste mais pas fini) reste à 0 dans les chiffres (corrigé en ligne) mais compte 1/2 pour le niveau.
+  · L'IA répond en 4 parties : à vérifier (ses doutes et copies manquantes), lignes à coller (sans remarque),
+    à écrire sur les copies (tableau dans l'ordre du scan : ✓, ½ ou ✗ par question, et une remarque didactique)
+    et bilan pour la classe (réussites, erreurs fréquentes avec une piste à reprendre ensemble).
+- Étiquettes : le code de copie n'y figure plus (prénom, niveaux, QR).
+- Mode d'emploi « Comment corriger avec l'IA » mis à jour : Claude Code ouvert sur le dossier du site récupère seul
+  le fichier ; il suffit de lui donner le PDF scanné.
+- Le fichier en ligne n'est réécrit qu'à la prochaine modification de l'Espace professeur (contrôle créé, résultat
+  collé…) ; d'ici là, Claude applique ces règles quand même (elles sont dans sa mémoire du projet).
+
+=========================================================
+
 MISE À JOUR 2026-11-15.9 : salle de jeux avec miniatures, Aura Rush
 
 À DÉPOSER : index.html, script.js, style.css, README.md

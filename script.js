@@ -4930,15 +4930,21 @@ function aiText(c) {
   L.push('CONSIGNES POUR LA CORRECTION');
   L.push('- Chaque copie porte un code (ex. ' + ctlCode(c.id, 1) + '). Les réponses sont écrites dans des cases ; les cases à cocher sont des ☐.');
   L.push('- Les questions marquées ★ sont un peu plus difficiles ; elles comptent comme les autres.');
-  L.push('- Pour chaque question : 1 si la réponse est juste, 0 sinon. Les tracés se jugent sur la copie (instrument, précision à 1 mm près, codage).');
-  L.push('- Niveau par compétence : tout juste = TB ; au moins 2/3 = MS ; au moins 1/3 = MF ; sinon MI.');
-  L.push('  (2 questions : 2/2 = TB, 1/2 = MF, 0/2 = MI ; 1 question : juste = TB, faux = MI.) Le professeur peut ajuster.');
-  L.push('- RÉPONDRE avec une ligne par copie, exactement sous cette forme :');
+  L.push('- Pour chaque question : 1 si la réponse est entièrement juste, 0 sinon. Ces chiffres alimentent le corrigé en ligne de l\'élève (QR de l\'étiquette). Les tracés se jugent sur la copie (instrument, précision à 1 mm près, codage). Deux cases cochées = 0.');
+  L.push('- On ne compte pas tout faux quand une partie du raisonnement est juste : une question EN PARTIE juste (erreur d\'inattention : retenue, virgule, nombre mal recopié ; une étape fausse puis la suite cohérente ; 2 calculs justes sur 3 ; problème juste mais pas terminé) garde 0 dans les chiffres mais compte 1/2 pour le niveau.');
+  L.push('- Niveau par compétence = (questions justes + 1/2 par question en partie juste) / nombre de questions : tout juste = TB ; au moins 2/3 = MS ; au moins 1/3 = MF ; sinon MI.');
+  L.push('  (1 seule question, ex. le problème : juste = TB ; en partie juste = MS si l\'essentiel est juste, MF si seulement un début ; faux ou vide = MI.) Le niveau écrit dans la ligne l\'emporte sur les chiffres.');
+  L.push('');
+  L.push('RÉPONDRE EN 4 PARTIES, dans cet ordre :');
+  L.push('1. À VÉRIFIER : seulement les réponses illisibles ou ambiguës (copie, question, ce que tu lis, ton choix, la ligne à mettre si c\'est l\'autre lecture). Signaler aussi les copies absentes du scan.');
+  L.push('2. LIGNES À COLLER : une ligne par copie, dans l\'ordre des codes, sans aucune remarque, exactement sous cette forme :');
   const ps = ctlVer(ctlPlan(c), c.k, 's');
-  L.push(`  ${ctlCode(c.id, 1)} ${c.k.map((k, i) => `C${i + 1}=TB(${'1'.repeat(ps.n[i])})`).join(' ')}`);
-  L.push('  (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés, et garde une question de chaque type)');
-  { const n1 = ps.n[0], b = n1 > 1 ? '1'.repeat(n1 - 1) + '0' : '0';
-    L.push(`  Ajouter « ? » après un niveau en cas de doute (ex. C1=${levelFromBits(b)}?(${b})), et une courte remarque après « // » si utile.`); }
+  L.push(`   ${ctlCode(c.id, 1)} ${c.k.map((k, i) => `C${i + 1}=TB(${'1'.repeat(ps.n[i])})`).join(' ')}`);
+  L.push('   (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés, et garde une question de chaque type : vérifier le nombre de questions de chaque copie plus bas)');
+  L.push('3. À ÉCRIRE SUR LES COPIES : un TABLEAU, une ligne par copie dans l\'ordre des pages du scan (pas des codes) ; colonnes : n° de page, prénom (s\'il est lisible sur la bande, sinon le code), une colonne par question (Q1, Q2…) contenant ✓ (juste), ½ (en partie juste) ou ✗ (faux ou vide), puis une colonne Remarque.');
+  L.push('   Dans une case ½ ou ✗ d\'une question à plusieurs calculs ou cases, préciser en 1 ou 2 caractères la partie fausse (ex. « ½ E »). AU MOINS une remarque par copie (si tout est juste : un mot sur le travail).');
+  L.push('   Remarque : 1 ou 2 phrases courtes, didactiques, qui réengagent l\'élève : dire ce qui est réussi, donner une piste pour qu\'il trouve son erreur lui-même (question à se poser, ordre de grandeur, vérification), ou le renvoyer au corrigé en ligne (QR de l\'étiquette). Pas de correction toute faite, pas de longs textes.');
+  L.push('4. BILAN POUR LA CLASSE (à dire en rendant les copies, sans nommer personne) : ce qui est réussi par la plupart ; 2 ou 3 erreurs fréquentes, chacune avec la question concernée, combien de copies, et une piste à reprendre ensemble (exemple au tableau, question à se poser) ; un mot d\'encouragement.');
   L.push('');
   c.s.forEach(([, ver], i) => {
     const n = i + 1, qs = ctlQuestions(c.id, n, ver, c.k, ctlPlan(c), ctlSalt(c, n), c.g);
@@ -4997,7 +5003,7 @@ function printLabels(c, rows, skip, dest) {
       const x = LEFT + (i % 3) * (W + GAP), y = TOP + Math.floor(i / 3) * H;
       if (!r) return '';
       const url = retourURL(c, r.n, r.lv, r.bits, dest);
-      return `<div class="lbl" style="left:${x}mm;top:${y}mm;width:${W}mm;height:${H}mm">${qrSVG(url, 'L')}<div class="lbl-txt"><b>${esc(r.name)}</b><span>${ctlCode(c.id, r.n)}</span><span class="lbl-lv">${r.lv.map((l, ci) => `C${ci + 1} ${l}`).join(' · ')}</span><span class="lbl-hint">📱 Scanne-moi : ton corrigé et tes exercices</span></div></div>`;
+      return `<div class="lbl" style="left:${x}mm;top:${y}mm;width:${W}mm;height:${H}mm">${qrSVG(url, 'L')}<div class="lbl-txt"><b>${esc(r.name)}</b><span class="lbl-lv">${r.lv.map((l, ci) => `C${ci + 1} ${l}`).join(' · ')}</span><span class="lbl-hint">📱 Scanne-moi : ton corrigé et tes exercices</span></div></div>`;
     }).join('')}</div>`).join('');
   printWindow(`Étiquettes ${c.id}`, body, `@page { size: A4; margin: 0; } body.print-doc { margin: 0; background: #fff; }`);
 }
@@ -5031,8 +5037,9 @@ function setupControles() {
     <div id="ctl-list"></div>
     <details class="howto small"><summary>Comment corriger avec l'IA</summary><ol class="steps-form">
       <li>Avant de scanner, détache (ou replie) les bandes avec les prénoms : les copies ne portent plus que leur code.</li>
-      <li>Scanne la pile avec ton téléphone (un seul PDF) et envoie-le à Claude avec le <b>fichier pour la correction assistée</b>.</li>
-      <li>Claude répond une ligne par copie (<code>${'ABC'}-07 C1=TB(111) C2=MS(110)…</code>) : colle-la plus bas, vérifie, puis imprime les étiquettes.</li>
+      <li>Scanne la pile (un seul PDF) et donne-le à Claude Code ouvert sur le dossier du site : il récupère seul le <b>fichier pour la correction assistée</b> (sauvegarde en ligne). Avec une autre IA, joins ce fichier au PDF.</li>
+      <li>Claude répond en 4 parties : <b>à vérifier</b> (ses doutes), <b>lignes à coller</b> (<code>${'ABC'}-07 C1=TB(111) C2=MS(110)…</code>), <b>à écrire sur les copies</b> (questions à valider ou barrer, remarque), dans l'ordre du scan, et <b>bilan pour la classe</b>.</li>
+      <li>Vérifie ses doutes sur les copies, colle les lignes plus bas, puis imprime les étiquettes.</li>
     </ol><p>Les copies scannées sont anonymes. Fais valider cet usage par ton établissement.</p></details>
     <h3>Après la correction : étiquettes QR</h3>
     <div class="prof-opts">
