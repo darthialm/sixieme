@@ -1,3 +1,20 @@
+MISE À JOUR 2026-11-16.1 : « pas fait », étiquettes enregistrées, cours Angles
+
+À DÉPOSER : index.html, script.js, classeur.html, documents.bin
+
+- Classeur : chaque étape du déroulé a un bouton « ✗ pas fait » (onglet Contenu de l'encadré, et planning).
+  L'étape est retirée du déroulé et du contenu de séance (ex. billet non fait le 16/11) ; « Remettre » l'annule.
+  L'encadré propose aussi le « Dernier » cours, pour le corriger après coup.
+- Classeur : les contrôles de l'Espace professeur sont retrouvés par le titre OU par la date (à 3 jours près).
+- Classeur : plus de « papier calque » (S6).
+- Espace professeur : les résultats collés et les niveaux corrigés (étiquettes) sont enregistrés avec le contrôle,
+  synchronisés sur tous les appareils, et lisibles par l'API (GET /v1/controles/{id}/resultats) pour saisir les notes.
+- Cours Angles (élève et enseignant) : une seule méthode « Nommer un angle et donner sa nature » en page 1 ;
+  figure sans couleurs (angles numérotés 1 à 4, angle droit codé). La page 2 commence à « Mesurer un angle ».
+  Copies pour le cloud : pour-le-cloud/Angles_eleve.pdf et Angles_enseignant.pdf.
+
+=========================================================
+
 MISE À JOUR 2026-11-16.1 : correction des contrôles avec l'IA
 
 À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)

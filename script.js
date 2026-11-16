@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-15.8';
+const SITE_VERSION = '2026-11-16.1';
 
 /* =========================================================
    Outils
@@ -5242,9 +5242,16 @@ function setupControles() {
     const all = ctlAll();
     $('ctl-pick').innerHTML = all.length ? all.map((c) => `<option value="${c.id}"${c.id === id ? ' selected' : ''}>${c.id} · ${esc(c.t)} · ${esc(c.c || '')} · ${new Date(c.d).toLocaleDateString('fr-FR')}</option>`).join('') : '<option value="">(aucun contrôle sur cet appareil)</option>';
     drawList(id);
+    loadRes(ctlFind($('ctl-pick').value));
     drawTable();
   }
   let edits = {};
+  /** Remet les résultats déjà collés et corrigés pour ce contrôle (enregistrés avec lui) */
+  function loadRes(c) {
+    $('ctl-res').value = c?.r?.txt || '';
+    edits = {};
+    if (c?.r?.ed) for (const [n, v] of Object.entries(c.r.ed)) edits[c.id + n] = { ...v };
+  }
   function drawTable() {
     const c = ctlFind($('ctl-pick').value); const host = $('ctl-table');
     if (!c) { host.innerHTML = ''; return; }
@@ -5254,6 +5261,13 @@ function setupControles() {
       return { n, name, ver, lv: c.k.map((_, ci) => e[ci] || r.lv[ci] || ''), bits: r.bits, doubt: r.doubt, note: r.note };
     });
     const done = rows.filter((r) => r.lv.every(Boolean));
+    // Résultats enregistrés avec le contrôle (synchronisés avec l'Espace professeur, lus par l'API pour saisir les notes)
+    const ed = {}; Object.keys(edits).filter((k) => k.startsWith(c.id)).forEach((k) => { ed[k.slice(c.id.length)] = edits[k]; });
+    const txt = $('ctl-res').value;
+    if (JSON.stringify([txt, ed]) !== JSON.stringify([c.r?.txt || '', c.r?.ed || {}]) || (!c.r && rows.some((r) => r.lv.some(Boolean)))) {
+      c.r = { txt, ed, lv: rows.map((r) => r.lv), notes: rows.map((r) => r.note || ''), at: Date.now() };
+      ctlSave(c);
+    }
     host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(ctlLabel(k))}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
       <p class="small muted">Cases orangées : Claude a un doute, vérifie la copie. Tu peux changer chaque niveau.</p>
       <p><button type="button" class="btn primary" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button> <span class="small muted">Seuls les élèves dont toutes les compétences ont un niveau ont une étiquette.</span></p>`;
@@ -5264,7 +5278,7 @@ function setupControles() {
       try { await navigator.clipboard.writeText(tsv); ev.target.textContent = '✔ Copié'; } catch (_) { ev.target.textContent = 'Copie impossible'; }
     });
   }
-  $('ctl-pick').addEventListener('change', () => { edits = {}; drawTable(); });
+  $('ctl-pick').addEventListener('change', () => { loadRes(ctlFind($('ctl-pick').value)); drawTable(); });
   $('ctl-res').addEventListener('input', drawTable);
   $('ctl-import-go').addEventListener('click', () => {
     let c = null; try { c = JSON.parse($('ctl-import').value.trim()); } catch (e) { c = null; }
