@@ -1,3 +1,15 @@
+MISE À JOUR 2026-11-15.9 : salle de jeux avec miniatures, Aura Rush
+
+À DÉPOSER : index.html, script.js, style.css, README.md
+  et le NOUVEAU DOSSIER : jeux-img/ (4 images : aura-rush.jpg, droite-parfaite.jpg, estimangle.jpg, pont-des-fractions.jpg)
+
+- Salle de jeux (bouton 🎮 Jeux) : chaque carte montre une miniature du jeu, son nom et sa description
+  (plus le titre du chapitre).
+- Nouveau jeu hors chapitre : Aura Rush (calculer des vitesses, v = d ÷ t), le jeu du dépôt calculvitesse,
+  affiché dans un cadre (plein écran, ou ouvrir dans un nouvel onglet). Adresse : #/jeux/aura-rush.
+
+=========================================================
+
 MISE À JOUR 2026-11-15.8 : pages déjà données
 
 À DÉPOSER : index.html, script.js, classeur.html
@@ -90,7 +102,7 @@ MISE À JOUR 2026-11-15.3 : accès partout avec un code
 
 MISE À JOUR 2026-11-15.2 : Espace professeur sauvegardé en ligne
 
-À DÉPOSER : index.html, script.js
+À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
 
 - L'Espace professeur est sauvegardé en ligne, chiffré, dans le même dépôt GitHub privé que le classeur
   (fichier prof.json, à côté de classeur.json), avec la même clé : rien à régler, il suffit que la
@@ -107,7 +119,7 @@ MISE À JOUR 2026-11-15.2 : Espace professeur sauvegardé en ligne
 
 MISE À JOUR 2026-11-15.1 : numéro de version du site
 
-À DÉPOSER : index.html, script.js
+À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
 
 - Version du site passée à 2026-11-15.1 (oubliée dans la mise à jour précédente) : les navigateurs rechargent
   script.js et comprennent les liens de devoir courts « /g=1 ».

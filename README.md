@@ -187,7 +187,10 @@ Dans l'onglet Séances, le bouton **✏️ Modifier les textes de cette séance*
 
 ## Jeux (14/11/2026)
 
-Le bouton **🎮 Jeux**, en haut de chaque page, ouvre la salle de jeux (`#/jeux`). Elle liste les pages `data-game="1"` qui ont un `data-game-name` (plus `data-game-icon` et `data-game-desc`), pour les chapitres ouverts aux élèves.
+Le bouton **🎮 Jeux**, en haut de chaque page, ouvre la salle de jeux (`#/jeux`). Elle liste les pages `data-game="1"` qui ont un `data-game-name` (plus `data-game-img`, la miniature dans `jeux-img/`, et `data-game-desc`), pour les chapitres ouverts aux élèves.
+
+- Jeux hors chapitre : une page `data-ch="_"` avec `data-game="1"`, ouverte à l'adresse `#/jeux/<data-p>`, toujours listée (après les jeux des chapitres). C'est le cas d'**Aura Rush** (dépôt `calculvitesse`, affiché dans un cadre depuis darthialm.github.io/calculvitesse).
+- Miniatures : captures 640 × 400 en JPEG.
 
 - **Droite parfaite** et **Estimangle** : dans `jeux.js`.
 - **Le Pont des Fractions** (chapitre 4) : jeu 3D affiché dans un cadre. Le site n'a besoin que du dossier `jeu-fractions/` (`index.html`, `jeu.js`, `jeu.css`). Le jeu n'est chargé que quand sa page est ouverte.

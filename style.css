@@ -966,8 +966,19 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 @media (max-width: 720px) { .top-links { position: absolute; top: 10px; right: 12px; } .top { position: sticky; } }
 
 /* ============ Salle de jeux et jeu intégré (Le Pont des Fractions) ============ */
-.game-card .symbol { font-size: 1.7rem; }
-.game-card .stat { font-weight: 700; color: var(--c); font-size: .9rem; }
+#games-hub { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.game-card {
+  display: flex; flex-direction: column; text-decoration: none; color: var(--ink); overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: transform .15s;
+}
+.game-card:hover, .game-card:focus-visible { transform: translateY(-3px); }
+.game-thumb { display: grid; place-items: center; aspect-ratio: 16 / 10; background: #141b33; font-size: 3rem; overflow: hidden; }
+.game-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.game-card:hover .game-thumb img { transform: scale(1.04); }
+.game-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px 16px; flex: 1; }
+.game-body h2 { margin: 0; font-size: 1.3rem; }
+.game-body p { margin: 0; color: var(--muted); font-size: .93rem; flex: 1; }
+.game-card .stat { font-weight: 700; color: var(--accent); font-size: .9rem; }
 .game-frame { border-radius: 18px; overflow: hidden; background: #1c2647; box-shadow: var(--shadow); border: 1px solid var(--line); }
 .game-frame-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding: 8px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .game-frame-bar .btn { padding: 6px 12px; font-size: .88rem; }

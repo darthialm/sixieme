@@ -2960,16 +2960,17 @@ function renderChapters() {
       <span class="stat">${parts.length ? parts.join(' · ') : 'Pas encore commencé'}</span>${c.hiddenNote ? `<span class="hidden-note">${c.hiddenNote}</span>` : ''}</a>`;
   }).join('');
 }
-/** Salle de jeux (#/jeux) : une carte par jeu, pour les chapitres ouverts aux élèves */
+/** Salle de jeux (#/jeux) : une carte par jeu (miniature, nom, description), pour les chapitres ouverts aux élèves,
+    plus les jeux hors chapitre (data-ch="_", adresse #/jeux/<data-p>) */
 function renderGamesHub() {
   const pages = [...document.querySelectorAll('.page[data-game][data-game-name]')]
-    .map((p) => ({ p, c: CHAPTERS.find((x) => x.id === p.dataset.ch) })).filter((x) => x.c && !x.c.locked);
-  document.getElementById('games-hub').innerHTML = pages.map(({ p, c }) => `<a class="chapter-card game-card" data-ch="${c.id}" href="#/${c.id}/${p.dataset.p}">
-      <span class="symbol">${p.dataset.gameIcon || '🎮'}</span>
-      <span class="num">Chapitre ${c.num} · ${c.title}</span>
-      <h2>${p.dataset.gameName}</h2>
+    .map((p) => ({ p, c: CHAPTERS.find((x) => x.id === p.dataset.ch) })).filter((x) => x.p.dataset.ch === '_' || (x.c && !x.c.locked))
+    .sort((a, b) => !a.c - !b.c); // jeux des chapitres d'abord, puis les autres
+  document.getElementById('games-hub').innerHTML = pages.map(({ p, c }) => `<a class="game-card" href="${c ? `#/${c.id}/${p.dataset.p}` : `#/jeux/${p.dataset.p}`}">
+      <div class="game-thumb">${p.dataset.gameImg ? `<img src="${p.dataset.gameImg}" alt="" loading="lazy">` : '🎮'}</div>
+      <div class="game-body"><h2>${p.dataset.gameName}</h2>
       <p>${p.dataset.gameDesc || ''}</p>
-      <span class="stat">Jouer →</span></a>`).join('') || '<p class="muted">Aucun jeu n’est ouvert pour l’instant.</p>';
+      <span class="stat">Jouer →</span></div></a>`).join('') || '<p class="muted">Aucun jeu n’est ouvert pour l’instant.</p>';
 }
 function renderChapterHome(ch) {
   const host = document.querySelector(`.page[data-ch="${ch}"][data-p="accueil"] .ch-cards`);
@@ -3967,6 +3968,8 @@ function route() {
   if (h.startsWith('projo')) { const ch = routeProjo(h.split('/')[1] || ''); special('projo', ch, 'Vidéoprojecteur'); return; }
   if (h === 'auto') { routeAuto(); special('auto', '', 'Automatismes du jour'); return; }
   if (h === 'jeux') { renderGamesHub(); special('salle-jeux', '', 'Jeux'); return; }
+  const hors = h.startsWith('jeux/') && document.querySelector(`.page[data-ch="_"][data-game][data-p="${CSS.escape(h.slice(5))}"]`);
+  if (hors) { special(hors.dataset.p, '', hors.dataset.gameName); return; }
   if (h.startsWith('r/')) { const ch = routeRetour(h.slice(2)); special('retour', ch, 'Mon contrôle'); return; }
   if (h === 'accueil') h = '';
   let [ch, p] = h.split('/');
