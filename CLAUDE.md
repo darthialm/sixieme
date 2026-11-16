@@ -36,9 +36,11 @@ Quand le professeur donne un PDF de copies « Contrôle » (code de copie en hau
       mettre si c'est l'autre lecture) et les copies absentes du scan.
    2. **Lignes à coller**, dans l'ordre des codes, sans aucune remarque :
       `BMG-03 C1=MF(100) C2=MF(00001) C3=MS(0)`
-   3. **À écrire sur les copies** : un **tableau**, une ligne par copie dans l'**ordre des pages du scan**.
-      Colonnes : n° de page · prénom (lu sur la bande ; sinon le code) · Q1, Q2… avec ✓ (juste), ½ (en partie juste)
-      ou ✗ (faux ou vide) · Remarque. Une question à plusieurs calculs (ex. priorités D, C, E) : marquer chaque
+   3. **À écrire sur les copies** : **une fiche par élève**, affichée avec l'outil de visuel interactif
+      (`show_widget`), avec des flèches ← → (boutons et clavier) pour passer d'un élève à l'autre, dans l'**ordre des
+      pages du scan**. Ne pas répéter les fiches en texte. Si l'outil n'est pas disponible : un tableau, une ligne
+      par copie. Chaque fiche : prénom (lu sur la bande ; sinon le code), n° de page, code, niveaux C1 C2 C3,
+      Q1, Q2… avec ✓ (juste), ½ (en partie juste) ou ✗ (faux ou vide), puis la Remarque. Une question à plusieurs calculs (ex. priorités D, C, E) : marquer chaque
       calcul dans l'ordre de la copie (« D✓ C✗ E✓ ») pour que le professeur valide ou barre chacun. Le problème :
       marquer chaque étape (« Dépense✗ Reçue✓ Finale✓* », ✓* = calcul juste avec les nombres de l'élève), puis
       le niveau. Une question à cases : préciser la case fausse (« ½ 3e case »). Au moins une remarque par copie
@@ -53,6 +55,7 @@ Les mêmes règles sont écrites dans le fichier de correction produit par le si
 les change, changer les deux. Les pages scannées restent dans le dossier temporaire : ne jamais les copier dans le
 projet (les bandes portent parfois les prénoms).
 
-Après la correction, le professeur colle les lignes dans « Résultats » (Espace professeur) et imprime les étiquettes :
-prénom, code, niveaux, et un QR vers la page « Mon contrôle » de l'élève (corrigé de son sujet, détail par question,
-exercices de remédiation).
+Après la correction, le professeur colle les lignes dans « Résultats » (Espace professeur) puis clique sur
+« Mettre les résultats en ligne » : `resultats/ID.json` (dépôt public du site, codes anonymes, aucun prénom). L'élève
+scanne le QR de sa copie (`#/m/ABC-07`) ou tape son code sur `#/m`, et arrive sur sa page « Mon contrôle » (corrigé de
+son sujet, détail par question, exercices de remédiation). Les étiquettes QR restent possibles.

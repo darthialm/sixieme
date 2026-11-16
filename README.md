@@ -117,8 +117,10 @@ Dans l'Espace professeur, carte **📝 Contrôle sur papier, par compétences** 
    - détache les bandes avec les prénoms, scanne la pile en un seul PDF ;
    - envoie ce PDF à Claude avec le **fichier pour la correction assistée** (.txt) ; ce fichier contient les énoncés et les réponses attendues, sans aucun nom ;
    - Claude répond une ligne par copie : `K7P-04 C1=TB(111) C2=MF?(100)` (« ? » marque un doute).
-6. **Après la correction : étiquettes**. Colle la réponse dans « Résultats », ou tape-les toi-même (`K7P-04 C1=TB C2=MF`). Vérifie le tableau, où les doutes sont surlignés. Puis **imprime les étiquettes** : planche A4 de 21 étiquettes (3 × 7, 63,5 × 38,1 mm, type L7160). Tu peux commencer à une étiquette déjà entamée.
-7. Chaque étiquette porte un QR code. L'élève le scanne et arrive sur **sa page** :
+6. **Après la correction : résultats en ligne (ou étiquettes)**. Colle la réponse dans « Résultats », ou tape-les toi-même (`K7P-04 C1=TB C2=MF`). Vérifie le tableau, où les doutes sont surlignés. Puis :
+   - **🌐 Mettre les résultats en ligne** : le site écrit `resultats/ID.json` dans le dépôt public du site (codes anonymes, niveaux et détail ✓/✗, **aucun prénom**), avec le jeton de la sauvegarde en ligne. Si ce jeton n'a pas le droit d'écrire dans le dépôt du site, le fichier est téléchargé : dépose-le dans le dossier `resultats` du site. Recommence si tu changes un niveau. Attention : ces résultats sont publics ; quelqu'un qui devine un code voit les niveaux qui vont avec, sans savoir de quel élève il s'agit ;
+   - ou **imprime les étiquettes** : planche A4 de 21 étiquettes autocollantes (3 × 7, 63,5 × 38,1 mm, type L7160). Tu peux commencer à une étiquette déjà entamée.
+7. L'élève scanne le QR **de sa copie** (contrôles imprimés depuis la version 2026-11-16.3), ou tape son code sur `…/index.html#/m`, ou scanne son étiquette. Il arrive sur **sa page** :
    - son bilan par compétence ;
    - un bouton « Je refais ces exercices » pour chaque compétence MF ou MI (comme un devoir, résultat envoyé dans ta table) ;
    - le corrigé de **son** sujet, avec ✔ / ✘ par question et l'animation des constructions.

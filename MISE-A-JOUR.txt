@@ -1,3 +1,21 @@
+MISE À JOUR 2026-11-16.3 : résultats des contrôles en ligne, sans étiquettes
+
+À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
+
+- Espace professeur, Résultats : bouton « 🌐 Mettre les résultats en ligne ». Le site écrit resultats/ID.json dans
+  le dépôt du site : codes anonymes, niveaux et détail ✓/✗, aucun prénom (ces résultats sont publics). Si le jeton
+  de la sauvegarde en ligne ne peut pas écrire dans le dépôt du site, le fichier est téléchargé : le déposer dans un
+  dossier « resultats » du site.
+- Page élève « Mon contrôle » à l'adresse …/index.html#/m : l'élève tape le code de sa copie (O et I sont lus 0 et 1)
+  et arrive sur son corrigé, son bilan et ses exercices.
+- Le QR imprimé sur la copie mène maintenant à cette page (…#/m/ABC-07) : plus besoin d'étiquettes. Les copies déjà
+  imprimées (QR = code seul) : les élèves tapent leur code sur …#/m.
+- Correction avec l'IA : une fiche par élève avec des flèches ← → (un tableau si l'IA ne peut pas afficher de page).
+- Corrige le numéro de version oublié dans script.js en 2026-11-16.2 (message « le site vient d'être mis à jour »
+  qui revenait).
+
+=========================================================
+
 MISE À JOUR 2026-11-16.2 : correction des contrôles, détail par calcul et par étape
 
 À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)

@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-16.1';
+const SITE_VERSION = '2026-11-16.3';
 
 /* =========================================================
    Outils
@@ -3971,6 +3971,7 @@ function route() {
   const hors = h.startsWith('jeux/') && document.querySelector(`.page[data-ch="_"][data-game][data-p="${CSS.escape(h.slice(5))}"]`);
   if (hors) { special(hors.dataset.p, '', hors.dataset.gameName); return; }
   if (h.startsWith('r/')) { const ch = routeRetour(h.slice(2)); special('retour', ch, 'Mon contrôle'); return; }
+  if (h === 'm' || h.startsWith('m/')) { routeMonCtl(decodeURIComponent(h.slice(2))); special('retour', '', 'Mon contrôle'); return; }
   if (h === 'accueil') h = '';
   let [ch, p] = h.split('/');
   if (!CHAPTERS.some((c) => c.id === ch && !c.locked)) { ch = ''; p = ''; }
@@ -4569,7 +4570,7 @@ function sheetHTML(c, i) {
     <div class="ctl-band"><span>Prénom : <b>${esc(name)}</b></span><span>${[c.c, c.t, date].filter(Boolean).map(esc).join(' · ')}</span></div>
     <div class="ctl-cut"></div>
     <div class="ctl-head">
-      <div class="ctl-code">${window.qrSVG ? qrSVG(code, 'M') : ''}<b>${code}</b></div>
+      <div class="ctl-code">${window.qrSVG ? qrSVG(siteURL() + '#/m/' + code, 'L') : ''}<b>${code}</b></div>
       <div class="ctl-title"><b>${esc(c.t)}</b><br><span class="small">Écris tes réponses dans les cases.</span></div>
       <table class="ctl-grid"><tr><th>Compétence</th><th>TB</th><th>MS</th><th>MF</th><th>MI</th></tr>
         ${c.k.map((k, ci) => `<tr><td>C${ci + 1} · ${esc(ctlLabel(k))}</td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
@@ -4941,7 +4942,7 @@ function aiText(c) {
   const ps = ctlVer(ctlPlan(c), c.k, 's');
   L.push(`   ${ctlCode(c.id, 1)} ${c.k.map((k, i) => `C${i + 1}=TB(${'1'.repeat(ps.n[i])})`).join(' ')}`);
   L.push('   (un chiffre par question, dans l\'ordre des questions de la compétence ; la version aménagée a une question de moins par compétence, sauf pour les tracés, et garde une question de chaque type : vérifier le nombre de questions de chaque copie plus bas)');
-  L.push('3. À ÉCRIRE SUR LES COPIES : un TABLEAU, une ligne par copie dans l\'ordre des pages du scan (pas des codes) ; colonnes : n° de page, prénom (s\'il est lisible sur la bande, sinon le code), une colonne par question (Q1, Q2…) contenant ✓ (juste), ½ (en partie juste) ou ✗ (faux ou vide), puis une colonne Remarque.');
+  L.push('3. À ÉCRIRE SUR LES COPIES : UNE FICHE PAR ÉLÈVE, dans l\'ordre des pages du scan (pas des codes). Si tu peux afficher une page interactive, montre une fiche à la fois avec des flèches ← → (boutons et clavier) pour passer à l\'élève suivant ; sinon, fais un TABLEAU, une ligne par copie. Chaque fiche : prénom (s\'il est lisible sur la bande, sinon le code), n° de page, code, niveaux C1 C2…, chaque question (Q1, Q2…) avec ✓ (juste), ½ (en partie juste) ou ✗ (faux ou vide), puis la Remarque.');
   L.push('   Question à plusieurs calculs (ex. priorités D, C, E) : marquer CHAQUE calcul dans l\'ordre de la copie (ex. « D✓ C✗ E✓ »), pour que le professeur valide ou barre chacun. Le problème : marquer CHAQUE étape (ex. « Dépense✗ Reçue✓ Finale✓* », ✓* = calcul juste avec les nombres de l\'élève), puis le niveau. Question à cases : préciser la case fausse (ex. « ½ 3e case »). AU MOINS une remarque par copie (si tout est juste : un mot sur le travail).');
   L.push('   Remarque : 1 ou 2 phrases courtes, didactiques, qui réengagent l\'élève : dire ce qui est réussi, donner une piste pour qu\'il trouve son erreur lui-même (question à se poser, ordre de grandeur, vérification), ou le renvoyer au corrigé en ligne (QR de l\'étiquette). Pas de correction toute faite, pas de longs textes.');
   L.push('4. BILAN POUR LA CLASSE (à dire en rendant les copies, sans nommer personne) : ce qui est réussi par la plupart ; 2 ou 3 erreurs fréquentes, chacune avec la question concernée, combien de copies, et une piste à reprendre ensemble (exemple au tableau, question à se poser) ; un mot d\'encouragement.');
@@ -4992,6 +4993,57 @@ function retourURL(c, n, levels, bits, dest) {
   const cl = encodeURIComponent(c.c || '').replace(/\./g, '%2E');
   return siteURL() + `#/r/${c.g >= 4 ? 5 : c.g >= 3 ? 4 : c.g ? 3 : 2}.${c.id}.${n}.${ver}${ctlSalt(c, n) || ''}.${planStr(plan)}.${c.k.join('+')}.${levels.map((l) => LV1[l] || '-').join('')}.${/[01]/.test(allBits) ? allBits : '-'}.${cl}${dest ? dest.seg : ''}`;
 }
+/* ---------- Résultats en ligne sous le code anonyme ----------
+   resultats/ID.json (dépôt PUBLIC du site, sans aucun prénom) : { v: 1, r: { n: « lien Mon contrôle sans #/r/ » } }.
+   Le QR de la copie (#/m/ABC-07) et la page « Mon contrôle » où l'élève tape son code le lisent :
+   plus besoin d'étiquettes. */
+const SITE_REPO = 'darthialm/sixieme', RES_DIR = 'resultats';
+function resFile(c, rows, dest) {
+  const r = {};
+  rows.forEach((x) => { r[x.n] = retourURL(c, x.n, x.lv, x.bits, dest).split('#/r/')[1]; });
+  return { v: 1, id: c.id, at: new Date().toISOString(), r };
+}
+/** Publie le fichier avec le jeton de la sauvegarde en ligne ; sinon le télécharge (à déposer dans resultats/). */
+async function publishResults(c, rows, dest) {
+  const file = resFile(c, rows, dest), txt = JSON.stringify(file), path = `${RES_DIR}/${c.id}.json`, cfg = psCfg();
+  if (cfg) {
+    try {
+      const api = (opt = {}) => fetch(`https://api.github.com/repos/${SITE_REPO}/contents/${path}`, { cache: 'no-store', ...opt,
+        headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' } });
+      const cur = await api();
+      const sha = cur.ok ? (await cur.json()).sha : null;
+      const r = await api({ method: 'PUT', body: JSON.stringify({ message: `Résultats du contrôle ${c.id} (codes anonymes)`, content: btoa(unescape(encodeURIComponent(txt))), ...(sha ? { sha } : {}) }) });
+      if (r.ok) return 'ok';
+    } catch (e) { /* pas de connexion : téléchargement */ }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = `${c.id}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  return 'file';
+}
+/* ---------- « Mon contrôle » par code : #/m (l'élève tape son code) ou #/m/ABC-07 (QR imprimé sur la copie) ---------- */
+function routeMonCtl(code) {
+  const host = document.querySelector('.page[data-p="retour"] .retour');
+  retourSpec = null;
+  const form = (msg, cls) => {
+    host.innerHTML = `<div class="hero"><p class="kicker">Mon contrôle</p><h1>Ton corrigé et tes exercices</h1>
+      <p class="lead">Tape le code écrit en haut à gauche de ta copie, sous le QR code (par exemple <b>ABC-07</b>).</p></div>
+      <div class="card"><form id="mc-form" class="prof-opts"><label for="mc-code"><b>Mon code :</b></label>
+      <input type="text" id="mc-code" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC-07" value="${esc(code || '')}">
+      <button type="submit" class="btn primary">Voir mon contrôle</button></form>${msg ? `<p class="small ${cls}">${msg}</p>` : ''}</div>`;
+    host.querySelector('#mc-form').addEventListener('submit', (e) => { e.preventDefault(); location.hash = '#/m/' + host.querySelector('#mc-code').value.trim(); });
+  };
+  // les codes n'ont ni O, ni I, ni L : un élève qui les tape veut dire 0 ou 1
+  const m = String(code || '').toUpperCase().replace(/[\s.]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1').match(/^([0-9A-Z]{3})-?(\d{1,3})$/);
+  if (!code) { form(); return; }
+  if (!m) { form('Je ne reconnais pas ce code : il ressemble à ABC-07 (3 caractères, un tiret, un nombre).', 'ko-t'); return; }
+  host.innerHTML = '<p class="lead">⏳ Je cherche ton contrôle…</p>';
+  fetch(`${RES_DIR}/${m[1]}.json`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((j) => {
+    const spec = j && j.r && j.r[parseInt(m[2], 10)];
+    if (spec) { location.replace('#/r/' + spec); return; }
+    form(j ? 'Il n\'y a pas encore de résultat pour cette copie. Demande à ton professeur.' : 'Les résultats de ce contrôle ne sont pas encore en ligne. Reviens un peu plus tard.', 'warn-t');
+  });
+}
 function printLabels(c, rows, skip, dest) {
   const W = 63.5, H = 38.1, TOP = 15.15, LEFT = 7.21, GAP = 2.54, PER = 21;
   const cells = [...Array(skip).fill(null), ...rows];
@@ -5039,7 +5091,7 @@ function setupControles() {
       <li>Avant de scanner, détache (ou replie) les bandes avec les prénoms : les copies ne portent plus que leur code.</li>
       <li>Scanne la pile (un seul PDF) et donne-le à Claude Code ouvert sur le dossier du site : il récupère seul le <b>fichier pour la correction assistée</b> (sauvegarde en ligne). Avec une autre IA, joins ce fichier au PDF.</li>
       <li>Claude répond en 4 parties : <b>à vérifier</b> (ses doutes), <b>lignes à coller</b> (<code>${'ABC'}-07 C1=TB(111) C2=MS(110)…</code>), <b>à écrire sur les copies</b> (questions à valider ou barrer, remarque), dans l'ordre du scan, et <b>bilan pour la classe</b>.</li>
-      <li>Vérifie ses doutes sur les copies, colle les lignes plus bas, puis imprime les étiquettes.</li>
+      <li>Vérifie ses doutes sur les copies, colle les lignes plus bas, puis mets les résultats en ligne (ou imprime les étiquettes).</li>
     </ol><p>Les copies scannées sont anonymes. Fais valider cet usage par ton établissement.</p></details>
     <h3>Après la correction : étiquettes QR</h3>
     <div class="prof-opts">
@@ -5270,7 +5322,16 @@ function setupControles() {
     }
     host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(ctlLabel(k))}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
       <p class="small muted">Cases orangées : Claude a un doute, vérifie la copie. Tu peux changer chaque niveau.</p>
-      <p><button type="button" class="btn primary" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button> <span class="small muted">Seuls les élèves dont toutes les compétences ont un niveau ont une étiquette.</span></p>`;
+      <p><button type="button" class="btn primary" id="ctl-publish"${done.length ? '' : ' disabled'}>🌐 Mettre ${done.length} résultat${done.length > 1 ? 's' : ''} en ligne</button> <button type="button" class="btn" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button></p>
+      <p class="small muted" id="ctl-publish-st">En ligne : l'élève scanne le QR de sa copie, ou tape son code sur <b>${esc(siteURL())}#/m</b> (sans prénom : seulement le code, les niveaux et le détail ✓/✗). Plus besoin d'étiquettes. Seuls les élèves dont toutes les compétences ont un niveau sont publiés.</p>`;
+    $('ctl-publish')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget, st = $('ctl-publish-st'); b.disabled = true; st.className = 'small'; st.textContent = '⏳ Publication…';
+      const how = await publishResults(c, done, profDest());
+      b.disabled = false;
+      st.className = 'small ok-t';
+      st.innerHTML = how === 'ok' ? `✔ En ligne (dans 1 à 2 minutes) : QR des copies, ou code tapé sur <b>${esc(siteURL())}#/m</b>. Recommence si tu changes un niveau.`
+        : `Fichier <b>${c.id}.json</b> téléchargé : dépose-le dans le dossier <b>${RES_DIR}</b> du site (comme une mise à jour). Les élèves verront ensuite leur contrôle avec le QR de la copie, ou en tapant leur code sur <b>${esc(siteURL())}#/m</b>.`;
+    });
     host.querySelectorAll('select').forEach((s) => s.addEventListener('change', () => { const k = c.id + s.dataset.n; edits[k] = edits[k] || {}; edits[k][s.dataset.ci] = s.value; drawTable(); }));
     $('ctl-print-lbl')?.addEventListener('click', () => printLabels(c, done, Number($('ctl-skip').value), profDest()));
     $('ctl-copy').addEventListener('click', async (ev) => {
