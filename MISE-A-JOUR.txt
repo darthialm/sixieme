@@ -1,3 +1,18 @@
+MISE À JOUR 2026-11-17.1 : billets de sortie Angles et Triangles en 4 versions
+
+À DÉPOSER : documents.bin
+
+- Billets de sortie Angles n°1 et n°2, Triangles n°1 et n°2 : les 4 billets d'une page sont maintenant 4 versions
+  différentes (A, B, C, D, écrites sous le titre), avec des nombres de même difficulté : deux voisins ne peuvent
+  plus recopier. Mesurer : mêmes types d'angles, deux versions en miroir. Relations : autres mesures. Construire :
+  autre triangle (RST, EFG, KLM, UVW). Règle des 180° : autres mesures.
+- Corrigé d'un billet (bouton de la séance) : les réponses de chaque version sont en rouge dans les cases ; pour
+  « Construire un triangle », le triangle juste est tracé en vraie grandeur dans le cadre.
+- Billets de sortie (corrigé complet, Différenciation) : tableau des réponses par version, avec les tolérances.
+- Billets Opérations n°1 et n°2 : inchangés.
+
+=========================================================
+
 MISE À JOUR 2026-11-16.3 : résultats des contrôles en ligne, sans étiquettes
 
 À DÉPOSER : index.html, script.js, CLAUDE.md (facultatif)
