@@ -1,3 +1,18 @@
+MISE À JOUR 2026-11-17.3 : écrans projetés du cahier d'activités plus visuels
+
+À DÉPOSER : classeur.html
+
+- Bouton « 📽 Projeter le programme » (séances S7, S8, S9, S14, S15) : une colonne par groupe (ou A, B, C), avec
+  les étapes numérotées dans l'ordre. Chaque étape : « Exercice 8 » et « page 85 » en gros, ce que je fais
+  (phrase à la 1re personne), une astuce 💡 pour démarrer seul, le matériel (📐 📏 ✏️), et les badges
+  « au tableau avec le professeur » ou « à deux ».
+- En bas, toujours visible : « Quand j'ai fini un exercice » (4 étapes jusqu'à la pochette) et « Je suis bloqué »
+  (cours, voisin, main levée).
+- Touches 1, 2, 3 (ou clic sur une colonne) : agrandit la colonne d'un groupe en plein écran ; 0 ou Échap : retour.
+- Les exercices 15, 24 à 28 et 30 à 35 n'ont pas de capture : leur consigne reste générale, à vérifier.
+
+=========================================================
+
 MISE À JOUR 2026-11-17.2 : chasse photo retirée du classeur
 
 À DÉPOSER : classeur.html

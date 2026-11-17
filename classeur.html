@@ -380,6 +380,66 @@ const CAHIER={
   D:"ta fiche « Je relève un défi » ; puis ex. 23 p. 87 (trois triangles accolés) ; puis invente un programme de construction d'un triangle et échange-le avec un élève du groupe",
   warn:"le corrigé de l'ex. 23 place l'angle de 100° en B au lieu de A : à vérifier avant de le mettre dans la pochette"},
 };
+/* Écran projeté du cahier : par groupe, les étapes dans l'ordre, pour que l'élève sache seul quoi faire.
+   EX(n° d'exercice, page, ce que je fais, astuce, matériel) ; FI(fiche, …) ; AU(titre libre, page, …).
+   Options : prof (au tableau avec le professeur), deux (à deux). Matériel : r = rapporteur, g = règle, c = crayon. */
+const EX=(n,p,quoi,aide,mat,o)=>Object.assign({k:"Exercice "+n,p,quoi,aide,mat},o),
+  FI=(k,quoi,aide,mat,o)=>Object.assign({k,fiche:true,quoi,aide,mat},o),
+  AU=(k,p,quoi,aide,mat,o)=>Object.assign({k,p,quoi,aide,mat},o);
+const AIDE_MES="Avant de mesurer : aigu ou obtus ? Puis centre sur le sommet, 0 sur un côté, je lis la graduation qui part de ce 0.";
+const AIDE_CONS="Centre du rapporteur sur le sommet, 0 sur le côté déjà tracé ; je marque un petit point à la bonne graduation, puis je trace à la règle.";
+const AIDE_TRI="Je fais d'abord une figure à main levée, codée avec les mesures. Puis je construis dans l'ordre de l'énoncé.";
+const PAS={
+ S7:{
+  A:[EX(8,85,"Je lis la mesure de chaque angle sur le rapporteur déjà posé.","Je pars du 0 qui est sur un côté de l'angle et je suis CETTE graduation (intérieure ou extérieure).",""),
+     EX(9,85,"Je dis si l'angle BAC est aigu ou obtus, puis je le mesure.","Aigu : plus petit que l'angle droit. Obtus : plus grand. Ma mesure doit être d'accord avec ma réponse !","r")],
+  B:[EX(24,88,"Ceinture jaune : je mesure les angles demandés.",AIDE_MES,"r"),
+     EX(25,88,"Ceinture verte : je mesure les angles demandés.",AIDE_MES,"r")],
+  C:[EX(26,88,"Ceinture noire : je mesure les angles demandés.",AIDE_MES,"r"),
+     EX(31,90,"Le cerf-volant : je lis tout l'énoncé, je repère les angles, puis je réponds.","Je repasse en couleur chaque angle avant de le mesurer.","r")]},
+ S8:{
+  R:[FI("Ma fiche « Je reprends »","Je la fais au tableau avec le professeur.","On mesure ensemble, étape par étape.","r",{prof:true}),
+     EX(10,85,"Je nomme les 4 angles du quadrilatère ABCD, puis je mesure chacun.","Pour nommer un angle, la lettre du sommet est au milieu : ABC a pour sommet B.","r"),
+     FI("Fiche d'exercices « Mesurer un angle »","Partie « Je reprends » : je mesure les 6 angles.",AIDE_MES,"r")],
+  E:[FI("Ma fiche « Je m'entraîne »","Je la fais seul, puis je me corrige à la pochette.",AIDE_MES,"r"),
+     EX(11,85,"L'horloge : une heure où les aiguilles font un angle droit, puis un angle plat. Puis l'angle à 4 h.","Un tour complet = 360° et il y a 12 espaces entre les nombres : combien de degrés pour un espace ?",""),
+     FI("Fiche d'exercices « Mesurer un angle »","Partie « Je m'entraîne » : je mesure les 6 angles.","Les angles sont dans tous les sens : je tourne ma feuille, le 0 toujours sur un côté.","r")],
+  D:[FI("Ma fiche « Je relève un défi »","Je la fais seul, puis je me corrige à la pochette.","J'écris ma recherche avant de regarder le corrigé.","r"),
+     AU("Le défi « La pendule »",91,"Je trouve la mesure exacte de l'angle entre les aiguilles à 10 h 12.","En 12 minutes, la petite aiguille a avancé aussi : de quelle part d'un espace de l'horloge ?",""),
+     EX(33,90,"Angle droit ? Je réponds et je justifie.","Je mesure, puis j'écris une phrase qui explique ma réponse.","r"),
+     AU("Le jeu « Un rapporteur dans l'œil »",91,"Je lis la règle du jeu et je joue avec un élève de mon groupe.","J'estime d'abord à l'œil, puis je vérifie au rapporteur.","r",{deux:true})]},
+ S9:{
+  R:[EX(12,86,"Je trace un segment pour obtenir un angle de 75° : le rapporteur est déjà placé.","On le fait ensemble au tableau.","rg",{prof:true}),
+     EX(13,86,"Un côté de l'angle est déjà tracé : je trace le 2e côté avec la mesure donnée (4 angles).",AIDE_CONS,"rg"),
+     FI("Fiche d'exercices « Construire un angle »","Partie « Je reprends » : 4 angles, un côté est déjà tracé.",AIDE_CONS,"rg")],
+  E:[EX(14,86,"Je reproduis la figure ABDC en vraie grandeur : [AC] est déjà tracé.","Je regarde le codage : l'angle droit, les mesures d'angles, les traits qui montrent des longueurs égales.","rgc"),
+     EX(15,86,"Je reproduis la figure en vraie grandeur.","Je commence par ce qui est déjà tracé et je lis le codage.","rgc"),
+     EX(16,86,"Je construis un angle de 150°, je le partage en 5 angles égaux, puis je complète sans rapporteur.","Chaque petit angle mesure 150 ÷ 5.","rg"),
+     EX(27,89,"Partage d'angle : je suis l'énoncé étape par étape.",AIDE_CONS,"rg"),
+     FI("Fiche « Construire un angle »","Partie « Je m'entraîne ».",AIDE_CONS,"rg")],
+  D:[EX(17,86,"Je construis DEG = 132°, puis DER = 132° de l'autre côté de (DE). Je trouve REG sans rapporteur.","Un tour complet autour du point E fait 360°.","rg"),
+     EX(29,89,"Points alignés ? Je trace les 4 angles collés (23°, 61°, 54°, 42°), puis je justifie par un calcul.","Trois points alignés font un angle plat : 180°.","rg"),
+     EX(32,90,"Le gâteau : je lis tout l'énoncé, puis je réponds.","Je fais un schéma et j'écris mes calculs.","rgc"),
+     EX(34,90,"La largeur d'une rivière : je fais la construction demandée, puis je réponds.","Je choisis une échelle simple et je l'écris.","rgc"),
+     EX(35,91,"Les caméras (tâche complexe) : je cherche, j'écris toutes mes pistes.","Même si je ne finis pas, ma recherche écrite compte.","rgc")]},
+ S14:{
+  A:[EX(18,87,"Je construis les triangles a et b en vraie grandeur : le premier côté est déjà tracé.","Dans l'ordre : le côté, l'angle, puis l'autre côté. Je relie à la fin.","rg"),
+     EX(21,87,"Je construis le triangle RTF : [RF] est tracé, 42° en R et 38° en F.","Je trace les deux angles aux deux bouts de [RF] : T est là où les côtés se croisent.","rg")],
+  B:[EX(19,87,"Je construis le triangle ABC, puis le triangle VER, avec les mesures de l'énoncé.",AIDE_TRI,"rgc"),
+     EX(22,87,"Je construis le triangle IJK : pas de figure, je fais d'abord un croquis.",AIDE_TRI,"rgc")],
+  C:[EX(30,89,"Je suis le programme de construction, ligne par ligne.","Je coche chaque ligne quand elle est faite.","rgc"),
+     EX(28,89,"La constellation : je fais la construction demandée.",AIDE_TRI,"rgc")]},
+ S15:{
+  R:[FI("Ma fiche « Je reprends »","Je la fais au tableau avec le professeur.","On construit ensemble, étape par étape.","rg",{prof:true}),
+     EX(19,87,"Je finis les triangles ABC et VER.",AIDE_TRI,"rgc"),
+     FI("Fiche d'exercices « Construire un triangle »","Partie « Je reprends » : 3 triangles.",AIDE_TRI,"rg")],
+  E:[FI("Ma fiche « Je m'entraîne »","Je la fais seul, puis je me corrige à la pochette.",AIDE_TRI,"rg"),
+     EX(20,87,"Je construis le triangle ABC isocèle en A : AC = 3,9 cm et BAC = 47°.","Isocèle en A : AB = AC.","rgc"),
+     FI("Fiche d'exercices « Construire un triangle »","Partie « Je m'entraîne » : 3 triangles.",AIDE_TRI,"rg")],
+  D:[FI("Ma fiche « Je relève un défi »","Je la fais seul, puis je me corrige à la pochette.","J'écris ma recherche avant de regarder le corrigé.","rg"),
+     EX(23,87,"Je construis les 3 triangles sans qu'ils se chevauchent : ABC, puis BCD, puis CDE.","Chaque triangle s'appuie sur un côté du précédent : [BC], puis [CD].","rgc"),
+     AU("À moi d'inventer !",null,"J'écris un programme de construction d'un triangle et je l'échange avec un élève de mon groupe.","Je le construis d'abord moi-même pour vérifier qu'il marche.","rgc",{deux:true})]},
+};
 /* Pages des documents élèves utilisées par séance : on n'imprime que les pages nouvelles
    (ex. le cours Angles page 1 a servi en S5 : pour S6, seulement la page 2). */
 const PAGES={
@@ -1607,17 +1667,69 @@ function projeterCahier(sid){
   w.document.write(projHtml(sid));w.document.close();
 }
 function projHtml(sid){
-  const x=CAHIER[sid];
-  const col={R:"#1e7f45",E:"#0b4f8a",D:"#6c3483"};
-  const carte=(k,titre,txt)=>txt?`<section style="border-top:10px solid ${col[k]}"><h2 style="color:${col[k]}">${titre}</h2><p>${esc(txt)}</p></section>`:"";
-  const cartes=x.pt?carte("R",G.R,x.R)+carte("E",G.E,x.E)+carte("D",G.D,x.D)
-    :carte("R","A · Essentiels (tout le monde)",x.A)+carte("E","B · Entraînement",x.B)+carte("D","C · Défi",x.C);
+  const x=CAHIER[sid],ps=PAS[sid]||{};
+  const MAT={r:["📐","rapporteur"],g:["📏","règle"],c:["✏️","crayon à papier"]};
+  /* colonnes : groupes du billet, ou niveaux A/B/C pour tous */
+  const cols=x.pt
+    ?[["R",G.R,"Ton groupe a été annoncé à l'oral",ps.R,x.R],["E",G.E,"Ton groupe a été annoncé à l'oral",ps.E,x.E],["D",G.D,"Ton groupe a été annoncé à l'oral",ps.D,x.D]]
+    :[["R","A · Essentiels","Tout le monde commence ici",ps.A,x.A],["E","B · Entraînement","Quand mes A sont justes",ps.B,x.B],["D","C · Défi","Quand mes B sont justes",ps.C,x.C]];
+  const etape=(e,i)=>`<li class="et${e.prof?" prof":""}"><div class="gauche"><span class="num">${i+1}</span>${e.mat?`<span class="mat">${[...e.mat].filter(m=>MAT[m]).map(m=>`<i title="${MAT[m][1]}">${MAT[m][0]}</i>`).join("")}</span>`:""}</div><div class="corps">
+      <div class="tete"><b class="ex">${esc(e.k)}</b>${e.p?`<span class="page">page ${e.p}</span>`:""}${e.prof?`<span class="badge">👩‍🏫 au tableau avec le professeur</span>`:""}${e.deux?`<span class="badge">👥 à deux</span>`:""}</div>
+      <p class="quoi">${esc(e.quoi)}</p>
+      ${e.aide?`<p class="aide">💡 ${esc(e.aide)}</p>`:""}</div></li>`;
+  const colonne=([k,titre,sous,pas,txt],i)=>(pas||txt)?`<section class="col c${k}" data-i="${i+1}" tabindex="0" title="Cliquer pour agrandir (touche ${i+1})">
+      <header><h2>${esc(titre)}</h2><span>${esc(sous)}</span></header>
+      ${pas?`<ol>${pas.map(etape).join("")}</ol>`:`<p class="quoi">${esc(txt)}</p>`}</section>`:"";
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(sid+" · "+x.t)}</title>
-<style>body{margin:0;font-family:system-ui,"Segoe UI",sans-serif;background:#fff;color:#1b2430;padding:3vh 3vw}h1{font-size:4.2vh;margin:0 0 3vh}
-main{display:grid;grid-template-columns:repeat(auto-fit,minmax(28vw,1fr));gap:2.5vw}section{background:#f4f6f9;border-radius:14px;padding:2.5vh 2vw}
-h2{font-size:3.6vh;margin:0 0 1.5vh}p{font-size:3.3vh;line-height:1.4;margin:0}footer{margin-top:4vh;font-size:2.8vh;color:#3b4656}</style></head>
-<body><h1>📘 ${esc(x.t)} · cahier d'activités${x.pt?" · par groupes":""}</h1><main>${cartes}</main>
-<footer>${x.pt?"":"Je commence par les A. "}Je termine l'exercice en entier, puis je vais à la pochette de corrigés et je corrige au stylo vert, sans effacer. Pour un défi, j'écris ma recherche avant de regarder.</footer></body></html>`;
+<style>
+:root{--R:#1e7f45;--E:#0b4f8a;--D:#6c3483}
+*{box-sizing:border-box}html{font-size:min(1.9vh,1.15vw)}
+body{margin:0;font-family:system-ui,"Segoe UI",sans-serif;background:#fff;color:#1b2430;padding:2.2vh 2vw;min-height:100vh;display:flex;flex-direction:column;gap:1.8vh}
+h1{font-size:2.3rem;margin:0;display:flex;align-items:baseline;gap:1.2rem;flex-wrap:wrap}h1 small{font-size:1.4rem;font-weight:500;color:#4a5566}
+main{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;flex:1;align-items:start}
+.col{border-radius:16px;background:#f4f6f9;overflow:hidden;cursor:zoom-in;outline:none}
+.col header{color:#fff;padding:1rem 1.3rem}.col h2{margin:0;font-size:2rem}.col header span{font-size:1.25rem;opacity:.92}
+.cR header{background:var(--R)}.cE header{background:var(--E)}.cD header{background:var(--D)}
+.col ol{list-style:none;margin:0;padding:.9rem;display:flex;flex-direction:column;gap:.8rem}
+.et{display:flex;gap:.9rem;background:#fff;border-radius:12px;padding:.9rem 1rem;box-shadow:0 1px 3px #0002}
+.et.prof{background:#fff8e1}
+.num{flex:none;width:2.6rem;height:2.6rem;border-radius:50%;color:#fff;font-weight:800;font-size:1.5rem;display:grid;place-items:center}
+.cR .num{background:var(--R)}.cE .num{background:var(--E)}.cD .num{background:var(--D)}
+.corps{flex:1;min-width:0}.tete{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem}
+.ex{font-size:1.85rem;line-height:1.15}.page{font-size:1.5rem;font-weight:700;background:#1b2430;color:#fff;border-radius:8px;padding:.1rem .7rem}
+.badge{font-size:1.15rem;font-weight:700;background:#ffe08a;border-radius:8px;padding:.15rem .6rem}
+.quoi{font-size:1.45rem;line-height:1.35;margin:.45rem 0 0}.aide{font-size:1.2rem;line-height:1.35;margin:.45rem 0 0;color:#3b4656}
+.gauche{flex:none;display:flex;flex-direction:column;align-items:center;gap:.4rem}.mat{display:flex;flex-direction:column;font-size:1.35rem;line-height:1.25}.mat i{font-style:normal}
+footer{display:grid;grid-template-columns:1.6fr 1fr;gap:1.4vw;position:sticky;bottom:0;background:#fff;padding-top:1vh;box-shadow:0 -10px 12px -8px #0002}
+footer div{border-radius:14px;padding:.6rem 1rem;background:#eef2f7}footer h3{margin:0 0 .4rem;font-size:1.35rem}
+footer ol{margin:0;padding:0;list-style:none;display:flex;gap:.6rem;flex-wrap:wrap}
+footer li{font-size:1.15rem;line-height:1.25;background:#fff;border-radius:10px;padding:.35rem .6rem;flex:1 1 0;min-width:8rem}
+footer li b{margin-right:.3rem}
+.bloque{background:#fdecea!important}
+/* une seule colonne agrandie */
+html.zoom{font-size:min(2.5vh,1.5vw)}html.zoom main{grid-template-columns:1fr}html.zoom .col:not(.on){display:none}html.zoom .col{cursor:zoom-out}
+.hint{font-size:1rem;color:#8a94a3;text-align:right;margin:0}
+@media print{.hint{display:none}}
+</style></head>
+<body>
+<h1>📘 ${esc(x.t)} <small>Cahier d'activités${x.pt?" · chaque groupe suit sa colonne":" · je commence par la colonne A"}</small></h1>
+<main>${cols.map(colonne).join("")}</main>
+<footer>
+ <div><h3>✅ Quand j'ai fini un exercice</h3><ol>
+  <li><b>1 ✏️</b>Je le termine en entier</li><li><b>2 📂</b>Je vais à la pochette de corrigés</li>
+  <li><b>3 🟢</b>Je corrige au stylo vert, sans effacer</li><li><b>4 ➡️</b>Juste : étape suivante. Faux : je cherche mon erreur</li></ol></div>
+ <div class="bloque"><h3>🆘 Je suis bloqué</h3><ol>
+  <li><b>1 📖</b>Je relis la méthode du cours</li><li><b>2 🤫</b>Je demande à mon voisin, à voix basse</li><li><b>3 ✋</b>Je lève la main</li></ol></div>
+</footer>
+<p class="hint">Touches 1, 2, 3 ou clic : agrandir une colonne · 0 ou Échap : tout voir</p>
+<script>
+const cols=[...document.querySelectorAll(".col")];
+function voir(n){const c=cols.find(c=>c.dataset.i==n);const on=c&&!c.classList.contains("on");
+  cols.forEach(x=>x.classList.toggle("on",on&&x===c));document.documentElement.classList.toggle("zoom",!!on)}
+cols.forEach(c=>c.addEventListener("click",()=>voir(c.dataset.i)));
+addEventListener("keydown",e=>{if(/^[123]$/.test(e.key))voir(e.key);if(e.key==="0"||e.key==="Escape")voir(0)});
+<\/script>
+</body></html>`;
 }
 function renderGroupes(c){
   const p=POINTS.find(x=>x.n===ui.point)||POINTS[0];
