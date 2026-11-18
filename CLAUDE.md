@@ -17,7 +17,11 @@ Quand le professeur donne un PDF de copies « Contrôle » (code de copie en hau
 2. **Lire les copies** : chaque page une seule fois, 3 ou 4 par message. Calculer soi-même les réponses à partir
    des énoncés imprimés. `corrige-compact.txt` (une ligne par question, ex. `grep "BMG-08 Q8"`) seulement pour une
    question douteuse ; ne pas lire `correction.txt` en entier.
-   **Doute de lecture** (virgule, retenue, petit chiffre dans une case, rature) : relire cette page dans `hd\`.
+   **Doute de lecture** (chiffre ou virgule peu lisible, rature, deux cases marquées, réponse surlignée mais pas
+   cochée, case presque vide…) : **ne jamais choisir seul**. Relire d'abord cette page dans `hd\` ; si le doute
+   reste, **poser la question au professeur** avec l'outil de question (copie, prénom, question, ce qui est lu, les
+   deux lectures possibles, image de la zone si possible) et **attendre sa réponse** avant de donner la ligne de cette
+   copie. Regrouper les doutes en une ou deux séries de questions plutôt que de les poser un par un.
 
 3. **Noter** :
    - Par question : `1` si entièrement juste, `0` sinon (ces chiffres alimentent le corrigé en ligne de l'élève).
@@ -32,8 +36,8 @@ Quand le professeur donne un PDF de copies « Contrôle » (code de copie en hau
    - Le niveau écrit dans la ligne l'emporte sur les chiffres : le site le lit tel quel.
 
 4. **Répondre en 4 parties** :
-   1. **À vérifier** : uniquement les lectures douteuses (copie, question, ce qui est lu, le choix retenu, la ligne à
-      mettre si c'est l'autre lecture) et les copies absentes du scan.
+   1. **À vérifier** : les copies absentes du scan, et le rappel des doutes de lecture tranchés par le professeur.
+      Aucun doute ne doit rester sans avoir été posé.
    2. **Lignes à coller**, dans l'ordre des codes, sans aucune remarque :
       `BMG-03 C1=MF(100) C2=MF(00001) C3=MS(0)`
    3. **À écrire sur les copies** : **une fiche par élève**, affichée avec l'outil de visuel interactif
