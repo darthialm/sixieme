@@ -377,8 +377,7 @@ const CAHIER={
  S15:{t:"Construire un triangle",pt:5,fiche:true,
   R:"ta fiche « Je reprends », au tableau avec le professeur ; puis finir ex. 19 p. 87 ; puis la fiche d'exercices « Construire un triangle », partie Je reprends (3 triangles)",
   E:"ta fiche « Je m'entraîne » ; puis ex. 20 p. 87 (triangle isocèle) ; puis la fiche « Construire un triangle », partie Je m'entraîne (3 triangles)",
-  D:"ta fiche « Je relève un défi » ; puis ex. 23 p. 87 (trois triangles accolés) ; puis invente un programme de construction d'un triangle et échange-le avec un élève du groupe",
-  warn:"le corrigé de l'ex. 23 place l'angle de 100° en B au lieu de A : à vérifier avant de le mettre dans la pochette"},
+  D:"ta fiche « Je relève un défi » ; puis ex. 23 p. 87 (trois triangles accolés) ; puis invente un programme de construction d'un triangle et échange-le avec un élève du groupe"},
 };
 /* Écran projeté du cahier : par groupe, les étapes dans l'ordre, pour que l'élève sache seul quoi faire.
    EX(n° d'exercice, page, ce que je fais, astuce, matériel) ; FI(fiche, …) ; AU(titre libre, page, …).
@@ -386,17 +385,17 @@ const CAHIER={
 const EX=(n,p,quoi,aide,mat,o)=>Object.assign({k:"Exercice "+n,p,quoi,aide,mat},o),
   FI=(k,quoi,aide,mat,o)=>Object.assign({k,fiche:true,quoi,aide,mat},o),
   AU=(k,p,quoi,aide,mat,o)=>Object.assign({k,p,quoi,aide,mat},o);
-const AIDE_MES="Avant de mesurer : aigu ou obtus ? Puis centre sur le sommet, 0 sur un côté, je lis la graduation qui part de ce 0.";
+const AIDE_MES="Avant de mesurer : aigu ou obtus ? Puis centre sur le sommet, ligne du 0 sur un côté, et je suis la graduation dont le 0 est SUR ce côté.";
 const AIDE_CONS="Centre du rapporteur sur le sommet, 0 sur le côté déjà tracé ; je marque un petit point à la bonne graduation, puis je trace à la règle.";
 const AIDE_TRI="Je fais d'abord une figure à main levée, codée avec les mesures. Puis je construis dans l'ordre de l'énoncé.";
 const PAS={
  S7:{
   A:[EX(8,85,"Je lis la mesure de chaque angle sur le rapporteur déjà posé.","Je pars du 0 qui est sur un côté de l'angle et je suis CETTE graduation (intérieure ou extérieure).",""),
      EX(9,85,"Je dis si l'angle BAC est aigu ou obtus, puis je le mesure.","Aigu : plus petit que l'angle droit. Obtus : plus grand. Ma mesure doit être d'accord avec ma réponse !","r")],
-  B:[EX(24,88,"Ceinture jaune : je mesure les angles demandés.",AIDE_MES,"r"),
-     EX(25,88,"Ceinture verte : je mesure les angles demandés.",AIDE_MES,"r")],
-  C:[EX(26,88,"Ceinture noire : je mesure les angles demandés.",AIDE_MES,"r"),
-     EX(31,90,"Le cerf-volant : je lis tout l'énoncé, je repère les angles, puis je réponds.","Je repasse en couleur chaque angle avant de le mesurer.","r")]},
+  B:[EX(24,88,"Ceinture jaune : je complète les phrases (aigu, droit, plat), puis je mesure 3 angles.",AIDE_MES,"r"),
+     EX(25,88,"Ceinture verte : je reconnais et je nomme les angles, puis je calcule une mesure.","Pour calculer un angle, je regarde quels angles collés le forment.","r")],
+  C:[EX(26,88,"Ceinture noire : nature des angles, noms de l'angle violet, puis des calculs de mesures.","Je pose chaque calcul : grand angle − petit angle.","r"),
+     EX(31,90,"Le cerf-volant : je trouve des angles aigus, droits, obtus et plats dans la figure.","Je repasse en couleur chaque angle avant de le classer.","r")]},
  S8:{
   R:[FI("Ma fiche « Je reprends »","Je la fais au tableau avec le professeur.","On mesure ensemble, étape par étape.","r",{prof:true}),
      EX(10,85,"Je nomme les 4 angles du quadrilatère ABCD, puis je mesure chacun.","Pour nommer un angle, la lettre du sommet est au milieu : ABC a pour sommet B.","r"),
@@ -406,7 +405,7 @@ const PAS={
      FI("Fiche d'exercices « Mesurer un angle »","Partie « Je m'entraîne » : je mesure les 6 angles.","Les angles sont dans tous les sens : je tourne ma feuille, le 0 toujours sur un côté.","r")],
   D:[FI("Ma fiche « Je relève un défi »","Je la fais seul, puis je me corrige à la pochette.","J'écris ma recherche avant de regarder le corrigé.","r"),
      AU("Le défi « La pendule »",91,"Je trouve la mesure exacte de l'angle entre les aiguilles à 10 h 12.","En 12 minutes, la petite aiguille a avancé aussi : de quelle part d'un espace de l'horloge ?",""),
-     EX(33,90,"Angle droit ? Je réponds et je justifie.","Je mesure, puis j'écris une phrase qui explique ma réponse.","r"),
+     EX(33,90,"Angle droit ? ABCD semble être un rectangle : je mesure ses angles pour vérifier.","Un rectangle a 4 angles droits : 90° pile. Je mesure avec soin.","r"),
      AU("Le jeu « Un rapporteur dans l'œil »",91,"Je lis la règle du jeu et je joue avec un élève de mon groupe.","J'estime d'abord à l'œil, puis je vérifie au rapporteur.","r",{deux:true})]},
  S9:{
   R:[EX(12,86,"Je trace un segment pour obtenir un angle de 75° : le rapporteur est déjà placé.","On le fait ensemble au tableau.","rg",{prof:true}),

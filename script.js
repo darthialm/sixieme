@@ -8,7 +8,7 @@
 const CODE_PROF = 'prof6e';
 
 /** Version du site : doit être la même que dans index.html (sinon le navigateur utilise un ancien fichier) */
-const SITE_VERSION = '2026-11-16.3';
+const SITE_VERSION = '2026-11-18.1';
 
 /* =========================================================
    Outils
@@ -306,21 +306,110 @@ const TOOLS = [
   { id: 'pan', icon: '✋', label: 'Déplacer' },
   { id: 'prot', icon: '◠', label: 'Rapporteur', extra: true },
 ];
+/* Mode d'emploi de chaque instrument : les étapes s'affichent au-dessus de la feuille, l'étape en cours en gras.
+   Les lignes après les étapes (tip) sont des conseils. Le rapporteur a sa propre liste (prSteps). */
 const HELP = {
-  seg: ['Règle : clique sur le point de départ.', 'Déplace, puis clique pour placer l\'extrémité.'],
-  hray: ['Demi-droite : clique sur son origine.', 'Clique sur un point par lequel elle passe.'],
-  line: ['Droite : clique sur un premier point.', 'Clique sur un second point de la droite.'],
-  circle: ['Compas : clique sur le centre (pointe sèche).', 'Écarte le compas, puis clique pour tracer le cercle.'],
-  point: ['Point : clique pour placer un point. Il s\'accroche aux intersections et aux tracés.'],
-  pan: ['Déplacer : fais glisser la feuille pour déplacer toute la figure (si elle sort du cadre).'],
-  perp: ['Équerre : clique sur la droite ou le segment de référence.', 'Clique sur le point par lequel doit passer la perpendiculaire.'],
-  par: ['Parallèle (règle + équerre) : clique sur la droite de référence.', 'Clique sur le point par lequel doit passer la parallèle.'],
-  prot: ['Rapporteur : clique sur le sommet de l\'angle (le centre du rapporteur se place dessus).', 'Clique sur un point du côté de départ : le 0° du rapporteur se place sur ce côté.', 'Tourne jusqu\'à la mesure voulue, puis clique pour faire une petite marque. Relie-la ensuite au sommet (outil Demi-droite).'],
+  seg: { t: '📏 Règle', s: ['Clique sur le point de départ.', 'Bouge la souris (ou ton doigt) : la longueur s\'affiche. Clique pour finir le segment.'], tip: 'Pas la bonne longueur ? Corrige avec les boutons − et + (au millimètre).' },
+  hray: { t: '↗ Demi-droite', s: ['Clique sur son origine (le point de départ).', 'Clique sur un point par lequel elle passe (par exemple ta marque).'] },
+  line: { t: '⟷ Droite', s: ['Clique sur un premier point.', 'Clique sur un deuxième point de la droite.'] },
+  circle: { t: '◯ Compas', s: ['Clique sur le centre : la pointe du compas.', 'Écarte le compas : le rayon s\'affiche. Clique pour tracer le cercle.'], tip: 'Pas le bon rayon ? Corrige avec − et +.' },
+  point: { t: '× Point', s: ['Choisis la lettre dans « Prochain point », puis clique à l\'endroit voulu. Le point s\'accroche aux croisements et aux tracés.'] },
+  pan: { t: '✋ Déplacer', s: ['Fais glisser la feuille pour déplacer toute la figure (si elle sort du cadre).'] },
+  perp: { t: '⊥ Équerre', s: ['Clique sur la droite (ou le segment) de départ.', 'Clique sur le point par lequel doit passer la perpendiculaire.'] },
+  par: { t: '∥ Parallèle', s: ['Clique sur la droite (ou le segment) de départ.', 'Clique sur le point par lequel doit passer la parallèle.'] },
 };
+
+/* =========================================================
+   Rapporteur à manipuler, comme un vrai : on le fait GLISSER (centre sur le sommet), on le TOURNE avec la
+   poignée ↻ (la ligne du 0 sur un côté), puis on CHOISIT le 0 qui est sur le côté : sa graduation devient orange.
+   P = { c: centre, a: direction (degrés, à l'écran) du 0 de la graduation extérieure, R: rayon,
+         on: point sous le centre, side: { z: 0 posé sur un côté ('out' extérieur, 'in' intérieur) }, z: 0 choisi }
+   ========================================================= */
+const PROT_R = 3.8;
+const protBN = (P) => { const b = G.rot({ x: 1, y: 0 }, P.a); return { b, n: { x: b.y, y: -b.x } }; };
+/** point du rapporteur à k degrés de la graduation extérieure, à la distance rr du centre */
+const prPt = (P, k, rr) => { const { b, n } = protBN(P), r = (k * Math.PI) / 180; return G.add(P.c, G.add(G.mul(b, rr * Math.cos(r)), G.mul(n, rr * Math.sin(r)))); };
+const prKnob = (P) => G.add(P.c, G.mul(protBN(P).n, P.R + 0.6));
+const prZero = (P, z) => (z === 'out' ? prPt(P, 0, P.R - 0.62) : prPt(P, 180, P.R - 1.05));
+function prInside(P, p) {
+  const { b, n } = protBN(P), v = G.sub(p, P.c), al = G.dot(v, b), up = G.dot(v, n);
+  return (up >= -0.55 && up <= 0.05 && Math.abs(al) <= P.R + 0.3) || (up >= 0 && G.len(v) <= P.R + 0.1);
+}
+/** angle (0 à 180, compté depuis le 0 extérieur) sous lequel le centre voit le point p ; null sous la base */
+function prAngleOf(P, p) {
+  const { b, n } = protBN(P), v = G.sub(p, P.c); if (G.len(v) < 0.3 || G.dot(v, n) < -0.3) return null;
+  return clamp((Math.atan2(Math.max(0, G.dot(v, n)), G.dot(v, b)) * 180) / Math.PI, 0, 180);
+}
+/** dessin : double graduation (extérieure en bleu, intérieure en violet), poignée, et les deux 0 à choisir si pick */
+function prSVG(P, { pick = false } = {}) {
+  const { b, n } = protBN(P), R = P.R, c = P.c, f = (q) => `${q.x.toFixed(3)} ${q.y.toFixed(3)}`;
+  const sw = G.cross(b, n) > 0 ? 1 : 0, ri = R - 1.35;
+  const e0 = G.add(c, G.mul(b, R)), e1 = G.sub(c, G.mul(b, R)), s0 = G.add(c, G.mul(b, R + 0.3)), s1 = G.sub(c, G.mul(b, R + 0.3)), dn = G.mul(n, -0.55);
+  let s = `<g class="pr${P.z ? ' pr-z-' + P.z : ''}">`;
+  s += `<path d="M${f(s0)} L${f(e0)} A ${R} ${R} 0 0 ${sw} ${f(e1)} L${f(s1)} L${f(G.add(s1, dn))} L${f(G.add(s0, dn))} Z" class="pr-body"/>`;
+  s += `<path d="M${f(prPt(P, 0, ri))} A ${ri} ${ri} 0 0 ${sw} ${f(prPt(P, 180, ri))}" class="pr-arc"/>`;
+  for (let k = 0; k <= 180; k++) {
+    const L = k % 10 === 0 ? 0.42 : k % 5 === 0 ? 0.28 : 0.15;
+    s += `<line x1="${f(prPt(P, k, R)).replace(' ', '" y1="')}" x2="${f(prPt(P, k, R - L)).replace(' ', '" y2="')}" class="pr-tk${k % 10 ? '' : ' pr-tk10'}"/>`;
+    if (k % 10 === 0) {
+      // nombres tournés comme sur un vrai rapporteur : le haut des chiffres vers l'extérieur
+      const o = prPt(P, k, R - 0.62), i = prPt(P, k, R - 1.05), d = G.sub(o, c), phi = ((Math.atan2(d.y, d.x) * 180) / Math.PI + 90).toFixed(1);
+      const tx = (q, cls, t) => `<text x="${q.x.toFixed(3)}" y="${q.y.toFixed(3)}" transform="rotate(${phi} ${q.x.toFixed(3)} ${q.y.toFixed(3)})" class="${cls}">${t}</text>`;
+      s += tx(o, 'pr-out', k) + tx(i, 'pr-in', 180 - k);
+    }
+  }
+  s += `<line x1="${f(e1).replace(' ', '" y1="')}" x2="${f(e0).replace(' ', '" y2="')}" class="pr-base"/>`;
+  s += `<path d="M${f(G.sub(c, G.mul(b, 0.3)))} L${f(G.add(c, G.mul(b, 0.3)))} M${f(G.sub(c, G.mul(n, 0.3)))} L${f(G.add(c, G.mul(n, 0.3)))}" class="pr-ctr"/>`;
+  const K = prKnob(P), Kb = G.add(c, G.mul(n, R));
+  s += `<line x1="${f(Kb).replace(' ', '" y1="')}" x2="${f(K).replace(' ', '" y2="')}" class="pr-stalk"/><circle cx="${K.x.toFixed(3)}" cy="${K.y.toFixed(3)}" r="0.45" class="pr-knob"/><text x="${K.x.toFixed(3)}" y="${K.y.toFixed(3)}" class="pr-knob-t">↻</text>`;
+  if (pick) ['out', 'in'].forEach((z) => { const q = prZero(P, z); s += `<circle cx="${q.x.toFixed(3)}" cy="${q.y.toFixed(3)}" r="0.38" class="pr-zero"/>`; });
+  return s + '</g>';
+}
+/** attraper : la poignée tourne, le corps se déplace */
+function prGrab(P, p) {
+  if (G.dist(p, prKnob(P)) < 0.65) return { mode: 'rot', a0: P.a, t0: Math.atan2(p.y - P.c.y, p.x - P.c.x), p0: p };
+  if (prInside(P, p)) return { mode: 'move', off: G.sub(P.c, p), p0: p };
+  return null;
+}
+function prMoveTo(P, g, p) {
+  if (g.mode === 'move') P.c = G.add(p, g.off);
+  else P.a = g.a0 + ((Math.atan2(p.y - P.c.y, p.x - P.c.x) - g.t0) * 180) / Math.PI;
+}
+/** aimant d'un vrai geste : le centre se colle sur un point proche, puis la ligne du 0 se colle sur un tracé
+    qui part de ce point (dirsAt : directions des tracés depuis ce point). Change de côté : le 0 choisi s'efface. */
+function prSnap(P, pts, dirsAt) {
+  let on = null, bd = 0.42;
+  for (const q of pts) { const d = G.dist(P.c, q); if (d < bd) { bd = d; on = q; } }
+  P.on = on; if (on) P.c = { x: on.x, y: on.y };
+  let side = null;
+  if (on) for (const d of dirsAt(on)) {
+    const da = (Math.atan2(d.y, d.x) * 180) / Math.PI;
+    for (const [off, z] of [[0, 'out'], [180, 'in']]) {
+      const diff = ((((P.a - da - off) % 360) + 540) % 360) - 180;
+      if (Math.abs(diff) < 5) { P.a = da + off; side = { z, d }; }
+    }
+  }
+  if (!side || !P.side || side.z !== P.side.z || G.dot(side.d, P.side.d) < 0.999) P.z = null;
+  P.side = side;
+}
+/** clic sur un 0 : 'ok', 'bad' (l'autre 0) ou null (pas sur un 0) */
+function prPickZero(P, p) {
+  const z = ['out', 'in'].find((x) => G.dist(p, prZero(P, x)) < 0.5); if (!z) return null;
+  if (P.side && P.side.z === z) { P.z = z; return 'ok'; }
+  return 'bad';
+}
+/** lecture de la graduation choisie pour un angle k compté depuis le 0 extérieur */
+const prRead = (P, k) => (P.z === 'in' ? 180 - k : k);
+/** coordonnées d'un événement souris/doigt dans le repère (cm) d'un svg */
+function svgPt(svg, e) {
+  const m = svg.getScreenCTM(); if (!m) return { x: 0, y: 0 };
+  const q = svg.createSVGPoint(); q.x = e.clientX; q.y = e.clientY;
+  const r = q.matrixTransform(m.inverse()); return { x: r.x, y: r.y };
+}
 
 function createBoard(host, opts = {}) {
   const W = 16, H = 11;
-  const st = { points: [], objs: [], hist: [], tool: 'seg', step: 0, tmp: {}, cur: null, next: null, adj: null, uid: 1 };
+  const st = { points: [], objs: [], hist: [], tool: 'seg', step: 0, tmp: {}, cur: null, next: null, adj: null, uid: 1, P: null };
   const taskNames = opts.names || [];
   const tools = TOOLS.filter((t) => (opts.tools ? opts.tools.includes(t.id) : !t.extra || opts.prot));
 
@@ -332,11 +421,13 @@ function createBoard(host, opts = {}) {
       <button type="button" class="tool" data-a="clear">✕<span>Effacer</span></button>
     </div>
     <div class="geo-names"></div>
+    <div class="geo-help"><b class="geo-ht"></b><ol class="geo-steps"></ol></div>
     <div class="geo-status"><span class="geo-msg"></span><span class="geo-read"></span><span class="geo-adj" hidden><button type="button" data-d="-1" aria-label="Diminuer">−</button><button type="button" data-d="1" aria-label="Augmenter">+</button></span></div>
     <div class="geo-wrap"><svg class="geo-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Feuille de construction">
-      <g class="g-grid"></g><g class="g-objs"></g><g class="g-prev"></g><g class="g-pts"></g></svg></div>
+      <g class="g-grid"></g><g class="g-objs"></g><g class="g-prev"></g><g class="g-pts"></g><g class="g-prot no-print"></g></svg></div>
   </div>`;
   const svg = host.querySelector('.geo-svg');
+  const gProt = svg.querySelector('.g-prot'), elSteps = host.querySelector('.geo-steps'), elHt = host.querySelector('.geo-ht');
   const gObjs = svg.querySelector('.g-objs'), gPts = svg.querySelector('.g-pts'), gPrev = svg.querySelector('.g-prev');
   const elMsg = host.querySelector('.geo-msg'), elRead = host.querySelector('.geo-read'), elAdj = host.querySelector('.geo-adj');
   const elNames = host.querySelector('.geo-names');
@@ -444,7 +535,12 @@ function createBoard(host, opts = {}) {
 
   /* ----- actions ----- */
   function msg(t, warn = false) { elMsg.textContent = t; elMsg.classList.toggle('warn', warn); }
-  function help() { msg(HELP[st.tool][st.step] || HELP[st.tool][0]); }
+  function help() {
+    msg('');
+    const prot = st.tool === 'prot', h = prot ? { t: '◠ Rapporteur', s: PROT_STEPS } : HELP[st.tool], now = prot ? protNow() : st.step;
+    elHt.textContent = h.t;
+    elSteps.innerHTML = h.s.map((t, i) => `<li class="${i < now ? 'ok' : i === now ? 'now' : ''}">${t}</li>`).join('') + (h.tip ? `<li class="tip">${h.tip}</li>` : '');
+  }
   function commit(ids) { st.hist.push(ids); st.adj = null; }
   function cancel() {
     if (st.step > 0 && st.tmp.created) {
@@ -464,23 +560,53 @@ function createBoard(host, opts = {}) {
     return addPoint(s.x, s.y, st.tmp.created).id;
   }
 
-  /** rapporteur : angle entier (en degrés) entre le côté de départ et la direction du pointeur */
-  function protAt(p) {
-    const C = pt(st.tmp.c), ref = st.tmp.ref; if (!C || !ref) return null;
-    const v = G.sub(p, C), r = G.len(v); if (r < 0.2) return null;
-    const a = Math.round(angDeg(ref, v)), sg = G.cross(ref, v) >= 0 ? 1 : -1;
-    const R = clamp(r, 1.2, 9);
-    const d = G.rot(ref, sg * a);
-    return { x: C.x + d.x * R, y: C.y + d.y * R, a, sg, r: R };
+  /* ----- rapporteur à manipuler (voir prSVG) ----- */
+  function protState() {
+    if (!st.P) st.P = { c: { x: W - 4.3, y: 4.9 }, a: -14, R: PROT_R, on: null, side: null, z: null };
+    return st.P;
   }
-  function protSVG(C, ref, sg, a) {
-    const R = 3.2, n = G.mul(G.perp(ref), sg);
-    const at = (deg, rr) => G.add(C, G.add(G.mul(ref, rr * Math.cos((deg * Math.PI) / 180)), G.mul(n, rr * Math.sin((deg * Math.PI) / 180))));
-    const e0 = at(0, R), e1 = at(180, R);
-    let s = `<path d="M${e0.x} ${e0.y} A ${R} ${R} 0 0 ${sg > 0 ? 1 : 0} ${e1.x} ${e1.y} Z" class="prot"/>`;
-    for (let k = 0; k <= 180; k += 5) { const q0 = at(k, R), q1 = at(k, R - (k % 10 ? 0.15 : 0.32)); s += `<line x1="${q0.x}" y1="${q0.y}" x2="${q1.x}" y2="${q1.y}" class="prot-tk"/>`; if (k % 30 === 0) { const q = at(k, R - 0.6); s += `<text x="${q.x}" y="${q.y}" class="prot-txt">${k}</text>`; } }
-    if (a != null) { const q = at(a, R + 0.4); s += `<line x1="${C.x}" y1="${C.y}" x2="${q.x}" y2="${q.y}" class="pv-dash"/>`; }
-    return s;
+  /** directions des tracés qui partent du point q (segments, demi-droites, droites qui passent par q) */
+  function dirsAt(q) {
+    const out = [];
+    st.objs.forEach((o) => {
+      if (o.kind === 'circle') return;
+      const L = lin(o), dd = G.dot(L.d, L.d); if (dd < 1e-9 || distToLine(L, q) > 0.05) return;
+      const t = G.dot(G.sub(q, L.P), L.d) / dd, u = G.norm(L.d);
+      if (t < L.t1 - 0.02) out.push(u);
+      if (t > L.t0 + 0.02) out.push(G.mul(u, -1));
+    });
+    return out;
+  }
+  const PROT_STEPS = [
+    'Fais <b>glisser</b> le rapporteur : sa croix ✛ (le centre) sur le <b>sommet</b> de l\'angle.',
+    'Tourne-le avec la poignée <b>↻</b> : la ligne du 0 bien posée <b>sur le côté de départ</b>.',
+    'Un rapporteur a <b>deux 0</b> (deux graduations). Clique sur le 0 qui est <b>sur ton côté de départ</b> : sa graduation devient orange.',
+    'Compte sur la graduation <b>orange</b> (0, 10, 20…) jusqu\'à la mesure, et clique <b>au bord</b> du rapporteur : ça fait une marque.',
+    'Prends l\'outil <b>↗ Demi-droite</b> : relie le sommet à ta marque.',
+  ];
+  function protNow() {
+    const P = protState();
+    if (!P.on) return 0; if (!P.side) return 1; if (!P.z) return 2;
+    return st.adj && st.adj.kind === 'ang' ? 4 : 3;
+  }
+  function renderProt() { gProt.innerHTML = st.tool === 'prot' ? prSVG(protState(), { pick: !!(st.P.side && !st.P.z) }) : ''; }
+  function protTap(p) {
+    const P = protState(), z = prPickZero(P, p);
+    if (z === 'ok') { help(); msg(`Bravo : c'est le bon 0. Compte sur la graduation ${P.z === 'out' ? 'extérieure' : 'intérieure'} (en orange) : 0, 10, 20, 30…`); renderProt(); return; }
+    if (z === 'bad') {
+      msg(P.side ? 'Non : ce 0 est au bout opposé, il ne touche pas ton côté de départ. Choisis le 0 qui est posé sur le côté.' : 'D\'abord : le centre sur le sommet, puis la ligne du 0 sur un côté.', true); return;
+    }
+    const k = prAngleOf(P, p), r = G.dist(p, P.c);
+    if (!prInside(P, p) && r > P.R + 0.9) { msg('Attrape le rapporteur : le corps pour le déplacer, la poignée ↻ pour le tourner.', true); return; }
+    if (k === null || r < P.R - 1.7) { msg('Pour faire une marque, clique au bord du rapporteur, en face de la bonne graduation.', true); return; }
+    if (!P.on || !P.side) { msg('Place d\'abord le rapporteur : la croix sur le sommet, la ligne du 0 sur le côté de départ.', true); return; }
+    if (!P.z) { msg('Avant de faire ta marque, clique sur le 0 qui est sur ton côté de départ.', true); return; }
+    const kk = Math.round(k), m = prPt(P, kk, P.R + 0.15);
+    const q = { id: st.uid++, x: m.x, y: m.y, name: '', tick: true };
+    st.points.push(q); commit([q.id]);
+    st.adj = { kind: 'ang', q, k: kk, P: { ...P, c: { ...P.c } } };
+    help(); msg(`Marque faite à ${prRead(P, kk)}°. Prends l'outil ↗ Demi-droite : du sommet jusqu'à la marque.`);
+    render();
   }
 
   function handle(p) {
@@ -511,24 +637,6 @@ function createBoard(host, opts = {}) {
       const o = { id: st.uid++, kind: 'circle', c: st.tmp.c, r };
       st.objs.push(o); st.tmp.created.push(o.id); commit(st.tmp.created);
       st.adj = { kind: 'rad', o }; st.step = 0; st.tmp = {}; help(); render(); return;
-    }
-    if (t === 'prot') {
-      if (st.step === 0) {
-        const s = snap(p);
-        if (s.type !== 'point') { msg('Clique sur un point : le sommet de l\'angle.', true); return; }
-        st.tmp = { created: [], c: s.pid }; st.step = 1; help(); render(); return;
-      }
-      if (st.step === 1) {
-        const s = snap(p, { exclude: st.tmp.c });
-        const C = pt(st.tmp.c);
-        if (s.type === 'free' || G.dist(s, C) < 0.3) { msg('Clique sur un point ou sur un tracé du côté de départ.', true); return; }
-        st.tmp.ref = G.norm(G.sub(s, C)); st.step = 2; help(); render(); return;
-      }
-      const g = protAt(p); if (!g) return;
-      const q = { id: st.uid++, x: g.x, y: g.y, name: '', tick: true };
-      st.points.push(q); commit([q.id]);
-      st.adj = { kind: 'ang', q, c: st.tmp.c, ref: st.tmp.ref, a: g.a, sg: g.sg, r: g.r };
-      st.step = 0; st.tmp = {}; help(); render(); return;
     }
     if (t === 'perp' || t === 'par') {
       if (st.step === 0) {
@@ -567,9 +675,8 @@ function createBoard(host, opts = {}) {
     } else if (a.kind === 'rad') {
       a.o.r = Math.max(0.1, round1(a.o.r + d * 0.1));
     } else if (a.kind === 'ang') {
-      const na = clamp(a.a + d, 0, 180); a.a = na;
-      const C = pt(a.c), dd = G.rot(a.ref, a.sg * na);
-      a.q.x = C.x + dd.x * a.r; a.q.y = C.y + dd.y * a.r;
+      a.k = clamp(a.k + (a.P.z === 'in' ? -d : d), 0, 180);
+      const m = prPt(a.P, a.k, a.P.R + 0.15); a.q.x = m.x; a.q.y = m.y;
     }
     render();
   }
@@ -596,7 +703,7 @@ function createBoard(host, opts = {}) {
       elAdj.hidden = false;
       if (a.kind === 'len') elRead.textContent = `Longueur : ${cm(G.dist(pt(a.o.a), pt(a.o.b)))}`;
       if (a.kind === 'rad') elRead.textContent = `Rayon : ${cm(a.o.r)}`;
-      if (a.kind === 'ang') elRead.textContent = `Marque à ${a.a}°`;
+      if (a.kind === 'ang') elRead.textContent = `Marque à ${prRead(a.P, a.k)}°`;
     } else if (st.step === 0) { elAdj.hidden = true; elRead.textContent = ''; }
     else elAdj.hidden = true;
   }
@@ -611,7 +718,7 @@ function createBoard(host, opts = {}) {
       if (p.tick) return `<circle cx="${p.x}" cy="${p.y}" r="0.09" class="snap"/>`;
       return `${p.mark && p.mark.dash ? dashSVG(p, p.mark.dash, 0.2, 'g-pt') : crossSVG(p, 0.11, 'g-pt')}<text x="${l.x}" y="${l.y}" class="g-lbl">${p.name}</text>`;
     }).join('');
-    renderNames(); readout(); preview();
+    renderNames(); readout(); preview(); renderProt();
   }
   function preview() {
     const p = st.cur;
@@ -641,13 +748,6 @@ function createBoard(host, opts = {}) {
       const e = G.add(C, G.mul(G.norm(G.sub(p, C)), r));
       s += `<circle cx="${C.x}" cy="${C.y}" r="${r}" class="pv"/>` + L2(C, e, 'pv-dash');
       elRead.textContent = `Rayon : ${cm(r)}`;
-    } else if (t === 'prot' && st.step === 1) {
-      const C = pt(st.tmp.c), sp = snap(p, { exclude: st.tmp.c });
-      if (sp.type !== 'free') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.12" class="snap"/>` + L2(C, far(C, G.sub(sp, C), 40), 'hl');
-      elRead.textContent = '';
-    } else if (t === 'prot' && st.step === 2) {
-      const C = pt(st.tmp.c), g = protAt(p);
-      if (g) { s += protSVG(C, st.tmp.ref, g.sg, g.a) + `<circle cx="${g.x}" cy="${g.y}" r="0.1" class="snap"/>`; elRead.textContent = `Angle : ${g.a}°`; }
     } else if ((t === 'perp' || t === 'par') && st.step === 0) {
       const o = nearestLinear(p); if (o) s += objSVG(o, 'hl');
     } else if ((t === 'perp' || t === 'par') && st.step === 1) {
@@ -657,7 +757,6 @@ function createBoard(host, opts = {}) {
       const u = G.norm(lin(ref).d), d = t === 'perp' ? G.perp(u) : u;
       s += L2(far(sp, d, -40), far(sp, d, 40), 'pv-dash');
     }
-    if (st.step === 0 && t === 'prot') { const sp = snap(p); if (sp.type === 'point') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.14" class="snap"/>`; }
     if (st.step === 0 && t !== 'perp' && t !== 'par' && t !== 'prot') {
       const sp = snap(p);
       if (sp.type === 'point' || sp.type === 'inter') s += `<circle cx="${sp.x}" cy="${sp.y}" r="0.12" class="snap"/>`;
@@ -678,6 +777,7 @@ function createBoard(host, opts = {}) {
     try { svg.setPointerCapture(e.pointerId); } catch (_) { /* rien */ }
     const p = toCm(e); st.cur = p;
     if (st.tool === 'pan') { down = { p, pan: true }; svg.classList.add('grabbing'); return; }
+    if (st.tool === 'prot') { down = { p, prot: true, g: prGrab(protState(), p) }; if (down.g) svg.classList.add('grabbing'); return; }
     down = { p, started: st.step === 0 };
     if (st.step === 0) handle(p);
   });
@@ -689,11 +789,20 @@ function createBoard(host, opts = {}) {
       st.objs.forEach((o) => { if (o.lblAt) o.lblAt = G.add(o.lblAt, { x: dx, y: dy }); });
       down.p = st.cur; render(); return;
     }
+    if (down && down.prot) {
+      if (!down.g) return;
+      const P = protState(); prMoveTo(P, down.g, st.cur);
+      P.c = { x: clamp(P.c.x, 0, W), y: clamp(P.c.y, 0, H) };
+      prSnap(P, st.points.filter((q) => !q.hidden && !q.tick), dirsAt);
+      down.moved = down.moved || G.dist(st.cur, down.p) > 0.15;
+      renderProt(); if (down.moved) help(); return;
+    }
     preview();
   });
   svg.addEventListener('pointerup', (e) => {
     if (!down) return;
     if (down.pan) { down = null; svg.classList.remove('grabbing'); return; }
+    if (down.prot) { svg.classList.remove('grabbing'); const tap = !down.moved && G.dist(toCm(e), down.p) < 0.15; down = null; if (tap) protTap(toCm(e)); return; }
     const p = toCm(e); st.cur = p;
     const moved = G.dist(p, down.p) > 0.35;
     if (!down.started) handle(p);

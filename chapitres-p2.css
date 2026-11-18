@@ -266,3 +266,25 @@ body.projo-mode main { padding-top: 8px; padding-bottom: 8px; }
 .fig .a-follow { fill: none; stroke: #f59f00; stroke-width: 9; stroke-opacity: .45; stroke-linecap: round; stroke-linejoin: round; }
 .fig .f-seg.a-side { stroke: #e8590c; stroke-width: 4; }
 .fig .f-seg.a-side2 { stroke: #2f9e44; stroke-width: 4; }
+
+/* « Mesurer un angle » : rapporteur à placer soi-même */
+.mp { display: flex; flex-direction: column; gap: 10px; margin: 8px 0; }
+.mp-steps { columns: 2 22em; column-gap: 2.5em; }
+.mp-steps li { break-inside: avoid; }
+.mp-svg { display: block; width: 100%; height: auto; background: #fffefb; border: 1.5px solid var(--line); border-radius: 12px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mp-svg.grabbing { cursor: grabbing; }
+.mp-svg * { vector-effect: non-scaling-stroke; }
+.mp-side { stroke: #1d2230; stroke-width: 2.4; stroke-linecap: round; }
+.mp-dash { stroke: #1d2230; stroke-width: 1.6; }
+.mp-lbl { font-size: .5px; font-weight: 700; fill: #1d2230; text-anchor: middle; dominant-baseline: middle; font-family: "Atkinson Hyperlegible", sans-serif; }
+.mp-box { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: .95rem; }
+.mp-steps { margin: 0; padding-left: 1.5em; }
+.mp-steps li { margin: 4px 0; color: var(--muted); }
+.mp-steps li.now { color: inherit; font-weight: 700; }
+.mp-steps li.now::marker { content: '👉 '; }
+.mp-steps li.ok { color: var(--ok); }
+.mp-steps li.ok::marker { content: '✔ '; }
+.mp-msg { margin: 8px 0 4px; min-height: 1.3em; }
+.mp-msg.warn { color: var(--warn); font-weight: 700; }
+.done .mp-svg { pointer-events: none; }
+.done .mp-reset { display: none; }

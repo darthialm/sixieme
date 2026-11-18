@@ -1,3 +1,23 @@
+MISE À JOUR 2026-11-18.1 : rapporteur à manipuler, corrigés du cahier sans grosses captures
+
+À DÉPOSER : index.html, script.js, chapitres-p2.js, style.css, chapitres-p2.css, classeur.html
+SUR TON CLOUD (dossier docs) : les 6 PDF « Corrige_cahier_S6 … S15 » de pour-le-cloud/Cahier_Angles
+(les anciens sont gardés dans pour-le-cloud/Cahier_Angles/ancien)
+
+- Mesurer un angle (site) : l'élève place lui-même le rapporteur. Il le fait glisser (la croix sur le sommet),
+  le tourne avec la poignée ↻ (la ligne du 0 sur un côté), puis clique sur le 0 qui est SUR le côté : sa
+  graduation devient orange. Le mauvais 0 est refusé avec une explication. 4 étapes à côté de la figure se
+  cochent au fur et à mesure. Les contrôles papier gardent la figure imprimée, inchangée.
+- Planche de construction (construire un angle, la bissectrice, les triangles) : même rapporteur à glisser et
+  tourner, choix du 0, puis clic au bord pour la marque. Pour chaque instrument, le mode d'emploi s'affiche
+  au-dessus de la feuille en étapes numérotées : l'étape en cours en gras, les étapes faites cochées.
+- Corrigés du cahier (S6, S7, S8, S9, S14, S15) : les réponses sont écrites en clair, avec une petite figure
+  recadrée seulement pour les constructions (S9 : 10 pages → 3). Pour les triangles, des longueurs à vérifier
+  à la règle. Ex. 23 p. 87 : corrigé recalculé (celui du livre plaçait mal l'angle de 100°).
+- Écran projeté du cahier : consignes des ex. 24, 25, 26, 31 et 33 précisées d'après le corrigé.
+
+=========================================================
+
 MISE À JOUR 2026-11-17.3 : écrans projetés du cahier d'activités plus visuels
 
 À DÉPOSER : classeur.html

@@ -624,7 +624,81 @@ function protractorScene(m) {
   const P1 = G.mul(s1, L - 0.3), P2 = G.mul(s2, L - 0.3);
   const items = [protractorDraw(V, b, nUp, 3.1), F2.seg(V, G.mul(s1, L), 'f-seg f-thick'), F2.seg(V, G.mul(s2, L), 'f-seg f-thick')];
   const fig = figure({ [ns[1]]: V, [ns[0]]: P1, [ns[2]]: P2 }, items, { marks: { [ns[1]]: 'none', [ns[0]]: { dash: s1 }, [ns[2]]: { dash: s2 } }, extra: [G.mul(b, 3.6), G.mul(b, -3.6), G.mul(nUp, 3.5), G.mul(nUp, -0.6)], pad: 0.6, center: G.mul(nUp, -2), cls: 'p2-protfig' });
-  return { ns, fig, flip, s1, nUp };
+  return { ns, fig, flip, s1, s2, nUp };
+}
+/* « Mesurer un angle » sur le site : l'élève place lui-même le rapporteur (glisser, tourner, choisir le bon 0).
+   Les contrôles papier gardent la figure avec le rapporteur imprimé (CTL_GEN >= 0). */
+const MP_V = { x: 9, y: 7 }, MP_L = 5.4, MP_W = 16, MP_H = 11;
+function mesureLibreQ(ns, s1, s2) {
+  const [nA, nV, nB] = ns, V = MP_V;
+  const A = G.add(V, G.mul(s1, 4.6)), B = G.add(V, G.mul(s2, 4.6)), bis = G.norm(G.add(s1, s2));
+  const side = (d) => `<line x1="${V.x}" y1="${V.y}" x2="${(V.x + d.x * MP_L).toFixed(3)}" y2="${(V.y + d.y * MP_L).toFixed(3)}" class="mp-side"/>`;
+  // nom du point : du côté extérieur à l'angle
+  const lab = (P, d, n) => { let u = G.norm(G.perp(d)); if (G.dot(u, bis) > 0) u = G.mul(u, -1); const o = G.add(P, G.mul(u, 0.5)); return dashSVG(P, d, 0.2, 'mp-dash') + `<text x="${o.x.toFixed(3)}" y="${o.y.toFixed(3)}" class="mp-lbl">${n}</text>`; };
+  const lv = G.sub(V, G.mul(bis, 0.55));
+  return `<p class="statement">Mesure l'angle ${angN(nA + nV + nB)} : <b>place le rapporteur toi-même</b>, comme sur ta feuille.</p>
+    <div class="mp">
+    <div class="mp-box no-print">
+      <ol class="mp-steps">
+        <li>Fais <b>glisser</b> le rapporteur : sa croix ✛ (le centre) sur le sommet <b>${nV}</b>.</li>
+        <li>Tourne-le avec la poignée <b>↻</b> : la ligne du 0 sur un côté, [${nV}${nA}) ou [${nV}${nB}), et le rapporteur par-dessus l'angle.</li>
+        <li>Le rapporteur a <b>deux 0</b>. Clique sur le 0 qui est <b>sur ce côté</b> : sa graduation devient orange.</li>
+        <li>Compte sur la graduation <b>orange</b> (0, 10, 20…) jusqu'à l'autre côté, et écris la mesure.</li>
+      </ol>
+      <p class="mp-msg" aria-live="polite"></p>
+      <p><button type="button" class="mini mp-reset">↺ Remettre le rapporteur au départ</button></p>
+    </div>
+    <svg class="mp-svg" viewBox="0 0 ${MP_W} ${MP_H}" role="img" aria-label="Angle ${nA}${nV}${nB} et rapporteur à déplacer">
+      ${side(s1)}${side(s2)}${arcMark(V, s1, s2, 0.7, 'f-arcm f-arc-red')}${lab(A, s1, nA)}${lab(B, s2, nB)}
+      <text x="${lv.x.toFixed(3)}" y="${lv.y.toFixed(3)}" class="mp-lbl">${nV}</text><g class="mp-prot no-print"></g></svg>
+    </div>
+    <p class="big">${angN(nA + nV + nB)} = ${inp('num', 'Mesure')} °</p>`;
+}
+function mountMesureLibre(r, s1, s2) {
+  const svg = r.querySelector('.mp-svg'); if (!svg) return;
+  const gP = svg.querySelector('.mp-prot'), lis = [...r.querySelectorAll('.mp-steps li')], elMsg = r.querySelector('.mp-msg');
+  const start = () => ({ c: { x: 3.9, y: 10.2 }, a: (Math.random() < 0.5 ? -1 : 1) * (12 + Math.floor(Math.random() * 14)), R: PROT_R, on: null, side: null, z: null });
+  let P = start();
+  const covers = () => { if (!P.side) return false; const other = G.dot(P.side.d, s1) > 0.999 ? s2 : s1; return G.dot(other, protBN(P).n) > 0.05; };
+  const say = (t, warn = false) => { elMsg.innerHTML = t; elMsg.classList.toggle('warn', warn); };
+  function upd() {
+    const ok = [!!P.on, !!P.on && covers(), !!P.on && covers() && !!P.z];
+    const now = ok.indexOf(false) < 0 ? 3 : ok.indexOf(false);
+    lis.forEach((li, i) => { li.classList.toggle('ok', i < now); li.classList.toggle('now', i === now); });
+    r._placed = ok[2];
+    gP.innerHTML = prSVG(P, { pick: ok[1] && !P.z });
+  }
+  let down = null;
+  svg.addEventListener('pointerdown', (e) => {
+    if (e.button) return; e.preventDefault();
+    const p = svgPt(svg, e); down = { p, g: prGrab(P, p), moved: false };
+    if (down.g) svg.classList.add('grabbing');
+    try { svg.setPointerCapture(e.pointerId); } catch (_) { /* rien */ }
+  });
+  svg.addEventListener('pointermove', (e) => {
+    if (!down || !down.g) return;
+    const p = svgPt(svg, e); down.moved = down.moved || G.dist(p, down.p) > 0.15;
+    prMoveTo(P, down.g, p); P.c = { x: clamp(P.c.x, 0, MP_W), y: clamp(P.c.y, 0, MP_H) };
+    prSnap(P, [MP_V], () => [s1, s2]);
+    if (P.side && !covers()) say('Le rapporteur doit être <b>par-dessus l\'angle</b> : fais-lui faire un demi-tour avec la poignée ↻.', true);
+    else if (down.moved) say('');
+    upd();
+  });
+  svg.addEventListener('pointerup', (e) => {
+    if (!down) return;
+    svg.classList.remove('grabbing');
+    const p = svgPt(svg, e), tap = !down.moved; down = null;
+    if (!tap) return;
+    const near = ['out', 'in'].some((z) => G.dist(p, prZero(P, z)) < 0.5);
+    if (near && !(P.on && covers())) { say('D\'abord : la croix sur le sommet, puis la ligne du 0 sur un côté (étapes 1 et 2).', true); return; }
+    const z = near ? prPickZero(P, p) : null;
+    if (z === 'ok') say(`Oui ! Ce 0 est posé sur le côté. Suis la graduation <b>${P.z === 'out' ? 'extérieure' : 'intérieure'}</b> (en orange) : 0, 10, 20, 30…`);
+    else if (z === 'bad') say('Non : ce 0 est au bout opposé, il ne touche aucun côté de l\'angle. Regarde quel 0 est <b>sur</b> le côté.', true);
+    else if (!prInside(P, p) && G.dist(p, prKnob(P)) > 0.7) say('Attrape le rapporteur : le corps pour le déplacer, la poignée ↻ pour le tourner.');
+    upd();
+  });
+  r.querySelector('.mp-reset').addEventListener('click', () => { P = start(); say(''); upd(); });
+  upd();
 }
 /** Animation pas à pas : placer le rapporteur et lire une mesure.
     V sommet, s1 direction du côté de départ [VA), m mesure, ns = [A, V, B] ; inner : le 0 est sur la graduation intérieure ;
@@ -677,9 +751,9 @@ function genAngMesure() {
     const o = mcq(`<p>Estime la mesure de l'angle ${nm(ns)}, sans rapporteur.</p>${fig}`, cand.map(deg), 0, `L'angle ${nm(ns)} mesure ${deg(m)} : il est ${NATS[natOf(m)]}${m < 90 ? ', donc moins de 90°' : ', donc plus de 90°'}.`);
     return withRemed(withHints(o, ['Outil : l\'angle est-il aigu ou obtus ? Compare-le à un angle droit (90°), puis à la moitié d\'un angle droit (45°).']), () => `Commence par la nature : l'angle est ${NATS[natOf(m)]}. Élimine les mesures impossibles.`);
   }
-  const { ns, fig, flip, s1, nUp } = protractorScene(m);
+  const { ns, fig, flip, s1, s2, nUp } = protractorScene(m);
   let m2; do { m2 = 5 * rand(5, 31); } while (Math.abs(m2 - m) < 20 || (m2 >= 80 && m2 <= 100));
-  return {
+  const base = {
     animLabel: '🎬 Voir comment placer le rapporteur',
     anim: () => sceneMesure({ x: 0, y: 0 }, s1, m, ns, { inner: flip, n: nUp }),
     example: () => sceneMesure({ x: 0, y: 0 }, { x: 1, y: 0 }, m2, pickNames3(), { inner: Math.random() < 0.4 }),
@@ -691,6 +765,25 @@ function genAngMesure() {
     },
     q: `<p>Lis la mesure de l'angle ${nm(ns)} sur le rapporteur.</p>${fig}<p class="big">${nm(ns)} = ${inp('num', 'Mesure')} °</p>`,
     check(r) { const x = val(r); if (!x) return null; const ok = eq(x.value, m); markInput(r, 0, ok); return { ok, msg: `Le centre est sur ${ns[1]}, le 0° est sur [${ns[1]}${ns[0]}) (graduation ${flip ? 'intérieure' : 'extérieure'}). On lit <b>${deg(m)}</b> sur [${ns[1]}${ns[2]}). L'angle est bien ${NATS[natOf(m)]}.` }; },
+  };
+  if (CTL_GEN >= 0) return base; // contrôle papier : figure imprimée, inchangée
+  const [nA, nV, nB] = ns;
+  return {
+    ...base,
+    hints: ['Suis les 4 étapes à côté de la figure : elles se cochent ✔ quand c\'est bon.', `Le bon 0 est celui qui est posé <b>sur</b> un côté de l'angle, [${nV}${nA}) ou [${nV}${nB}). L'autre 0 est au bout opposé : il ne touche rien.`, `Vérifie avec la nature : l'angle est ${NATS[natOf(m)]}, donc ta mesure est ${m < 90 ? 'plus petite' : 'plus grande'} que 90°.`],
+    remediate(r) {
+      const x = val(r); if (!x || eq(x.value, m)) return null;
+      if (eq(x.value, 180 - m)) return `Tu as suivi la mauvaise graduation : celle dont le 0 n'est pas sur ton côté. Reprends l'étape 3 : quel 0 touche le côté ? Vérifie aussi : l'angle est ${NATS[natOf(m)]}.`;
+      if (!r._placed) return 'Ton rapporteur n\'est pas encore bien placé : fais les étapes 1, 2 et 3 (elles se cochent ✔), puis lis la mesure.';
+      if (Math.abs(x.value - m) <= 4) return 'Presque ! Entre deux nombres, chaque petit trait vaut 1° et le trait moyen tombe sur 5. Recompte les petits traits.';
+      return null;
+    },
+    q: mesureLibreQ(ns, s1, s2),
+    mount(r) { mountMesureLibre(r, s1, s2); },
+    check(r) {
+      const x = val(r); if (!x) return null; const ok = eq(x.value, m); markInput(r, 0, ok);
+      return { ok, msg: `Centre sur ${nV}, ligne du 0 sur un côté, puis on suit la graduation dont le <b>0 est sur ce côté</b> jusqu'à l'autre côté : <b>${deg(m)}</b>. L'angle est bien ${NATS[natOf(m)]}.` };
+    },
   };
 }
 
@@ -718,7 +811,7 @@ function genAngConstruire() {
   const O = { x: m > 90 ? 8.2 : 4.5, y: 8 }, X = G.add(O, G.mul(b, 6.8));
   const good = (d) => Math.abs(angDeg(b, d) - m) <= 1.5;
   return {
-    hints: [`Relis les 4 étapes « Construire un angle » dans ${ficheLink('angles')}.`, `Outil Rapporteur : clique sur ${nO}, puis sur la demi-droite [${nO}${nx}), tourne jusqu'à ${m}° et clique pour faire une marque. Enfin, outil Demi-droite : de ${nO} vers la marque.`, 'Clique sur « 🎬 Voir un exemple ».'],
+    hints: [`Relis les 4 étapes « Construire un angle » dans ${ficheLink('angles')}.`, `Outil Rapporteur : fais-le glisser (la croix sur ${nO}), tourne-le avec la poignée ↻ (la ligne du 0 sur [${nO}${nx})), clique sur le 0 qui est sur [${nO}${nx}), puis clique au bord à ${m}° sur la graduation orange. Enfin, outil Demi-droite : de ${nO} vers la marque.`, 'Clique sur « 🎬 Voir un exemple ».'],
     anim: () => sceneAngle(O, b, m, nO, nx, ny),
     example: () => sceneAngle({ x: 0, y: 0 }, { x: 1, y: 0 }, m === 65 ? 140 : 65, 'A', 'u', 'v'),
     remediate(r) {
@@ -874,7 +967,7 @@ function genAngBiss() {
   const K = { x: m > 100 ? 7.5 : 4.5, y: 8.4 }, X = G.add(K, G.mul(ux, 6.8)), Y = G.add(K, G.mul(uy, 6));
   const good = (d) => Math.abs(angDeg(d, uz) ) <= 1.5;
   return {
-    hints: [`Relis la méthode « Construire la bissectrice » dans ${ficheLink('angles')}.`, `Outil : mesure d'abord l'angle ${angN('x' + nK + 'y')} avec le Rapporteur (clique sur ${nK}, puis sur [${nK}x) : la mesure s'affiche quand tu vises [${nK}y)). Puis divise par 2.`, 'Clique sur « 🎬 Voir un exemple ».'],
+    hints: [`Relis la méthode « Construire la bissectrice » dans ${ficheLink('angles')}.`, `Outil : mesure d'abord l'angle ${angN('x' + nK + 'y')} avec le Rapporteur (la croix sur ${nK}, la ligne du 0 sur [${nK}x), clique sur le 0 qui est sur [${nK}x), puis lis où passe [${nK}y) sur la graduation orange). Puis divise par 2.`, 'Clique sur « 🎬 Voir un exemple ».'],
     anim: () => sceneBiss(K, ux, m, nK),
     example: () => sceneBiss({ x: 0, y: 0 }, { x: 1, y: 0 }, m === 70 ? 100 : 70, 'A'),
     remediate(r) {
