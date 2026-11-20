@@ -104,6 +104,21 @@ details.passes,details.proj,details.aide,details.plus{border:1px dashed var(--li
 details.passes>summary,details.proj>summary,details.aide>summary,details.plus>summary{cursor:pointer;font-weight:600;padding:4px 0}
 details.passes[open]{display:flex;flex-direction:column;gap:8px}
 .chap>h2{padding-top:6px}
+.liste{display:flex;flex-direction:column;gap:10px}
+.semaine{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:6px 0 -2px}
+.cren{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.cren.next{border:2px solid var(--accent)}
+.cren.done{opacity:.8}
+.cren>header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cren .seg.st{margin-left:auto}
+.cren .seg.st button{min-height:36px;padding:6px 10px;font:inherit;font-size:.88rem;cursor:pointer;color:var(--ink)}
+.cren .seg.st button[aria-pressed="true"]{color:var(--accent)}
+.cren .docs .dsec{margin-top:0}
+.tag.next{color:var(--accent);background:var(--accent-soft)}
+ol.deroule.court li{padding:3px 8px}
+ol.deroule.court li .btn.small{min-height:30px;padding:2px 8px;margin-left:6px}
+.docs .deja{display:inline-flex;align-items:center;gap:6px;opacity:.6}.docs .deja i{font-style:normal;font-size:.85rem;color:var(--muted);white-space:nowrap}
+.cren .docs{align-items:center}.cren .docs .dsec{flex-basis:auto;margin:0 2px 0 6px;font-size:.72rem;white-space:nowrap}
 details.seance{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
 details.seance[open]{border-color:var(--accent)}
 details.seance.done{opacity:.86}
@@ -757,135 +772,91 @@ function docsBox(sids,parcs,avant=[]){
   const grp={eleve:[],fiche:[],pochette:[],projeter:[]};ks.forEach(k=>(grp[docType(k)]||grp.projeter).push(k));
   const deja=k=>new Set(avant.flatMap(sid=>(PAGES[k]||{})[sid]||[]));
   const pagesOf=k=>{const d=deja(k);return [...new Set(sids.flatMap(sid=>(PAGES[k]||{})[sid]||[]))].filter(n=>!d.has(n)).sort((a,b)=>a-b)};
-  const btn=k=>{const pg=pagesOf(k);return pg.length?docPagesBtn({k,pages:pg}):PAGES[k]&&sids.some(sid=>(PAGES[k][sid]||[]).length)?`${docBtn(k)}<span class="hint">déjà donné</span>`:docBtn(k)};
+  const dejaDoc=k=>!PAGES[k]&&docType(k)!=="projeter"&&avant.some(sid=>{const s=SEANCES.find(q=>q.id===sid);return s&&s.docs.includes(k)});
+  const btn=k=>{if(dejaDoc(k))return `<span class="deja">${docBtn(k)}<i>✓ déjà donné</i></span>`;const pg=pagesOf(k);return pg.length?docPagesBtn({k,pages:pg}):PAGES[k]&&sids.some(sid=>(PAGES[k][sid]||[]).length)?`<span class="deja">${docBtn(k)}<i>✓ déjà donné</i></span>`:docBtn(k)};
   const sec=(t,arr)=>arr.length?`<div class="dsec">${t}</div>`+arr.map(btn).join(""):"";
   const h=sec("À imprimer",[...grp.eleve,...grp.fiche])+sec("Pochette de corrigés",grp.pochette)+sec("À projeter / pour toi",grp.projeter)
     +(parcs.length?`<div class="dsec">Parcours vierges (sans prénom)</div>`+parcs.map(parcVierges).join(""):"");
   return h||`<span class="hint">—</span>`;
 }
-function imprimerHtml(c,P,i,titre){
-  const x=P.cr[i],a=aImprimer(c,P,i),n=c.eleves.length||0;
-  const li=(arr,qte)=>arr.map(e=>`<li>${docPagesBtn(e)}${qte?` <span class="qte">${qte}</span>`:""}</li>`).join("");
-  const vide=!a.eleve.length&&!a.fiche.length&&!a.pochette.length&&!a.parc.length;
-  return `<div class="panel imprimer"><h2>${titre} : ${esc(fmtJ(x.date,{weekday:"long",day:"numeric",month:"long"}))} <span class="hint">(${fmtD(x.d)})</span></h2>
-    <p class="quoi">${esc(resumeCreneau(x))}</p>
-    ${vide?`<p class="hint">Rien de nouveau à imprimer.</p>`:`<ul class="aimp">
-      ${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page, à couper)":"")}
-      ${a.parc.map(pt=>`<li><button class="btn small" data-goparc="${pt}">Parcours du point ${pt} avec les prénoms</button> <span class="qte">onglet Groupes</span></li>`).join("")}
-      ${a.pochette.length?`<li class="sous">Pochette de corrigés (libre-service) :</li>${li(a.pochette,"× 2")}`:""}
-    </ul>`}
-    ${a.projeter.length?`<details class="proj"><summary>À projeter / pour toi (${a.projeter.length})</summary><div class="docs">${a.projeter.map(e=>docBtn(e.k)).join("")}</div></details>`:""}
-  </div>`;
+/* Texte court d'une étape (le texte complet reste dans « Détail » et en info-bulle) */
+function court(t){
+  let s=String(t).replace(/\s*\([^)]*\)/g,"").split(/ ; /)[0].trim();
+  if(s.length>80)s=s.slice(0,78).replace(/[\s,;:]+\S*$/,"")+"…";
+  return s;
 }
-/* L'essentiel du cours choisi (par défaut le prochain) : à imprimer, documents, contenu, devoirs */
-function essentielHtml(c,P){
-  const nx=prochainCreneau(P);if(!nx)return `<div class="panel"><p class="now">Tous les créneaux de la période sont passés.</p></div>`;
-  const ni=P.cr.indexOf(nx),dernier=P.cr.slice(0,ni).reverse().find(z=>z.st&&z.st!=="annule");
-  const choix=[...(dernier?[dernier]:[]),...P.cr.slice(ni,ni+4)];
-  const x=choix.find(z=>z.id===ui.essC)||nx,i=P.cr.indexOf(x);
-  const tab=ui.essT||"imp";
-  const sids=[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))];
-  const parcs=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="p").map(p=>POINTS.find(q=>q.p===p.sid).n);
-  const a=aImprimer(c,P,i),n=c.eleves.length||0,dv=devoirsCreneau(c,P,i);
-  const nImp=a.eleve.length+a.fiche.length+a.pochette.length+a.parc.length+a.evals.length;
-  const li=(arr,qte)=>arr.map(e=>`<li>${docPagesBtn(e)}${qte?` <span class="qte">${qte}</span>`:""}</li>`).join("");
-  let corps="";
-  if(tab==="imp")corps=nImp?`<ul class="aimp">${a.evals.map(ch=>evalHtml(ch,x.date)).join("")}${li(a.eleve,n?"× "+n:"")}${li(a.fiche,n?"× "+Math.ceil(n/2)+" (2 parcours par page)":"")}
-      ${a.parc.map(pt=>`<li><button class="btn small" data-goparc="${pt}">Parcours du point ${pt} avec les prénoms</button></li>`).join("")}
-      ${a.pochette.length?`<li class="sous">Pochette de corrigés</li>${li(a.pochette,"× 2")}`:""}</ul>`:`<p class="hint">Rien de nouveau à imprimer pour ce cours.</p>`;
-  if(tab==="doc")corps=(a.evals.length?`<ul class="aimp">${a.evals.map(ch=>evalHtml(ch,x.date)).join("")}</ul>`:"")+`<div class="docs">${docsBox(sids,parcs,avantSids(P,i))}</div>`;
-  if(tab==="cont"){
-    corps=`<ol class="deroule">${x.pieces.map(p=>{const t=`${p.t0}–${p.t0+p.m}`;
-      if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier d'activités ou rattrapage</span></li>`;
-      const b=BLOCS[p.sid][p.i];return `<li class="y-${b.y}"><span class="tps">${t}</span><span>${esc(b.t)}${p.suite?" (suite)":""}${p.coupe?" (à finir au cours suivant)":""}</span>${omitBtn(p)}</li>`}).join("")}</ol>`
-      +retiresHtml(c,sids)
-      +[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")
-      +`<details class="plus"><summary>Contenu de séance pour École Directe</summary><div class="devoir" id="ess-ct">${contenuHtml(x.pieces.filter(p=>!p.marge))}</div>
-        <div class="row"><button class="btn small" data-essct="${i}">Copier</button></div></details>`;
-  }
-  if(tab==="dev")corps=dv.html?`<div class="devoir" id="ess-dev">${dv.html}</div><div class="row"><button class="btn primary small" data-essdev="${i}">Copier les devoirs</button></div>`
-      :`<p class="hint">Pas de devoirs à donner à la fin de ce cours (le suivant est trop proche, ou rien de prévu).</p>`;
-  const tabs=[["imp","🖨️ À imprimer"+(nImp?` (${nImp})`:"")],["doc","📄 Documents"],["cont","📝 Contenu"],["dev","🏠 Devoirs"+(dv.html?"":" (aucun)")]];
-  return `<div class="panel ess">
-    <div class="esschoix" role="group" aria-label="Choisir le cours">${choix.map(z=>`<button data-essc="${z.id}" aria-pressed="${z.id===x.id}">${z===dernier?"Dernier · ":z===nx?"Prochain · ":""}${esc(fmtJ(z.date,{weekday:"short",day:"numeric",month:"short"}))}</button>`).join("")}</div>
-    <h2>${esc(fmtJ(x.date,{weekday:"long",day:"numeric",month:"long"}))} <span class="hint">· ${fmtD(x.d)}</span></h2>
-    <p class="quoi">${esc(resumeCreneau(x))}</p>
-    <div class="seg ess-tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" data-esst="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>
-    <div class="esscorps">${corps}</div>
-    <div class="essfin"><span class="hint">Après le cours :</span>${[["fait","Fait"],["partiel","Pas tout fini"],["annule","Annulé"]].map(([k,l])=>`<button class="btn small" data-cst="${k}" data-c="${x.id}" aria-pressed="${(x.st||"")===k}">${l}</button>`).join("")}</div>
-  </div>`;
+/* Fait / Pas tout fini / Annulé, directement sur la carte du cours ; un 2e clic remet « à venir » */
+function statutSeg(x){
+  return `<div class="seg st" role="group" aria-label="Ce cours">${[["fait","✓ Fait"],["partiel","Pas tout fini"],["annule","Annulé"]].map(([k,l])=>`<button data-cst="${(x.st||"")===k?"":k}" data-c="${x.id}" aria-pressed="${(x.st||"")===k}">${l}</button>`).join("")}</div>`;
 }
+/* Un cours (créneau) : l'essentiel en clair, le reste dans « Détail » et « École Directe » */
+function carteCreneau(c,P,i,nx){
+  const x=P.cr[i],pcs=x.pieces.filter(p=>!p.marge),sids=[...new Set(pcs.map(p=>p.sid))];
+  const de=t=>pcs.filter(p=>BLOCS[p.sid][p.i].y===t).map(p=>p.sid);
+  const billets=de("b"),parcs=de("p"),evals=evalsCreneau(x);
+  const parcN=parcs.map(sid=>POINTS.find(q=>q.p===sid).n);
+  const stLab={fait:"Fait",partiel:"Pas tout fini",annule:"Annulé"}[x.st];
+  const tags=[x===nx?`<span class="tag next">Prochain cours</span>`:"",
+    x.extra?`<span class="tag extra">Créneau en plus</span>`:"",
+    ...evals.map(()=>`<span class="tag eval">Évaluation</span>`),
+    ...parcN.map(n=>`<span class="tag parc">Parcours point ${n}</span>`),
+    ...billets.map(s=>`<span class="tag billet">Billet ${billetNom(POINTS.find(q=>q.b===s).n).replace(" · billet","")}</span>`)].join("");
+  const estCahier=p=>CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t));
+  const etapes=x.cap===0?`<p class="hint">Cours annulé : le contenu passe au cours suivant.</p>`
+    :`<ol class="deroule court">${x.pieces.map(p=>{
+      const t=`${p.t0}–${p.t0+p.m}`;
+      if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier ou rattrapage</span></li>`;
+      const b=BLOCS[p.sid][p.i];
+      return `<li class="y-${b.y}" title="${esc(b.t)}"><span class="tps">${t}</span><span>${esc(court(b.t))}${p.suite?" (suite)":""}${p.coupe?" (à finir au cours suivant)":""}${CAHIER[p.sid]&&(b.y==="p"||/^Cahier/i.test(b.t))?` <button class="btn small" data-projcahier="${p.sid}">📽 Projeter</button>`:""}</span>${omitBtn(p)}</li>`}).join("")}
+      ${x.st==="partiel"&&x.reste?`<li><span class="tps">${x.d-x.reste}–${x.d}</span><span class="hint">Non fait : reporté au cours suivant</span></li>`:""}</ol>${retiresHtml(c,sids)}`;
+  const docs=sids.length?`<div class="docs">${docsBox(sids,[],avantSids(P,i))}${parcN.map(n=>`<button class="btn small" data-goparc="${n}">Parcours du point ${n} avec les prénoms</button>`).join("")}</div>`:"";
+  const dv=devoirsCreneau(c,P,i);
+  const detail=sids.length?`<details class="plus"><summary>Détail</summary><div class="sbody" style="padding:8px 0 0">
+      <ol class="deroule">${pcs.map(p=>{const b=BLOCS[p.sid][p.i];return `<li class="y-${b.y}"><span class="tps">${p.t0}–${p.t0+p.m}</span><span><span class="lib">${esc(labPiece(p.sid,p.i))}</span> ${esc(b.t)}</span></li>`}).join("")}</ol>
+      ${sids.map(sid=>{const s=SEANCES.find(q=>q.id===sid);
+        return `<div class="box"><div><b>${esc(chapPos(s))}</b>${estPerso(s.id)?` <span class="tag perso">Modifiée</span>`:""}</div>
+          <div class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</div>
+          ${s.act?`<div><b>Activité :</b> ${esc(s.act)}</div>`:""}
+          ${s.prof?`<div class="profnote"><b>💡 À dire en classe :</b> ${s.prof}</div>`:""}
+          <div><button class="btn small" data-edit="${s.id}" data-editc="${x.id}">✏️ Modifier les textes de cette séance</button></div></div>`}).join("")}
+      ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<p class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au cours suivant.</p>`}).join("")}
+      ${[...new Set(pcs.filter(estCahier).map(p=>p.sid))].map(cahierHtml).join("")}
+      ${parcN.length?`<div class="docs"><span class="dsec">Parcours vierges (sans prénom)</span>${parcN.map(parcVierges).join("")}</div>`:""}
+    </div></details>`:"";
+  const ed=sids.length?`<details class="plus"><summary>École Directe : contenu${dv.html?" et devoirs":""}</summary>
+      ${contenuBox(contenuHtml(pcs),"ctc-"+x.id,`data-copyctc="${i}"`)}
+      ${dv.html?`<div class="box"><h3>Devoirs à donner en fin de cours</h3><div class="devoir" id="devc-${x.id}">${dv.html}</div>
+        <div class="row"><button class="btn primary small" data-copyc="${i}">Copier les devoirs</button></div>
+        ${dv.ended.filter(sid=>SEANCES.find(s=>s.id===sid).dev.includes(LIEN)).map(sid=>lienBox(SEANCES.find(s=>s.id===sid),"lienc-"+x.id)).join("")}</div>`:""}
+    </details>`:"";
+  return `<article class="cren${x.st?" done":""}${x===nx?" next":""}" id="cr-${x.id}">
+    <header><span class="sid">${esc(fmtJ(x.date))}</span><span class="stitle">${esc(resumeCreneau(x))}<small>${esc(JOURS[x.j])} · ${fmtD(x.d)}${stLab?" · "+stLab:""}</small></span>${tags}${statutSeg(x)}</header>
+    ${x.st==="partiel"?`<div class="row"><label for="reste-${x.id}">Temps qui n'a pas pu être fait</label>
+      <select id="reste-${x.id}" data-reste="${x.id}">${[10,15,20,30,40,45,60,90].filter(m=>m<=x.d).map(m=>`<option value="${m}" ${+x.reste===m?"selected":""}>${fmtD(m)}</option>`).join("")}</select>
+      <span class="hint">Ce qui n'a pas été fait passe au cours suivant.</span></div>`:""}
+    ${ui.edit&&ui.editC===x.id&&sids.includes(ui.edit)?editBox(SEANCES.find(s=>s.id===ui.edit)):""}
+    ${evals.length?`<ul class="aimp">${evals.map(ch=>evalHtml(ch,x.date)).join("")}</ul>`:""}
+    ${etapes}${docs}${detail}${ed}</article>`;
+}
+/* Les cours dans l'ordre ; les cours passés (Fait, Pas tout fini, Annulé) seulement sur demande */
 function renderCreneaux(c){
-  const P=plan(c);
-  const nfait=P.cr.filter(x=>x.st).length;
-  const nx=prochainCreneau(P);
-  let h=`<details class="tous"${ui.tous||ui.edit?" open":""}><summary>Tout le planning (${nfait} créneau${nfait>1?"x":""} passé${nfait>1?"s":""} sur ${P.cr.length})</summary><div class="panel"><div class="progress"><h2>${nfait} créneau${nfait>1?"x":""} passé${nfait>1?"s":""} sur ${P.cr.length}</h2>
-    <div class="meter" role="img" aria-label="${nfait} sur ${P.cr.length}"><i style="width:${Math.round(nfait/Math.max(1,P.cr.length)*100)}%"></i></div></div>
-    ${nx?"":`<p class="now">Tous les créneaux de la période sont passés.</p>`}
-    <details class="aide"><summary>Comment ça marche</summary><p class="hint">La progression est calculée sur l'emploi du temps de la classe. Après chaque cours, indique « Fait », « Pas tout fini » ou « Annulé » : la suite se recalcule. Une évaluation n'est jamais coupée, et un parcours tombe toujours au moins un créneau après son billet.${coupe(P)?` Pour tout faire tenir, les temps de cahier d'activités sont raccourcis de ${fmtD(coupe(P))} au total.`:""}</p></details>
+  const P=plan(c),nx=prochainCreneau(P);
+  const npass=P.cr.filter(x=>x.st).length;
+  let h=`<div class="panel"><div class="progress"><h2>${npass} cours passé${npass>1?"s":""} sur ${P.cr.length}</h2>
+    <div class="meter" role="img" aria-label="${npass} sur ${P.cr.length}"><i style="width:${Math.round(npass/Math.max(1,P.cr.length)*100)}%"></i></div></div>
+    ${nx?"":`<p class="now">Tous les cours de la période sont passés.</p>`}
     ${P.manque.length?`<p class="warn">Ne tient plus avant les vacances : ${esc([...new Set(P.manque.map(u=>labPiece(u.sid,u.i)))].join(", "))}. Raccourcis une activité ou ajoute un créneau.</p>`:""}
-  </div>`;
-  h=essentielHtml(c,P)+h;
-  const passes=P.cr.filter(x=>x.st).length;
-  let semaine="",dansPasses=false;
-  if(passes){h+=`<details class="passes"${ui.passes?" open":""}><summary>Créneaux passés (${passes})</summary>`;dansPasses=true}
+    <div class="row">${npass?`<button class="btn small" data-passes="1" aria-pressed="${!!ui.passes}">${ui.passes?"Masquer":"Voir"} les séances passées (${npass})</button>`:""}
+    <details class="aide"><summary>Comment ça marche</summary><p class="hint">Après chaque cours, touche « Fait », « Pas tout fini » ou « Annulé » sur sa carte : il passe dans les séances passées et la suite se recalcule. « ✗ pas fait » retire une seule étape. À côté de chaque document, « déjà donné » indique qu'il a été distribué à un cours précédent. Une évaluation n'est jamais coupée, et un parcours tombe toujours au moins un cours après son billet.${coupe(P)?` Pour tout faire tenir, les temps de cahier d'activités sont raccourcis de ${fmtD(coupe(P))} au total.`:""}</p></details></div>
+  </div><div class="liste">`;
+  let semaine="";
   P.cr.forEach((x,i)=>{
-    if(dansPasses&&!x.st){if(semaine)h+=`</div>`;semaine="";h+=`</details>`;dansPasses=false}
+    if(x.st&&!ui.passes)return;
     const lu=iso(lundi(x.date));
-    if(lu!==semaine){if(semaine)h+=`</div>`;semaine=lu;h+=`<div class="chap"><h2>Semaine du ${esc(fmtJ(lu,{day:"numeric",month:"long"}))}</h2>`}
-    const billets=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="b").map(p=>p.sid);
-    const parcs=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="p").map(p=>p.sid);
-    const evals=x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="v").map(p=>p.sid);
-    const pts=sid=>POINTS.find(q=>q.b===sid||q.p===sid);
-    const stLab={fait:"Fait",partiel:"Pas tout fini",annule:"Annulé"}[x.st];
-    const tags=[x.st?`<span class="tag ${x.st==="annule"?"eval":"fait"}">${stLab}</span>`:"",
-      x.extra?`<span class="tag extra">Créneau en plus</span>`:"",
-      ...evals.map(()=>`<span class="tag eval">Évaluation</span>`),
-      ...parcs.map(s=>`<span class="tag parc">Parcours point ${POINTS.find(q=>q.p===s).n}</span>`),
-      ...billets.map(s=>`<span class="tag billet">Billet ${billetNom(POINTS.find(q=>q.b===s).n).replace(" · billet","")}</span>`)].join("");
-    const open=ui.openC&&P.cr.some(z=>z.id===ui.openC)?ui.openC===x.id:(nx&&nx.id===x.id);
-    const dv=devoirsCreneau(c,P,i);
-    const docs=[];x.pieces.filter(p=>!p.marge).forEach(p=>SEANCES.find(s=>s.id===p.sid).docs.forEach(d=>{if(!docs.includes(d))docs.push(d)}));
-    h+=`<details class="seance${x.st?" done":""}" data-cid="${x.id}" ${open?"open":""}>
-      <summary><span class="sid">${esc(fmtJ(x.date))}</span><span class="stitle">${esc(resumeCreneau(x))}<small>${esc(JOURS[x.j])} · ${fmtD(x.d)}</small></span>${tags}</summary>
-      <div class="sbody">
-        <div class="seg" role="group" aria-label="Ce créneau">
-          ${[["","À venir"],["fait","Fait"],["partiel","Pas tout fini"],["annule","Annulé"]].map(([k,l])=>`<button data-cst="${k}" data-c="${x.id}" aria-pressed="${(x.st||"")===k}">${l}</button>`).join("")}
-        </div>
-        ${ui.edit&&ui.editC===x.id&&x.pieces.some(p=>p.sid===ui.edit)?editBox(SEANCES.find(s=>s.id===ui.edit)):""}
-        ${x.st==="partiel"?`<div class="row"><label for="reste-${x.id}">Temps qui n'a pas pu être fait</label>
-          <select id="reste-${x.id}" data-reste="${x.id}">${[10,15,20,30,40,45,60,90].filter(m=>m<=x.d).map(m=>`<option value="${m}" ${+x.reste===m?"selected":""}>${fmtD(m)}</option>`).join("")}</select>
-          <span class="hint">Ce qui n'a pas été fait passe au créneau suivant.</span></div>`:""}
-        <div class="box"><h3>Déroulé</h3>
-          ${x.cap===0?`<p class="hint">Créneau annulé : le contenu passe au créneau suivant.</p>`:`<ol class="deroule">${x.pieces.map(p=>{
-            const t=`${p.t0}–${p.t0+p.m}`;
-            if(p.marge)return `<li><span class="tps">${t}</span><span><span class="lib">Temps libre</span> Cahier d'activités sur ce qu'on vient de faire, ou rattrapage</span></li>`;
-            const b=BLOCS[p.sid][p.i];
-            return `<li class="y-${b.y}"><span class="tps">${t}</span><span><span class="lib">${esc(labPiece(p.sid,p.i))}</span> ${esc(b.t)}${p.suite?" (suite)":""}${p.coupe?" (à finir au créneau suivant)":""}</span>${omitBtn(p)}</li>`}).join("")}
-            ${x.st==="partiel"&&x.reste?`<li><span class="tps">${x.d-x.reste}–${x.d}</span><span class="hint">Non fait : reporté au créneau suivant</span></li>`:""}</ol>${retiresHtml(c,[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))])}`}
-        </div>
-        <div class="sgrid">
-          <div class="box"><h3>Repère</h3>${[...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))].map(sid=>{const s=SEANCES.find(q=>q.id===sid);
-            return `<div><b>${esc(chapPos(s))}</b>${estPerso(s.id)?` <span class="tag perso">Modifiée</span>`:""}<br><span class="hint">${esc(s.t)} · cours : ${esc(s.cours)}</span><br><button class="btn small" data-edit="${s.id}" data-editc="${x.id}" style="margin-top:4px">✏️ Modifier les textes de cette séance</button></div>`}).join("")||`<p class="hint">—</p>`}
-            ${parcs.map(s=>{const n=POINTS.find(q=>q.p===s).n;return `<div><button class="btn small" data-goparc="${n}">Préparer les parcours du point ${n}</button></div>`}).join("")}
-            ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<div class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au créneau suivant.</div>`}).join("")}
-            ${[...new Set(x.pieces.filter(p=>!p.marge&&CAHIER[p.sid]&&(BLOCS[p.sid][p.i].y==="p"||/cahier/i.test(BLOCS[p.sid][p.i].t))).map(p=>p.sid))].map(cahierHtml).join("")}
-          </div>
-          <div class="box"><h3>Documents</h3><div class="docs">${docsBox([...new Set(x.pieces.filter(p=>!p.marge).map(p=>p.sid))],parcs.map(sid=>POINTS.find(q=>q.p===sid).n),avantSids(P,i))}</div></div>
-        </div>
-        <details class="plus"><summary>Contenu de séance et devoirs (École Directe)</summary>
-        ${contenuBox(contenuHtml(x.pieces.filter(p=>!p.marge)),"ctc-"+x.id,`data-copyctc="${i}"`)}
-        ${dv.html?`<div class="box"><h3>Devoirs à donner en fin de créneau</h3>
-          <div class="devoir" id="devc-${x.id}">${dv.html}</div>
-          <div class="row"><button class="btn primary small" data-copyc="${i}">Copier les devoirs</button></div>
-          ${dv.ended.filter(sid=>SEANCES.find(s=>s.id===sid).dev.includes(LIEN)).map(sid=>`<p class="hint" style="margin:6px 0 0"><b>${esc(labPiece(sid,9))}</b></p>`+lienBox(SEANCES.find(s=>s.id===sid),"lienc-"+x.id)).join("")}
-        </div>`:""}
-        </details>
-      </div></details>`;
+    if(lu!==semaine){semaine=lu;h+=`<h3 class="semaine">Semaine du ${esc(fmtJ(lu,{day:"numeric",month:"long"}))}</h3>`}
+    h+=carteCreneau(c,P,i,nx);
   });
-  if(semaine)h+=`</div>`;
-  if(dansPasses)h+=`</details>`;
-  return h+`</details>`;
+  return h+`</div>`;
 }
 function renderEdt(c){
   const e=c.edt||{hebdo:[{j:1,d:90},{j:3,d:90},{j:5,d:90}],extra:{on:false,j:2,d:90,first:PERIODE.debut,every:3}};
@@ -919,7 +890,7 @@ const pdfCache={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
-function saveUi(){try{localStorage.setItem("revisions6e-classeur-ui",JSON.stringify({cls:ui.cls,tab:ui.tab,point:ui.point,mode:ui.mode,open:ui.open,openC:ui.openC,vue:ui.vue,essT:ui.essT,essC:ui.essC}))}catch(e){}}
+function saveUi(){try{localStorage.setItem("revisions6e-classeur-ui",JSON.stringify({cls:ui.cls,tab:ui.tab,point:ui.point,mode:ui.mode,open:ui.open,openC:ui.openC,vue:ui.vue,passes:!!ui.passes}))}catch(e){}}
 function cur(){return data.classes.find(c=>c.id===ui.cls)||data.classes[0]||null}
 function setStatus(t){$("#status").textContent=t}
 function norm(d){
@@ -1588,10 +1559,12 @@ function renderSeances(c){
   let html=(vueSeg?`<div class="row">${vueSeg}</div>`:"")+`<div class="panel"><div class="progress"><h2>${done} séance${done>1?"s":""} faite${done>1?"s":""} sur ${SEANCES.length}</h2>
     <div class="meter" role="img" aria-label="${done} sur ${SEANCES.length}"><i style="width:${Math.round(done/SEANCES.length*100)}%"></i></div></div>
     ${nx?`<p class="now">On en est à : <b>${esc(nx.k)}</b> · ${esc(nx.t)} <span class="hint">(${nx.id})</span></p><p class="hint">${esc(chapPos(nx))}.${c.edt?" Le suivi se fait dans la vue par créneau.":" Coche la séance quand elle est faite."}</p>`:`<p class="now">Toute la période est faite.</p>`}
-    <p class="hint">Les devoirs en gras sont ceux des élèves avec un tiers temps ; les autres font tout.</p></div>`;
+    <p class="hint">Les devoirs en gras sont ceux des élèves avec un tiers temps ; les autres font tout.</p>
+    ${done?`<div class="row"><button class="btn small" data-passes="1" aria-pressed="${!!ui.passes}">${ui.passes?"Masquer":"Voir"} les séances passées (${done})</button></div>`:""}</div>`;
   for(const chap of ["Opérations","Angles","Triangles"]){
+    const vis=SEANCES.filter(x=>x.chap===chap&&(ui.passes||!seanceFaite(c,x.id)));if(!vis.length)continue;
     html+=`<div class="chap"><h2>${chap}</h2>`;
-    for(const s of SEANCES.filter(x=>x.chap===chap)){
+    for(const s of vis){
       const pr=c.edt?{done:seanceFaite(c,s.id)}:(c.prog[s.id]||{});
       const tags=[pr.done?`<span class="tag fait">Faite${pr.date?" le "+new Date(pr.date+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""}</span>`:"",
         s.eval?`<span class="tag eval">Évaluation</span>`:"",
@@ -1683,7 +1656,11 @@ function projHtml(sid){
 <style>
 :root{--R:#1e7f45;--E:#0b4f8a;--D:#6c3483}
 *{box-sizing:border-box}html{font-size:min(1.9vh,1.15vw)}
-body{margin:0;font-family:system-ui,"Segoe UI",sans-serif;background:#fff;color:#1b2430;padding:2.2vh 2vw;min-height:100vh;display:flex;flex-direction:column;gap:1.8vh}
+body{margin:0;font-family:system-ui,"Segoe UI",sans-serif;background:#fff;color:#1b2430;padding:1.6vh 1.6vw;min-height:100vh;display:flex;flex-direction:column;gap:1.2vh}
+.outils{position:fixed;top:.8vh;right:1vw;display:flex;gap:.5rem;z-index:5}
+.outils button{font:inherit;font-size:1.1rem;font-weight:700;border:0;border-radius:10px;padding:.45rem .9rem;background:#1b2430;color:#fff;cursor:pointer;opacity:.85}
+.outils button:hover{opacity:1}
+h1{padding-right:16rem}
 h1{font-size:2.3rem;margin:0;display:flex;align-items:baseline;gap:1.2rem;flex-wrap:wrap}h1 small{font-size:1.4rem;font-weight:500;color:#4a5566}
 main{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;flex:1;align-items:start}
 .col{border-radius:16px;background:#f4f6f9;overflow:hidden;cursor:zoom-in;outline:none}
@@ -1699,7 +1676,7 @@ main{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;flex:1;align-ite
 .badge{font-size:1.15rem;font-weight:700;background:#ffe08a;border-radius:8px;padding:.15rem .6rem}
 .quoi{font-size:1.45rem;line-height:1.35;margin:.45rem 0 0}.aide{font-size:1.2rem;line-height:1.35;margin:.45rem 0 0;color:#3b4656}
 .gauche{flex:none;display:flex;flex-direction:column;align-items:center;gap:.4rem}.mat{display:flex;flex-direction:column;font-size:1.35rem;line-height:1.25}.mat i{font-style:normal}
-footer{display:grid;grid-template-columns:1.6fr 1fr;gap:1.4vw;position:sticky;bottom:0;background:#fff;padding-top:1vh;box-shadow:0 -10px 12px -8px #0002}
+footer{display:grid;grid-template-columns:1.6fr 1fr;gap:1.4vw}
 footer div{border-radius:14px;padding:.6rem 1rem;background:#eef2f7}footer h3{margin:0 0 .4rem;font-size:1.35rem}
 footer ol{margin:0;padding:0;list-style:none;display:flex;gap:.6rem;flex-wrap:wrap}
 footer li{font-size:1.15rem;line-height:1.25;background:#fff;border-radius:10px;padding:.35rem .6rem;flex:1 1 0;min-width:8rem}
@@ -1708,7 +1685,7 @@ footer li b{margin-right:.3rem}
 /* une seule colonne agrandie */
 html.zoom{font-size:min(2.5vh,1.5vw)}html.zoom main{grid-template-columns:1fr}html.zoom .col:not(.on){display:none}html.zoom .col{cursor:zoom-out}
 .hint{font-size:1rem;color:#8a94a3;text-align:right;margin:0}
-@media print{.hint{display:none}}
+@media print{.hint,.outils{display:none}}
 </style></head>
 <body>
 <h1>📘 ${esc(x.t)} <small>Cahier d'activités${x.pt?" · chaque groupe suit sa colonne":" · je commence par la colonne A"}</small></h1>
@@ -1720,13 +1697,26 @@ html.zoom{font-size:min(2.5vh,1.5vw)}html.zoom main{grid-template-columns:1fr}ht
  <div class="bloque"><h3>🆘 Je suis bloqué</h3><ol>
   <li><b>1 📖</b>Je relis la méthode du cours</li><li><b>2 🤫</b>Je demande à mon voisin, à voix basse</li><li><b>3 ✋</b>Je lève la main</li></ol></div>
 </footer>
-<p class="hint">Touches 1, 2, 3 ou clic : agrandir une colonne · 0 ou Échap : tout voir</p>
+<div class="outils"><button id="pe" title="Plein écran (touche F)">⛶ Plein écran</button><button id="fermer" title="Fermer cet écran (Échap)">✕ Fermer</button></div>
+<p class="hint">Touches 1, 2, 3 ou clic : agrandir une colonne · 0 : tout voir · Échap : revenir, puis fermer</p>
 <script>
 const cols=[...document.querySelectorAll(".col")];
 function voir(n){const c=cols.find(c=>c.dataset.i==n);const on=c&&!c.classList.contains("on");
   cols.forEach(x=>x.classList.toggle("on",on&&x===c));document.documentElement.classList.toggle("zoom",!!on)}
 cols.forEach(c=>c.addEventListener("click",()=>voir(c.dataset.i)));
-addEventListener("keydown",e=>{if(/^[123]$/.test(e.key))voir(e.key);if(e.key==="0"||e.key==="Escape")voir(0)});
+/* tout tient sur un écran : on réduit le texte tant que la page déborde */
+function ajuster(){const r=document.documentElement;r.style.fontSize="";let f=parseFloat(getComputedStyle(r).fontSize),n=0;
+  while(r.scrollHeight>innerHeight+1&&f>8&&n<80){f*=.96;r.style.fontSize=f+"px";n++}}
+const voir0=voir;voir=n=>{voir0(n);ajuster()};
+function fermer(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});window.close();
+  setTimeout(()=>{if(!window.closed)document.body.innerHTML='<p style="font-size:2rem;padding:2rem">Ferme cet onglet (Ctrl + W).</p>'},300)}
+function pleinEcran(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{})}
+document.getElementById("fermer").onclick=e=>{e.stopPropagation();fermer()};
+document.getElementById("pe").onclick=e=>{e.stopPropagation();pleinEcran()};
+addEventListener("keydown",e=>{if(/^[123]$/.test(e.key))voir(e.key);if(e.key==="0")voir(0);if(e.key==="f"||e.key==="F")pleinEcran();
+  if(e.key==="Escape"){if(document.documentElement.classList.contains("zoom"))voir(0);else if(!document.fullscreenElement)fermer()}});
+addEventListener("resize",ajuster);document.addEventListener("fullscreenchange",()=>{document.getElementById("pe").textContent=document.fullscreenElement?"⛶ Quitter le plein écran":"⛶ Plein écran";ajuster()});
+ajuster();
 <\/script>
 </body></html>`;
 }
@@ -1813,12 +1803,9 @@ document.addEventListener("click",ev=>{
   if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ctc-"+x.id);return}
   if(t.dataset.omit){const c=cur();c.omit=c.omit||{};c.omit[t.dataset.omit]=true;invalider(c);persist();render();return}
   if(t.dataset.unomit){const c=cur();if(c.omit)delete c.omit[t.dataset.unomit];invalider(c);persist();render();return}
-  if(t.dataset.essc){ui.essC=t.dataset.essc;saveUi();render();return}
-  if(t.dataset.esst){ui.essT=t.dataset.esst;saveUi();render();return}
-  if(t.dataset.essct){const P=plan(cur()),x=P.cr[+t.dataset.essct];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ess-ct");return}
-  if(t.dataset.essdev){const c=cur(),i=+t.dataset.essdev,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"ess-dev");return}
   if(t.dataset.copyc){const c=cur(),i=+t.dataset.copyc,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"devc-"+P.cr[i].id);return}
   if(t.dataset.vue){ui.vue=t.dataset.vue;saveUi();render();return}
+  if(t.dataset.passes){ui.passes=!ui.passes;saveUi();render();return}
   if(t.dataset.cst!==undefined){const c=cur(),id=t.dataset.c,v=t.dataset.cst;
     if(!v)delete c.cren[id];else c.cren[id]={st:v,reste:v==="partiel"?((c.cren[id]||{}).reste||20):0};
     if(v){const P=planClasse(c);const i=P.cr.findIndex(x=>x.id===id);const n=P.cr.slice(i+1).find(x=>!x.st);ui.openC=v==="partiel"?id:(n?n.id:id)}else ui.openC=id;

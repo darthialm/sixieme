@@ -1,3 +1,35 @@
+MISE À JOUR 2026-11-20.2 : classeur plus simple, écran du cahier qui tient sur une page
+
+À DÉPOSER : classeur.html
+
+- Séances (par créneau) : les cours s'affichent directement dans l'ordre, une carte par cours, le prochain
+  encadré. Les boutons « ✓ Fait », « Pas tout fini », « Annulé » sont sur la carte (un 2e clic annule).
+- Les séances passées sont cachées : bouton « Voir les séances passées » en haut (aussi dans la vue par séance).
+- Plus d'onglet « À imprimer » : sur chaque carte, les documents du cours, avec « ✓ déjà donné » à côté de ceux
+  distribués à un cours précédent.
+- Les étapes sont écrites en court (texte complet au survol). « Détail » : déroulé complet, repère, cahier
+  différencié, modifier les textes, parcours vierges. « École Directe » : contenu de séance et devoirs à copier.
+- Écran projeté du cahier : bouton « ✕ Fermer » (ou Échap) et « ⛶ Plein écran » (touche F) en haut à droite ;
+  le texte se réduit tout seul pour que tout tienne sur un seul écran (aussi quand une colonne est agrandie).
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
+MISE À JOUR 2026-11-20.1 : parcours du point 3 allégés
+
+À DÉPOSER : documents.bin
+SUR TON CLOUD (dossier docs) : Corrige_parcours_point_3.pdf (dans pour-le-cloud)
+
+- Parcours point 3 (Je reprends, Je m'entraîne, Je relève un défi) et leur corrigé : l'encadré
+  « Exemple résolu » est retiré, le reste de la fiche remonte.
+- Je reprends : l'« Étape 1 » a maintenant une « Étape 2 – Si j'ai fini : cahier d'activités p. … n° … »,
+  comme sur la fiche Je m'entraîne.
+- Corrigé Je reprends : les cases aigu / obtus sont cochées.
+- documents.bin déjà poussé sur GitHub.
+
+=========================================================
+
 MISE À JOUR 2026-11-18.1 : rapporteur à manipuler, corrigés du cahier sans grosses captures
 
 À DÉPOSER : index.html, script.js, chapitres-p2.js, style.css, chapitres-p2.css, classeur.html
