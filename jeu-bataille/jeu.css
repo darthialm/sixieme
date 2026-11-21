@@ -1,0 +1,96 @@
+/* Bataille navale des angles · sixième — ambiance mer : bleu profond, îles de sable, drapeaux rouges */
+:root {
+  --bg: #0b2a3d; --sea: #12405c; --sea2: #1a5375; --ink: #eef8ff; --dim: #a9c6d8; --line: rgba(255,255,255,.15);
+  --sand: #f0d9a0; --flag: #ff5a4f; --foam: #8fe3ff; --gold: #ffd166; --ok: #5ef0a6; --ko: #ff7a70;
+  --m-bg: var(--bg); --m-panel: var(--sea); --m-panel2: var(--sea2); --m-ink: var(--ink); --m-dim: var(--dim);
+  --m-acc: var(--gold); --m-acc-ink: #2b1d00; --m-ok: var(--ok); --m-ko: var(--ko); --m-key: #1f5f86; --m-key-sh: #061824;
+  --m-font: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--m-font);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); overflow: hidden; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+b { color: var(--gold); }
+.app { position: fixed; inset: 0; overflow: hidden auto; background: linear-gradient(180deg, #0e3550, var(--bg)); }
+.screen { min-height: 100%; display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 12px; }
+.screen.play { gap: 8px; }
+.mute { position: fixed; top: 10px; right: 10px; z-index: 50; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--sea); display: grid; place-items: center; padding: 0; }
+body.m-duel-on .mute { display: none; }
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.brand h1 { margin: 0; font-size: clamp(2.1rem, 8.5vmin, 3.5rem); line-height: 1; letter-spacing: .03em; }
+.brand h1 span { color: var(--gold); }
+.lvl { padding: 3px 10px; border-radius: 99px; background: var(--flag); color: #fff; font-weight: 900; letter-spacing: .12em; font-size: .8rem; text-transform: uppercase; }
+.tag { margin: 0; color: var(--dim); }
+.capt { display: flex; gap: 10px; align-items: flex-start; width: 100%; max-width: 680px; }
+.capt .face { font-size: 2.4rem; line-height: 1; }
+.say { flex: 1; background: var(--sand); color: #3a2b10; border-radius: 14px; padding: 10px 14px; line-height: 1.45; }
+.say b { color: #b3261e; }
+.duel-btn { width: 100%; max-width: 680px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; padding: 12px 16px; border-radius: 16px; border: 2px solid var(--gold); background: var(--sea); font-size: 1.15rem; }
+.duel-btn small { width: 100%; color: var(--dim); font-size: .85rem; }
+.map { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; width: 100%; max-width: 900px; }
+.zone { position: relative; text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 14px; border: 2px solid #2b6a90; background: linear-gradient(160deg, var(--sea2), var(--sea)); min-height: 116px; }
+.zone:hover:not(:disabled), .zone:focus-visible { border-color: var(--gold); outline: none; transform: translateY(-2px); }
+.zone .num { position: absolute; top: 10px; right: 12px; font-weight: 900; color: rgba(255,255,255,.15); font-size: 1.6rem; }
+.zone .ico { font-size: 1.7rem; } .zone .nm { font-weight: 800; font-size: 1.1rem; } .zone .rl { color: var(--dim); font-size: .85rem; }
+.zone .st { margin-top: auto; color: var(--gold); letter-spacing: .1em; } .zone .st i { font-style: normal; color: rgba(255,255,255,.18); }
+.zone .rec { font-size: .8rem; color: var(--foam); }
+.zone.locked { opacity: .45; filter: grayscale(.8); } .zone.boss { border-color: var(--flag); }
+.zone.next { animation: glow 1.6s ease-in-out infinite; } @keyframes glow { 50% { box-shadow: 0 0 20px rgba(255,209,102,.35); } }
+.foot { color: var(--dim); font-size: .8rem; text-align: center; max-width: 640px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn { border: 0; border-radius: 12px; padding: 12px 22px; font-weight: 800; font-size: 1.05rem; background: var(--sea2); box-shadow: inset 0 0 0 2px var(--line); }
+.btn.go { background: var(--gold); color: #2b1d00; box-shadow: 0 5px 0 #8a6a14; }
+.btn.ghost { background: transparent; }
+.hud { width: 100%; max-width: 1100px; display: flex; align-items: center; gap: 10px; padding-right: 48px; flex-wrap: wrap; }
+.hud .quit { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--sea2); padding: 0; }
+.hud .zn { font-weight: 800; } .hud .right { margin-left: auto; }
+.game { width: 100%; max-width: 1100px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; align-items: start; }
+.field { border-radius: 16px; overflow: hidden; background: var(--sea); box-shadow: inset 0 0 0 2px #2b6a90; }
+.field svg { display: block; width: 100%; height: auto; }
+.fleetinfo { margin: 4px 10px 8px; color: var(--dim); text-align: center; letter-spacing: .1em; }
+.side { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.ask { margin: 0; font-weight: 800; font-size: 1.15rem; text-align: center; }
+.namebox { padding: 6px 18px; border-radius: 12px; background: rgba(0,0,0,.25); box-shadow: inset 0 0 0 2px var(--gold); }
+.m-ang.big { font-size: 2rem; font-weight: 900; letter-spacing: .12em; }
+.letters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 420px; }
+.lk { width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--m-key); box-shadow: 0 3px 0 var(--m-key-sh); font-weight: 900; font-size: 1.2rem; }
+.lk:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--m-key-sh); }
+.off .lk, .off .m-btn { opacity: .35; pointer-events: none; }
+.msg { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.explain { width: 100%; border-radius: 12px; padding: 10px 14px; line-height: 1.6; background: rgba(255,122,112,.12); border: 1px solid rgba(255,122,112,.6); }
+.explain.good { background: rgba(94,240,166,.1); border-color: rgba(94,240,166,.55); }
+.explain.warn { background: rgba(255,209,102,.1); border-color: rgba(255,209,102,.55); }
+.log { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; color: var(--dim); font-size: .9rem; max-height: 22vh; overflow-y: auto; }
+.log p { margin: 0; }
+@media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
+
+/* ---------- La mer ---------- */
+.sfig .wave { fill: none; stroke: rgba(143,227,255,.12); stroke-width: 1.5; }
+.sfig .ray { stroke: #f4f1e6; stroke-width: 2.4; stroke-linecap: round; }
+.sfig .pt { fill: #f4f1e6; }
+.sfig .lbl { fill: #fff; font-size: 15px; font-weight: 800; font-style: italic; paint-order: stroke; stroke: var(--sea); stroke-width: 4px; }
+.sfig .isle { fill: var(--sand); stroke: #b58a3c; stroke-width: 2; }
+.sfig .vl { fill: #3a2b10; font-size: 12px; font-weight: 900; }
+.sfig .cell { stroke: rgba(255,255,255,.12); stroke-width: 1; }
+.sfig .cell.free { fill: rgba(255,255,255,.03); }
+.sfig .cell.miss { fill: rgba(143,227,255,.22); }
+.sfig .cell.hit { fill: rgba(255,90,79,.55); }
+.sfig .cell.sunk { fill: rgba(60,20,20,.85); stroke: var(--flag); stroke-width: 2; }
+.sfig .cell.shown { fill: rgba(255,209,102,.45); }
+.sfig .mk { font-size: 15px; }
+
+/* ---------- Duel ---------- */
+.bz { height: 100%; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.dhead { display: flex; justify-content: space-between; gap: 8px; font-weight: 800; font-size: .92rem; }
+.bfield { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.bfield svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; border-radius: 12px; background: var(--sea); }
+.bkb { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bkb .lk { width: clamp(32px, 7cqw, 44px); height: clamp(32px, 6cqh, 44px); font-size: 1.05rem; }
+.bkb .m-ang.big { font-size: 1.5rem; }
+.bmsg { text-align: center; font-size: .92rem; color: var(--dim); min-height: 1.3em; }
+.endsea svg { width: 100%; max-height: 40cqh; }
+@container (min-aspect-ratio: 11/10) {
+  .bz { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: auto 1fr auto auto; gap: 4px 10px; }
+  .dhead { grid-column: 1 / -1; } .bfield { grid-row: 2 / 5; } .bkb { grid-column: 2; grid-row: 2; justify-content: center; }
+}

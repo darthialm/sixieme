@@ -1,3 +1,18 @@
+MISE À JOUR 2026-11-22.1 : Le Rayon remplacé par deux jeux d'angles
+
+À DÉPOSER : index.html, jeu-chaine/, jeu-bataille/, jeux-img/chaine.svg, jeux-img/bataille.svg ; SUPPRIMER jeu-rayon/ et jeux-img/rayon.svg
+
+- Angles en chaîne (page « 🎮 Angles en chaîne ») : trouver tous les angles d'une figure de proche en proche, en
+  choisissant à chaque fois la propriété qui justifie la mesure (opposés par le sommet, points alignés, angle droit,
+  bissectrice, adjacents). Solo : 7 étapes ; duel : chacun son tour gagne un angle juste et justifié.
+- Bataille navale des angles (page « 🎮 Bataille navale des angles ») : pour tirer, nommer l'angle visé (sommet au
+  milieu). Solo : 4 missions ; duel : le jeu cache les flottes, rien de secret n'est affiché.
+- Le Rayon (estimation de l'angle de tir) est retiré : le chapitre ne porte pas sur l'estimation.
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-21.2 : deux jeux pour la classe (solo + duel sur tablette)
 
 À DÉPOSER : index.html, jeux-classes.js, jeux-commun/, jeu-rayon/, jeu-trigone/, jeux-img/rayon.svg, jeux-img/trigone.svg

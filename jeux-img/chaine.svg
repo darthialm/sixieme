@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><rect width="640" height="360" fill="#1d3a30"/><rect x="8" y="8" width="624" height="344" fill="none" stroke="#8a5a33" stroke-width="12"/>
+<g stroke="#f2f1e8" stroke-width="5" stroke-linecap="round"><line x1="300" y1="230" x2="560" y2="230"/><line x1="300" y1="230" x2="80" y2="230"/><line x1="300" y1="230" x2="420" y2="70"/><line x1="300" y1="230" x2="180" y2="330"/><line x1="300" y1="230" x2="300" y2="60" stroke="#8fd3ff"/></g>
+<path d="M300 230 L360 230 A60 60 0 0 0 336 182 Z" fill="#ffe27a" opacity=".4"/><text x="372" y="212" font-family="Trebuchet MS, sans-serif" font-size="30" font-weight="900" fill="#ffe27a">53°</text>
+<text x="330" y="150" font-family="Trebuchet MS, sans-serif" font-size="40" font-weight="900" fill="#ff9ec7">?</text><text x="220" y="200" font-family="Trebuchet MS, sans-serif" font-size="40" font-weight="900" fill="#ff9ec7">?</text>
+<text x="40" y="90" font-family="Segoe Print, Comic Sans MS, cursive" font-size="54" fill="#f2f1e8">Angles</text><text x="40" y="150" font-family="Segoe Print, Comic Sans MS, cursive" font-size="46" fill="#ffe27a">en chaîne</text></svg>
