@@ -33,25 +33,29 @@
   --accent:#7fb3e6; --accent-soft:#1d2e42;
   --rep:#5fcf8c; --rep-soft:#173426; --ent:#7fb3e6; --ent-soft:#18304a; --def:#c895e0; --def-soft:#33213d;
   --ok:#e3b45a; --danger:#ff7b72; --done:#5fcf8c; color-scheme:dark}
-/* Couleur propre à chaque classe (ordre des classes) : accent, fond, pastille du bouton de classe */
-:root[data-cls="0"]{--accent:#0b4f8a;--accent-soft:#e2ecf7;--bg:#f1f5fb}
-:root[data-cls="1"]{--accent:#b4531a;--accent-soft:#fbe8da;--bg:#fbf5ef}
-:root[data-cls="2"]{--accent:#0f7471;--accent-soft:#d9f1ef;--bg:#eff8f7}
-:root[data-cls="3"]{--accent:#a3245e;--accent-soft:#f8e1ec;--bg:#fbf2f6}
-:root[data-cls="4"]{--accent:#5b6b12;--accent-soft:#ecf1d6;--bg:#f6f8ee}
+/* Couleur propre à chaque classe (ordre des classes : bleu, rouge, vert, orange, violet) : accent, fond, bordures, cartes */
+:root[data-cls="0"]{--accent:#1d5fc4;--accent-soft:#dbe7fb;--bg:#e3edfc;--line:#b7cdf1;--surface:#fbfdff}
+:root[data-cls="1"]{--accent:#c4202b;--accent-soft:#fbdcde;--bg:#fce6e7;--line:#f0b9bd;--surface:#fffbfb}
+:root[data-cls="2"]{--accent:#1d7f34;--accent-soft:#d8f1de;--bg:#e3f4e7;--line:#b5dfbf;--surface:#fbfefc}
+:root[data-cls="3"]{--accent:#b35400;--accent-soft:#fde5cc;--bg:#fdeedd;--line:#f2cc9f;--surface:#fffcf8}
+:root[data-cls="4"]{--accent:#7b2cb5;--accent-soft:#eedcfa;--bg:#f3e8fc;--line:#d9bdf0;--surface:#fdfbff}
 @media (prefers-color-scheme: dark){
- :root:not([data-theme="light"])[data-cls="0"]{--accent:#7fb3e6;--accent-soft:#1d2e42;--bg:#10161e}
- :root:not([data-theme="light"])[data-cls="1"]{--accent:#f0a46e;--accent-soft:#3a2617;--bg:#18130f}
- :root:not([data-theme="light"])[data-cls="2"]{--accent:#6fd3cc;--accent-soft:#163533;--bg:#0f1817}
- :root:not([data-theme="light"])[data-cls="3"]{--accent:#ee8fbb;--accent-soft:#3b1a2a;--bg:#181014}
- :root:not([data-theme="light"])[data-cls="4"]{--accent:#c3d36a;--accent-soft:#2c3312;--bg:#14160d}}
-:root[data-theme="dark"][data-cls="0"]{--accent:#7fb3e6;--accent-soft:#1d2e42;--bg:#10161e}
-:root[data-theme="dark"][data-cls="1"]{--accent:#f0a46e;--accent-soft:#3a2617;--bg:#18130f}
-:root[data-theme="dark"][data-cls="2"]{--accent:#6fd3cc;--accent-soft:#163533;--bg:#0f1817}
-:root[data-theme="dark"][data-cls="3"]{--accent:#ee8fbb;--accent-soft:#3b1a2a;--bg:#181014}
-:root[data-theme="dark"][data-cls="4"]{--accent:#c3d36a;--accent-soft:#2c3312;--bg:#14160d}
+ :root:not([data-theme="light"])[data-cls="0"]{--accent:#86b4ff;--accent-soft:#1b2c48;--bg:#0f1829;--line:#2c4270;--surface:#172238}
+ :root:not([data-theme="light"])[data-cls="1"]{--accent:#ff8a92;--accent-soft:#4a1c21;--bg:#1f1012;--line:#6e2d33;--surface:#2a1719}
+ :root:not([data-theme="light"])[data-cls="2"]{--accent:#6fdc8a;--accent-soft:#183a22;--bg:#0e1b12;--line:#2b5a37;--surface:#16261a}
+ :root:not([data-theme="light"])[data-cls="3"]{--accent:#ffad5c;--accent-soft:#47290c;--bg:#1f150a;--line:#6e461c;--surface:#2a1d10}
+ :root:not([data-theme="light"])[data-cls="4"]{--accent:#cc95ff;--accent-soft:#33204a;--bg:#170f22;--line:#4f3470;--surface:#22172f}
+}
+:root[data-theme="dark"][data-cls="0"]{--accent:#86b4ff;--accent-soft:#1b2c48;--bg:#0f1829;--line:#2c4270;--surface:#172238}
+:root[data-theme="dark"][data-cls="1"]{--accent:#ff8a92;--accent-soft:#4a1c21;--bg:#1f1012;--line:#6e2d33;--surface:#2a1719}
+:root[data-theme="dark"][data-cls="2"]{--accent:#6fdc8a;--accent-soft:#183a22;--bg:#0e1b12;--line:#2b5a37;--surface:#16261a}
+:root[data-theme="dark"][data-cls="3"]{--accent:#ffad5c;--accent-soft:#47290c;--bg:#1f150a;--line:#6e461c;--surface:#2a1d10}
+:root[data-theme="dark"][data-cls="4"]{--accent:#cc95ff;--accent-soft:#33204a;--bg:#170f22;--line:#4f3470;--surface:#22172f}
 body{transition:background-color .25s}
-.chip .pastille{display:inline-block;width:.75em;height:.75em;border-radius:50%;margin-right:6px;vertical-align:-.05em;border:2px solid var(--surface)}
+:root[data-cls] body{border-top:10px solid var(--accent);margin-top:0}
+:root[data-cls] h1{color:var(--accent)}
+:root[data-cls] .panel,:root[data-cls] .cren,:root[data-cls] details.seance{border-left:5px solid var(--accent)}
+.chip .pastille{display:inline-block;width:.8em;height:.8em;border-radius:50%;margin-right:6px;vertical-align:-.05em;border:2px solid var(--surface)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
@@ -1530,7 +1534,7 @@ function tap(eid,p){
 }
 
 /* ======================= AFFICHAGE ======================= */
-const COUL_CLASSE=["#0b4f8a","#b4531a","#0f7471","#a3245e","#5b6b12"];// mêmes couleurs que :root[data-cls] (CSS)
+const COUL_CLASSE=["#1d5fc4","#c4202b","#1d7f34","#b35400","#7b2cb5"];// mêmes couleurs que :root[data-cls] (CSS)
 function renderBar(){
   $("#classBar").innerHTML=data.classes.map((c,i)=>`<button class="chip" data-cls="${c.id}" aria-pressed="${cur()&&cur().id===c.id}"><span class="pastille" style="background:${COUL_CLASSE[i%COUL_CLASSE.length]}" aria-hidden="true"></span>${esc(c.nom)}</button>`).join("")
    +(data.classes.length?`<button class="btn" id="btnManage" aria-expanded="${ui.manage}">${ui.manage?"Fermer":"Gérer la classe"}</button>`:"");
