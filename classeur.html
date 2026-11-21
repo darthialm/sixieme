@@ -33,6 +33,25 @@
   --accent:#7fb3e6; --accent-soft:#1d2e42;
   --rep:#5fcf8c; --rep-soft:#173426; --ent:#7fb3e6; --ent-soft:#18304a; --def:#c895e0; --def-soft:#33213d;
   --ok:#e3b45a; --danger:#ff7b72; --done:#5fcf8c; color-scheme:dark}
+/* Couleur propre à chaque classe (ordre des classes) : accent, fond, pastille du bouton de classe */
+:root[data-cls="0"]{--accent:#0b4f8a;--accent-soft:#e2ecf7;--bg:#f1f5fb}
+:root[data-cls="1"]{--accent:#b4531a;--accent-soft:#fbe8da;--bg:#fbf5ef}
+:root[data-cls="2"]{--accent:#0f7471;--accent-soft:#d9f1ef;--bg:#eff8f7}
+:root[data-cls="3"]{--accent:#a3245e;--accent-soft:#f8e1ec;--bg:#fbf2f6}
+:root[data-cls="4"]{--accent:#5b6b12;--accent-soft:#ecf1d6;--bg:#f6f8ee}
+@media (prefers-color-scheme: dark){
+ :root:not([data-theme="light"])[data-cls="0"]{--accent:#7fb3e6;--accent-soft:#1d2e42;--bg:#10161e}
+ :root:not([data-theme="light"])[data-cls="1"]{--accent:#f0a46e;--accent-soft:#3a2617;--bg:#18130f}
+ :root:not([data-theme="light"])[data-cls="2"]{--accent:#6fd3cc;--accent-soft:#163533;--bg:#0f1817}
+ :root:not([data-theme="light"])[data-cls="3"]{--accent:#ee8fbb;--accent-soft:#3b1a2a;--bg:#181014}
+ :root:not([data-theme="light"])[data-cls="4"]{--accent:#c3d36a;--accent-soft:#2c3312;--bg:#14160d}}
+:root[data-theme="dark"][data-cls="0"]{--accent:#7fb3e6;--accent-soft:#1d2e42;--bg:#10161e}
+:root[data-theme="dark"][data-cls="1"]{--accent:#f0a46e;--accent-soft:#3a2617;--bg:#18130f}
+:root[data-theme="dark"][data-cls="2"]{--accent:#6fd3cc;--accent-soft:#163533;--bg:#0f1817}
+:root[data-theme="dark"][data-cls="3"]{--accent:#ee8fbb;--accent-soft:#3b1a2a;--bg:#181014}
+:root[data-theme="dark"][data-cls="4"]{--accent:#c3d36a;--accent-soft:#2c3312;--bg:#14160d}
+body{transition:background-color .25s}
+.chip .pastille{display:inline-block;width:.75em;height:.75em;border-radius:50%;margin-right:6px;vertical-align:-.05em;border:2px solid var(--surface)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
@@ -311,6 +330,7 @@ const POINTS=[
  {n:1,t:"Calculer avec les règles",b:"S2",p:"S3"},
  {n:2,t:"Poser + et −",b:"S3",p:"S4"},
  {n:3,t:"Mesurer un angle",b:"S7",p:"S8"},
+ {n:7,t:"Construire un angle",b:"S9",p:"S9",sansFiche:true}, // billet pendant S9 (après le cours), groupes pour le cahier de la fin de S9 : pas de fiche parcours
  {n:4,t:"Relations entre angles",b:"S10",p:"S11"},
  {n:5,t:"Construire un triangle",b:"S14",p:"S15"},
  {n:6,t:"Règle des 180°",b:"S17",p:"S18"}];
@@ -341,7 +361,7 @@ const SEANCES=[
   dev:"<p><b>Apprendre les 4 étapes pour mesurer un angle (partie 2).</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur.</b></p>"},
  {id:"S8",chap:"Angles",k:"Angles · séance 4",t:"Mesurer un angle (2)",cours:"Pas de nouvelle partie : entraînement sur la partie 2",docs:["coursA","coursAp","corP3","ficheMes","corC8"],act:"Estimathon (jeu Estimangle sur ton site)",parcours:3,
   dev:"<p><b>Revoir la partie 2 du cours : mesurer un angle.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur, règle, crayons de couleur et calculatrice.</b></p>"},
- {id:"S9",chap:"Angles",k:"Angles · séance 5",t:"Construire un angle",cours:"Partie 3 (construction dans le cahier)",docs:["coursA","coursAp","orion","ficheCons","corC9"],act:"Constellation d'Orion",
+ {id:"S9",chap:"Angles",k:"Angles · séance 5",t:"Construire un angle",cours:"Partie 3 (construction dans le cahier)",docs:["coursA","coursAp","orion","ficheCons","billets","billetsC","corC9"],act:"Constellation d'Orion",billet:7,
   dev:"<p><b>Apprendre la partie 3 : construire un angle.</b></p><p><b>Finir la constellation d'Orion.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Construire sur le cahier un angle de 75° et un angle de 140°.</p><p><b>Apporter : rapporteur et règle.</b></p>"},
  {id:"S10",chap:"Angles",k:"Angles · séance 6",t:"Relations entre deux angles",cours:"Partie 4 et sa méthode",docs:["coursA","coursAp","billets","billetsC"],act:"",billet:4,
   dev:"<p><b>Apprendre la partie 4 : le tableau des relations entre angles et la propriété.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Reconnaître et utiliser les relations entre deux angles ».</p><p><b>Apporter : rapporteur, règle et ciseaux.</b></p>"},
@@ -368,7 +388,7 @@ const SEANCES=[
 /* Cahier Mission Indigo 6e (chap. 9 Angles) différencié. Les élèves écrivent dans le cahier : chaque exercice n'est donné qu'une fois.
    - sans billet récent sur la notion (S7, S14) : progression pour tous, A essentiels → B entraînement → C défi ;
      (pas de cahier différencié en S6 : séance d'évaluation Opérations, notion « nommer / nature » déjà faite) ;
-   - après un billet sur la notion (S8 et S9 : billet n°3 ; S15 : billet n°5) : programme par groupe du billet (R, E, D),
+   - après un billet sur la notion (S8 : billet n°3 ; S9 : billet n°7, donné pendant la séance ; S15 : billet n°5) : programme par groupe du billet (R, E, D),
      liste des élèves à annoncer à l'oral, programme à projeter (sans les noms).
    Beaucoup d'exercices et de problèmes du cahier par groupe ; s'il n'y en a pas assez : fiche d'exercices à l'ancienne
    (2 parcours par page, ficheMes/ficheCons/ficheTri). Corrigés en libre-service : « Corrigés cahier » de la séance, un PDF par séance. */
@@ -381,7 +401,7 @@ const CAHIER={
   R:"ta fiche « Je reprends », au tableau avec le professeur ; puis ex. 10 p. 85 (les 4 angles d'un quadrilatère) ; puis la fiche d'exercices « Mesurer un angle », partie Je reprends (6 angles)",
   E:"ta fiche « Je m'entraîne » ; puis ex. 11 p. 85 (l'horloge) ; puis la fiche d'exercices « Mesurer un angle », partie Je m'entraîne (6 angles dans tous les sens)",
   D:"ta fiche « Je relève un défi » ; puis « Le défi » p. 91 (la pendule à 10 h 12), ex. 33 p. 90 (angle droit ?) ; puis le jeu « Un rapporteur dans l'œil » p. 91 avec un autre élève du groupe"},
- S9:{t:"Construire un angle",pt:3,
+ S9:{t:"Construire un angle",pt:7,
   R:"ex. 12 p. 86 au tableau avec le professeur (rapporteur déjà placé), puis ex. 13 p. 86 seul ; puis la fiche d'exercices « Construire un angle », partie Je reprends (4 angles, un côté déjà tracé)",
   E:"ex. 14 p. 86 (reproduire), ex. 15 p. 86 (reproduire), ex. 16 p. 86 (partager 150°), ex. 27 p. 89 (partage d'angle) ; puis la fiche « Construire un angle », partie Je m'entraîne",
   D:"ex. 17 p. 86, ex. 29 p. 89 (points alignés ?), ex. 32 p. 90 (le gâteau), ex. 34 p. 90 (largeur d'une rivière), puis ex. 35 p. 91 (les caméras, tâche complexe)"},
@@ -479,7 +499,8 @@ const BL=(m,t,y,min)=>({m,t,y:y||"r",min:min==null?(y==="e"?10:m):min});
 /* Billets de sortie : numérotés DANS LE CHAPITRE pour les élèves (« Angles · billet n°1 ») ; le numéro global
    reste celui du point (onglet Groupes). Chaque séance ne donne que la page de SON billet (voir billetPdf). */
 function billetInfo(n){const s=SEANCES.find(x=>x.billet===n);if(!s)return null;
-  return {n,chap:s.chap,k:SEANCES.filter(x=>x.billet&&x.chap===s.chap&&x.billet<=n).length,sid:s.id}}
+  const i=SEANCES.indexOf(s);// numéro dans le chapitre : ordre des séances (le billet n°7 tombe entre le n°3 et le n°4)
+  return {n,chap:s.chap,k:SEANCES.filter((x,j)=>x.billet&&x.chap===s.chap&&j<=i).length,sid:s.id}}
 const billetNom=n=>{const b=billetInfo(n);return b?`${b.chap} · billet n°${b.k}`:`billet n°${n}`};
 const bTxt=t=>String(t).replace(/([Bb]illet(?: de sortie)?) n°(\d+)/g,(m,w,n)=>{const b=billetInfo(+n);return b?`${w} ${b.chap} n°${b.k}`:m});
 SEANCES.forEach(s=>{
@@ -498,7 +519,7 @@ const BLOCS={
  S6:[BL(30,"Évaluation Opérations","v"),BL(10,"Correction d'un exercice supplémentaire d'opérations"),BL(10,"Jeu « estimangles »"),BL(20,"Suite du chapitre (feuille 2) : mesurer un angle"),BL(10,"Billet de sortie : mesurer un angle","e",5)],
  S7:[BL(10,"Questions flash : nature d'angles"),BL(30,"Cours : les 4 étapes pour mesurer un angle, démonstration au rapporteur au tableau"),BL(45,"Cahier pour tous : A ex. 8 et 9 p. 85, B ex. 24 et 25 p. 88, C ex. 26 p. 88 et 31 p. 90 ; corrigés en libre-service","e"),BL(5,"Billet de sortie n°3","b")],
  S8:[BL(10,"L'estimathon : jeu Estimangle sur ton site (Angles, Jeux)"),BL(20,"Cours : rappel de la méthode « Mesurer un angle »"),BL(60,"Groupes du billet n°3 (annoncés à l’oral, programme projeté) : fiches vierges du point 3, puis cahier et fiche d'exercices « Mesurer » ; « Je reprends » au tableau ; bilan 5 min","p")],
- S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(30,"Cahier par groupes du billet n°3 (annoncés à l’oral, programme projeté) : « Je reprends » au tableau sur l’ex. 12 ; corrigés en libre-service, bilan","e",20),BL(30,"Constellation d'Orion : la reproduire en vraie grandeur (règle, rapporteur), à finir à la maison","e",20)],
+ S9:[BL(10,"Questions flash : mesurer deux angles"),BL(20,"Cours : construire un angle (dans le cahier)"),BL(5,"Billet de sortie n°7 : construire un angle","b"),BL(25,"Constellation d'Orion pour tous (règle, rapporteur), à finir à la maison ; pendant ce temps, tu tries les billets en R, E, D","e",20),BL(30,"Cahier par groupes du billet n°7 (annoncés à l’oral, programme projeté) : « Je reprends » au tableau sur l’ex. 12 ; corrigés en libre-service, bilan","e",20)],
  S10:[BL(10,"Questions flash : compléments à 90 et à 180"),BL(20,"Au tableau : deux droites sécantes, mesurer les 4 angles"),BL(20,"Cours : tableau des relations, propriété"),BL(20,"Cours : méthode « Reconnaître et utiliser les relations »"),BL(15,"Cahier d'activités","e"),BL(5,"Billet de sortie n°4","b")],
  S11:[BL(10,"Questions flash : diviser par 2"),BL(20,"Découverte : plier un angle découpé"),BL(20,"Cours : la bissectrice, définition et méthode"),BL(40,"Parcours point 4 ; La Grande Ourse (règle et rapporteur) pour ceux qui ont fini ; idée : chasse au trésor ou course d'orientation","p")],
  S12:[BL(45,"Révisions : cahier d'activités, méthodes du cours","e",20),BL(45,"Évaluation Angles","v")],
@@ -542,7 +563,7 @@ function reduire(us,from,R,sens){
     if(!moved)break}
   return {dur,ok:r<=0};
 }
-const BILLET_DE={S2:1,S3:2,S7:3,S10:4,S14:5,S17:6};
+const BILLET_DE={S2:1,S3:2,S7:3,S9:7,S10:4,S14:5,S17:6};
 const PARC_DE={S3:1,S4:2,S8:3,S11:4,S15:5,S18:6};
 function simuler(cr,us,dur,etat){
   // etat: {k,used} position de départ ; cr: créneaux à remplir {cap}
@@ -819,7 +840,7 @@ function carteCreneau(c,P,i,nx){
           ${s.act?`<div><b>Activité :</b> ${esc(s.act)}</div>`:""}
           ${s.prof?`<div class="profnote"><b>💡 À dire en classe :</b> ${s.prof}</div>`:""}
           <div><button class="btn small" data-edit="${s.id}" data-editc="${x.id}">✏️ Modifier les textes de cette séance</button></div></div>`}).join("")}
-      ${billets.map(s=>{const n=POINTS.find(q=>q.b===s).n;return `<p class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). Les parcours sont au cours suivant.</p>`}).join("")}
+      ${billets.map(s=>{const q=POINTS.find(q=>q.b===s),n=q.n;return `<p class="hint">${billetNom(n)} : note les groupes dans l'onglet Groupes (point ${n}). ${q.sansFiche?"Les groupes servent au cahier de la fin de ce cours.":"Les parcours sont au cours suivant."}</p>`}).join("")}
       ${[...new Set(pcs.filter(estCahier).map(p=>p.sid))].map(cahierHtml).join("")}
       ${parcN.length?`<div class="docs"><span class="dsec">Parcours vierges (sans prénom)</span>${parcN.map(parcVierges).join("")}</div>`:""}
     </div></details>`:"";
@@ -1509,8 +1530,9 @@ function tap(eid,p){
 }
 
 /* ======================= AFFICHAGE ======================= */
+const COUL_CLASSE=["#0b4f8a","#b4531a","#0f7471","#a3245e","#5b6b12"];// mêmes couleurs que :root[data-cls] (CSS)
 function renderBar(){
-  $("#classBar").innerHTML=data.classes.map(c=>`<button class="chip" data-cls="${c.id}" aria-pressed="${cur()&&cur().id===c.id}">${esc(c.nom)}</button>`).join("")
+  $("#classBar").innerHTML=data.classes.map((c,i)=>`<button class="chip" data-cls="${c.id}" aria-pressed="${cur()&&cur().id===c.id}"><span class="pastille" style="background:${COUL_CLASSE[i%COUL_CLASSE.length]}" aria-hidden="true"></span>${esc(c.nom)}</button>`).join("")
    +(data.classes.length?`<button class="btn" id="btnManage" aria-expanded="${ui.manage}">${ui.manage?"Fermer":"Gérer la classe"}</button>`:"");
 }
 function renderTabs(){
@@ -1584,7 +1606,7 @@ function renderSeances(c){
               ${s.prof?`<div class="profnote"><b>💡 À dire en classe :</b> ${s.prof}</div>`:""}
               ${(()=>{const i=SEANCES.indexOf(s),pv=i>0?SEANCES[i-1].id:null,l=pv&&projoLink(pv);return l?`<div><a class="btn small" href="${esc(l)}" target="_blank" rel="noopener">📽 Questions flash au vidéoprojecteur</a> <span class="hint">sur la séance précédente</span></div>`:""})()}
               ${s.parcours?`<div><b>Parcours :</b> ${BLOCS[s.id].find(b=>b.y==="p").m} min, d'après le billet de la séance précédente. <button class="btn small" data-goparc="${s.parcours}">Préparer les parcours du point ${s.parcours}</button></div>`:""}
-              ${s.billet?`<div><b>Billet de sortie ${billetNom(s.billet)}</b> : 5 min avant la fin. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
+              ${s.billet?`<div><b>Billet de sortie ${billetNom(s.billet)}</b> : ${POINTS.find(q=>q.n===s.billet).sansFiche?"5 min juste après le cours ; trie les billets pendant Orion, les groupes servent au cahier de la fin de séance":"5 min avant la fin"}. Note les groupes dans l'onglet Groupes (point ${s.billet}).</div>`:""}
               ${cahierHtml(s.id)}
             </div>
             <div class="box"><h3>Documents</h3><div class="docs">${docsBox([s.id],s.parcours?[s.parcours]:[],SEANCES.slice(0,SEANCES.indexOf(s)).map(q=>q.id))}</div></div>
@@ -1618,7 +1640,7 @@ function cahierHtml(sid){
   if(x.pt){
     const c=cur(),g=groupesBillet(c,x.pt),b=POINTS.find(p=>p.n===x.pt);
     const vide=!g.R.length&&!g.D.length;
-    return `<div class="cahier"><b>📘 Travail par groupes du ${billetNom(x.pt)}</b> <span class="hint">(fin de ${b.b} · cahier Mission Indigo, chap. 9)</span>
+    return `<div class="cahier"><b>📘 Travail par groupes du ${billetNom(x.pt)}</b> <span class="hint">(${b.sansFiche?"pendant":"fin de"} ${b.b} · cahier Mission Indigo, chap. 9)</span>
       <ul>${["R","E","D"].map(k=>`<li><span class="niv ${GCL[k]}">${G[k]}</span>${esc(x[k])}<br><span class="hint">À dire : ${g[k].length?esc(g[k].join(", ")):"personne"}</span></li>`).join("")}</ul>
       ${vide?`<p class="hint">Aucun groupe noté pour le ${billetNom(x.pt)} : tout le monde serait en « Je m'entraîne ». <button class="btn small" data-goparc="${x.pt}">Noter les groupes</button></p>`:""}
       <ol><li>Annonce les groupes à l'oral (liste ci-dessus) et projette le programme : les noms ne sont pas projetés.</li>
@@ -1728,7 +1750,7 @@ function renderGroupes(c){
   return `<div style="display:flex;flex-direction:column;gap:16px">
   <div class="panel">
     <div class="row" style="justify-content:space-between">
-      <h2>Point ${p.n} · ${esc(p.t)} · billet en fin de ${p.b}, parcours en ${p.p}</h2>
+      <h2>Point ${p.n} · ${esc(p.t)} · ${p.sansFiche?`billet pendant ${p.b}, groupes pour le cahier de la fin de ${p.p}`:`billet en fin de ${p.b}, parcours en ${p.p}`}</h2>
     </div>
     <div class="summary">
       <div class="count c-R"><b>${k.R}</b><span>Je reprends</span></div>
@@ -1737,9 +1759,10 @@ function renderGroupes(c){
       <div class="count c-0"><b>${k["0"]}</b><span>sans groupe : « Je m'entraîne » d'office</span></div>
     </div>
     <p class="hint">Billet de la ${p.b} : touche une case pour passer de vide à R, E, D, puis vide. 0 ou 1 juste = R, 2 justes = E, 3 justes = D.</p>
-    <div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${c.eleves.length} parcours sur ${Math.ceil(c.eleves.length/2)} feuilles, avec les prénoms)`}</button>
+    ${p.sansFiche?`<p class="hint">Pas de fiche parcours pour ce point : les groupes servent au cahier d'activités (programme projeté depuis la séance ${p.p}, avec la fiche d'exercices « Construire un angle »).</p>`
+    :`<div class="row"><button class="btn primary" id="btnGen" ${busy?"disabled":""}>${busy?"Fabrication…":`Fabriquer le PDF des parcours (${c.eleves.length} parcours sur ${Math.ceil(c.eleves.length/2)} feuilles, avec les prénoms)`}</button>
     <span class="hint">Deux parcours par feuille, à couper au milieu. Le PDF s'ouvre dans un nouvel onglet : imprime-le depuis là.</span></div>
-    <div class="row"><span class="hint">Pour expliquer au tableau (sans prénom) :</span>${parcVierges(p.n)}</div>
+    <div class="row"><span class="hint">Pour expliquer au tableau (sans prénom) :</span>${parcVierges(p.n)}</div>`}
     ${sans.length?`<p class="hint">Sans groupe, donc « Je m'entraîne » dans le PDF : ${sans.map(x=>esc(x.e.nom)).join(", ")}</p>`:""}
   </div>
 
@@ -1763,13 +1786,15 @@ function renderGroupes(c){
 function renderDocuments(){
   return `<div class="panel"><p class="hint">Touche un document pour le télécharger. Les versions « élève » s'impriment ; les corrigés et les écrans se projettent.</p></div>`
    +DOC_GROUPS.map(([t,keys])=>`<div class="panel docgroup"><h2>${t}</h2><div class="docs">${keys.map(docBtn).join("")}</div></div>`).join("")
-   +`<div class="panel docgroup"><h2>Parcours vierges (sans prénom, à projeter si besoin)</h2><div class="docs">${POINTS.map(p=>["R","E","D"].map(g=>`<button class="doc" data-pdoc="${p.n}${g}"><b>Point ${p.n}</b> · ${G[g]}</button>`).join("")).join("")}</div></div>`;
+   +`<div class="panel docgroup"><h2>Parcours vierges (sans prénom, à projeter si besoin)</h2><div class="docs">${POINTS.filter(p=>!p.sansFiche).map(p=>["R","E","D"].map(g=>`<button class="doc" data-pdoc="${p.n}${g}"><b>Point ${p.n}</b> · ${G[g]}</button>`).join("")).join("")}</div></div>`;
 }
 function render(){
   applyPerso();
   data.classes.forEach(invalider);
   const keep=ui.manage&&$("#fEleves")?{n:$("#fNom").value,e:$("#fEleves").value}:null;
   if(!data.classes.find(c=>c.id===ui.cls)&&data.classes[0])ui.cls=data.classes[0].id;
+  const ic=data.classes.findIndex(c=>c.id===ui.cls);// couleur de la classe choisie
+  if(ic>=0)document.documentElement.dataset.cls=String(ic%COUL_CLASSE.length);else delete document.documentElement.dataset.cls;
   renderBar();renderTabs();renderManage();
   if(keep&&$("#fEleves")){$("#fNom").value=keep.n;$("#fEleves").value=keep.e}
   const c=cur(),main=$("#main");
