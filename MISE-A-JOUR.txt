@@ -1,3 +1,19 @@
+MISE À JOUR 2026-11-21.2 : deux jeux pour la classe (solo + duel sur tablette)
+
+À DÉPOSER : index.html, jeux-classes.js, jeux-commun/, jeu-rayon/, jeu-trigone/, jeux-img/rayon.svg, jeux-img/trigone.svg
+
+- Le Rayon (chapitre Les angles, page « 🎮 Le Rayon ») : on tape l'angle de tir d'un laser. Estimer, mesurer au
+  rapporteur, puis calculer (adjacents, supplémentaires, complémentaires, opposés par le sommet, bissectrice).
+- Trigone · sixième (chapitre Les triangles, page « 🎮 Trigone ») : le triangle mystère (« Qui est-ce ? ») et la
+  charpente (angles qui font 180°). Visible quand le chapitre Triangles sera ouvert.
+- Duel : deux élèves sur la même tablette, moitié gauche / moitié droite, chacun son tour. Prénom + classe ; à la
+  fin, une ligne par élève part dans Grist (code JEU-…, ignorée par le bilan des devoirs). Sans réseau, elle
+  attend sur la tablette. Classes proposées : jeux-classes.js (Pilates, Sophrologie, Yoga).
+
+Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-20.2 : classeur plus simple, écran du cahier qui tient sur une page
 
 À DÉPOSER : classeur.html
@@ -13,6 +29,26 @@ MISE À JOUR 2026-11-20.2 : classeur plus simple, écran du cahier qui tient sur
   le texte se réduit tout seul pour que tout tienne sur un seul écran (aussi quand une colonne est agrandie).
 
 Après le dépôt : recharger le site avec Ctrl + F5.
+
+=========================================================
+
+MISE À JOUR 2026-11-21.1 : billet « Construire un angle », fiches de construction refaites
+
+À DÉPOSER : classeur.html, documents.bin
+SUR TON CLOUD (dossier docs) : Corrige_cahier_S9.pdf et Corrige_cahier_S15.pdf (pour-le-cloud/Cahier_Angles)
+
+- Nouveau billet Angles « Construire un angle » (point 7 dans l'onglet Groupes), PENDANT S9 :
+  flash 10, cours 20, billet 5, Orion pour tous 25 (tu tries les billets), cahier par groupes de CE billet 30.
+  4 versions par page (Version A à D en haut à droite), corrigé tracé en rouge, juste à 2° près.
+  Les billets Angles suivants sont renumérotés dans le chapitre (relations entre angles = Angles n°3).
+- Fiches d'exercices « Construire un angle » et « Construire un triangle » : Étape 1 dans le cahier
+  d'activités (pages et numéros), Étape 2 sur la fiche avec une consigne claire, chapeaux sur les angles,
+  plus de ligne « Prénom », un cadre par construction. Corrigés refaits (dernière page des corrigés S9 / S15).
+- Parcours des points 3 à 6 : plus de ligne « Nom » (le prénom reste imprimé par le PDF nominatif).
+- Classeur : chaque classe a sa couleur, dans l'ordre des classes : bleu, rouge, vert, orange, violet.
+  Toute la page change : bandeau en haut, titre, fond, bordures et bord gauche des cartes, boutons,
+  pastille sur le bouton de la classe.
+- classeur.html et documents.bin déjà poussés sur GitHub.
 
 =========================================================
 

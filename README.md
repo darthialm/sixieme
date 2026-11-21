@@ -202,3 +202,16 @@ Le bouton **🎮 Jeux**, en haut de chaque page, ouvre la salle de jeux (`#/jeux
   - `src/core/hints.ts` : les messages d'aide ;
   - `src/core/soundEngine.ts` : musique et bruitages ;
   - `src/scene/` : le décor 3D ; `src/App.tsx` et `src/ui/` : les boutons et les fenêtres.
+
+## Jeux pour la classe : solo à la maison, duel sur tablette (21/11/2026)
+
+Deux nouveaux jeux, chacun avec un **mode solo** (à la maison, missions et étoiles) et un **mode Duel** pour 2 élèves sur la même tablette.
+Dans ces jeux, ce sont les maths qui font jouer : on vise avec un angle, on choisit ses questions, on assemble des triangles.
+
+- **Le Rayon** (chapitre Les angles, page « 🎮 Le Rayon ») : un laser part de O, on tape l'**angle de tir**. Missions : estimer, mesurer au rapporteur (on pose un fil sur la cible), puis des cibles si fines qu'il faut **calculer** l'angle (adjacents, supplémentaires, complémentaires, opposés par le sommet, bissectrice). Duel des tours : chacun brise les 3 cristaux de l'autre ; le niveau choisi règle la finesse des cristaux et l'aide du rapporteur.
+- **Trigone · sixième** (chapitre Les triangles, page « 🎮 Trigone ») : le **triangle mystère** (un « Qui est-ce ? » : poser le moins de questions possible et éliminer soi-même les cartes, en lisant les codages et en calculant le 3e angle ; les éliminations fausses sont expliquées) et la **charpente** (tuiles d'angles à assembler en triangles de 180°). Duels : triangle mystère à deux, ou course aux triangles.
+
+**Le duel** : la tablette est coupée en moitié gauche / moitié droite. Chaque élève tape son prénom et choisit son niveau ; on joue chacun son tour (la moitié du joueur actif est éclairée). Le bouton ⟳ de la barre du milieu tourne chaque moitié vers son joueur s'ils sont assis face à face aux deux bouts de la tablette. Pour un duel, ouvre le jeu dans un nouvel onglet : il passe en plein écran. **Résultats dans Grist** : après son prénom, chaque élève touche sa classe. À la fin du duel, une ligne par élève part dans ta table Grist (le même formulaire que les devoirs) : Prénom, Code `JEU-…`, Classe, Devoir « 🎮 Jeu — partie (duel) », Score (par exemple « 3/7 » tirs réussis, « 2 manches gagnées », « 4 questions »), Détail (gagné/perdu, adversaire, niveau, statistiques). Le widget « Mes devoirs » et le bilan de l'Espace prof ignorent ces lignes. Sans réseau, les lignes attendent sur la tablette et partent toutes seules plus tard. Un élève qui joue « sans prénom » n'envoie rien. Les classes proposées sont dans `jeux-classes.js` (Pilates, Sophrologie, Yoga : les noms déjà utilisés par tes devoirs dans Grist).
+
+**À déposer sur GitHub** : `index.html`, `jeux-classes.js`, les dossiers `jeux-commun/` (le moteur commun), `jeu-rayon/`, `jeu-trigone/`, et `jeux-img/rayon.svg`, `jeux-img/trigone.svg`.
+Le dossier `jeux-commun/` et le jeu `jeu-trigone/` existent aussi dans le site de 5e : ce sont les mêmes fichiers (Trigone choisit sa version avec `data-niveau` dans son `index.html`). Ajouter `?tout` à l'adresse d'un jeu ouvre toutes ses missions (pour le professeur).

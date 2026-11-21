@@ -64,3 +64,11 @@ Après la correction, le professeur colle les lignes dans « Résultats » (Espa
 « Mettre les résultats en ligne » : `resultats/ID.json` (dépôt public du site, codes anonymes, aucun prénom). L'élève
 scanne le QR de sa copie (`#/m/ABC-07`) ou tape son code sur `#/m`, et arrive sur sa page « Mon contrôle » (corrigé de
 son sujet, détail par question, exercices de remédiation). Les étiquettes QR restent possibles.
+
+## Jeux (solo + duel sur tablette)
+
+- `jeux-commun/moteur.js` et `moteur.css` (questions, pavés, écran coupé gauche/droite, `Moteur.match` pour les duels au
+  tour par tour) et le dossier `jeu-trigone/` sont **identiques dans les deux sites** : toute modification se recopie
+  dans l'autre site (Trigone choisit sa version avec `<body data-niveau="6|5">`).
+- Un nouveau jeu doit avoir un mode solo et un mode duel, et une vraie mécanique où les décisions du joueur sont des
+  décisions mathématiques (pas un quiz habillé, pas seulement une course).
