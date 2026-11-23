@@ -1,3 +1,17 @@
+MISE À JOUR 2026-11-23.1 : classeur, exercices faits dans le cahier et « Fait aussi »
+
+À DÉPOSER : classeur.html
+
+- Sur la carte d'un cours avec du cahier : « Exercices faits dans le cahier ». Pour chaque groupe, je coche dans tout
+  le cahier (ex. 1 à 35, rangés par page) ce qui a été fait ; les exercices prévus sont cochés d'avance.
+- Contenu de séance École Directe : les numéros des exercices faits par groupe (« Je reprends : ex. 12 et 13 p. 86… »)
+  remplacent « Cahier par groupes… », avec « Corrigés dans le cloud de la classe ».
+- « ＋ Fait aussi » sur un cours fait : l'activité prévue au cours suivant a été faite aussi ; la suite se recalcule.
+
+Après le dépôt : recharger le classeur avec Ctrl + F5.
+
+=========================================================
+
 MISE À JOUR 2026-11-22.1 : Le Rayon remplacé par deux jeux d'angles
 
 À DÉPOSER : index.html, jeu-chaine/, jeu-bataille/, jeux-img/chaine.svg, jeux-img/bataille.svg ; SUPPRIMER jeu-rayon/ et jeux-img/rayon.svg

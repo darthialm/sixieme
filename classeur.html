@@ -254,6 +254,8 @@ ol.ordre .g{font-weight:700;font-size:.8rem;border-radius:6px;padding:1px 6px;ma
 .sync a{color:var(--accent)}
 #syncAlert{border-color:var(--danger);margin-bottom:10px}
 #syncAlert p{margin:0}
+.exgrp{margin:6px 0}.expages{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px}.expage{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}.expage small{color:var(--muted,#667);margin-right:2px}
+label.exo{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 6px;border:1px solid #ccd;border-radius:6px;cursor:pointer;font-size:.85em;margin:1px}label.exo input{position:absolute;opacity:0;pointer-events:none}label.exo.on{background:#1e7f45;color:#fff;border-color:#1e7f45}label.exo:focus-within{outline:2px solid #0b4f8a}
 </style>
 </head>
 <body>
@@ -574,19 +576,22 @@ function simuler(cr,us,dur,etat){
   let k=etat.k,used=etat.used;const res=[];
   for(const c of cr){
     let rem=c.cap,t=0,pieces=[],billets=[];
+    /* « Fait aussi » (23/11/2026) : le cours est allé jusqu'à l'activité c.upto incluse, quel que soit le temps prévu */
+    const stop=c.upto?us.findIndex((u,j)=>j>=k&&u.sid+":"+u.i===c.upto):-1;if(stop>=0)rem=1e9;
     while(rem>0&&k<us.length){
       const u=us[k],left=dur[k]-used;
       if(left<=0){k++;used=0;continue}
       if(u.y==="p"&&billets.includes(PARC_DE[u.sid]))break;
       if(u.y!=="e"&&left>rem)break;
-      if(u.i===0&&u.y==="r"&&u.m===10&&pieces.length&&k+1<us.length){const n=us[k+1];if(n.sid===u.sid&&n.y!=="e"&&(dur[k+1]>rem-left||(n.y==="p"&&billets.includes(PARC_DE[n.sid]))))break}
+      if(stop<0&&u.i===0&&u.y==="r"&&u.m===10&&pieces.length&&k+1<us.length){const n=us[k+1];if(n.sid===u.sid&&n.y!=="e"&&(dur[k+1]>rem-left||(n.y==="p"&&billets.includes(PARC_DE[n.sid]))))break}
       const take=Math.min(left,rem);
       pieces.push({sid:u.sid,i:u.i,t0:t,m:take,y:u.y,suite:used>0,coupe:take<left});
       t+=take;rem-=take;used+=take;
       if(u.y==="b")billets.push(BILLET_DE[u.sid]);
       if(used>=dur[k]){k++;used=0}
+      if(stop>=0&&k>stop){rem=0;break}
     }
-    if(rem>0&&k<us.length){
+    if(stop<0&&rem>0&&k<us.length){
       // rend le temps libre aux blocs souples raccourcis de ce créneau
       for(let a=pieces.length-1;a>=0&&rem>0;a--){const pv=pieces[a];
         if(pv.y==="e"&&!pv.coupe&&!pv.suite){const add=Math.min(rem,Math.max(0,us.find(z=>z.sid===pv.sid&&z.i===pv.i).m-pv.m));pv.m+=add;rem-=add}}
@@ -652,7 +657,7 @@ function planClasse(c){
   for(let i=0;i<cr.length;i++){
     if(i<=L){
       // créneau figé : planifié avec les créneaux suivants supposés complets
-      const rest=cr.slice(i).map((x,j)=>({...x,cap:j===0?capOf(x):x.d}));
+      const rest=cr.slice(i).map((x,j)=>({...x,cap:j===0?capOf(x):x.d,upto:j===0?(st[x.id]||{}).upto||"":""}));
       const p=planifier(rest,us,cur);
       out.push({...cr[i],cap:rest[0].cap,...p.res[0],st:(st[cr[i].id]||{}).st||"fait",reste:(st[cr[i].id]||{}).reste||0,fige:true});
       cur=p.res[0].fin;
@@ -849,7 +854,7 @@ function carteCreneau(c,P,i,nx){
       ${parcN.length?`<div class="docs"><span class="dsec">Parcours vierges (sans prénom)</span>${parcN.map(parcVierges).join("")}</div>`:""}
     </div></details>`:"";
   const ed=sids.length?`<details class="plus"><summary>École Directe : contenu${dv.html?" et devoirs":""}</summary>
-      ${contenuBox(contenuHtml(pcs),"ctc-"+x.id,`data-copyctc="${i}"`)}
+      ${contenuBox(contenuHtml(pcs,c),"ctc-"+x.id,`data-copyctc="${i}"`)}
       ${dv.html?`<div class="box"><h3>Devoirs à donner en fin de cours</h3><div class="devoir" id="devc-${x.id}">${dv.html}</div>
         <div class="row"><button class="btn primary small" data-copyc="${i}">Copier les devoirs</button></div>
         ${dv.ended.filter(sid=>SEANCES.find(s=>s.id===sid).dev.includes(LIEN)).map(sid=>lienBox(SEANCES.find(s=>s.id===sid),"lienc-"+x.id)).join("")}</div>`:""}
@@ -861,7 +866,31 @@ function carteCreneau(c,P,i,nx){
       <span class="hint">Ce qui n'a pas été fait passe au cours suivant.</span></div>`:""}
     ${ui.edit&&ui.editC===x.id&&sids.includes(ui.edit)?editBox(SEANCES.find(s=>s.id===ui.edit)):""}
     ${evals.length?`<ul class="aimp">${evals.map(ch=>evalHtml(ch,x.date)).join("")}</ul>`:""}
-    ${etapes}${docs}${detail}${ed}</article>`;
+    ${etapes}${faitAussiHtml(c,P,i)}${exosChoixHtml(c,[...new Set(pcs.filter(p=>estBlocCahier(p.sid,BLOCS[p.sid][p.i])).map(p=>p.sid))],x.id)}${docs}${detail}${ed}</article>`;
+}
+/* « Fait aussi » (23/11/2026) : le cours a avancé plus que prévu, l'activité suivante (prévue au cours d'après) a été faite aussi.
+   c.cren[id].upto = "S9:3" : ce cours est allé jusqu'à cette activité incluse ; la suite se recalcule. */
+function faitAussiHtml(c,P,i){
+  const x=P.cr[i];if(x.st!=="fait")return "";
+  const upto=(c.cren[x.id]||{}).upto;
+  const n=P.cr.slice(i+1).find(z=>z.cap>0&&z.pieces.some(p=>!p.marge));
+  const p=n&&n.pieces.find(q=>!q.marge);
+  const add=p?`<button class="btn small" data-plus="${x.id}" data-upto="${p.sid}:${p.i}" title="Activité prévue au cours suivant, faite aussi dans ce cours">＋ Fait aussi : ${esc(court(BLOCS[p.sid][p.i].t))}</button>`:"";
+  const undo=upto?`<button class="btn small" data-plus="${x.id}" data-upto="">↺ Annuler « fait aussi »</button>`:"";
+  return add||undo?`<div class="row">${add}${undo}</div>`:"";
+}
+/* Exercices faits (23/11/2026) : pour chaque groupe, je coche dans TOUT le cahier (ex. 1 à 35, par page) ce qui a été
+   fait ; les exercices prévus sont cochés d'avance. Le contenu de séance École Directe donne ces numéros. */
+function exosChoixHtml(c,sids,cid){
+  if(!sids.length)return "";
+  const pages=[];for(let n=1;n<=CAHIER_NB;n++){const p=pageEx(n);let g=pages.find(z=>z.p===p);if(!g)pages.push(g={p,ns:[]});g.ns.push(n)}
+  const chip=(sid,k,v,lab,on)=>`<label class="exo${on?" on":""}"><input type="checkbox" data-exo="${sid}|${k}|${v}" data-excid="${cid}" ${on?"checked":""}>${esc(lab)}</label>`;
+  return `<details class="plus"${ui.exOpen===cid?" open":""} data-exc="${cid}"><summary>Exercices faits dans le cahier (pour École Directe)</summary>${sids.map(sid=>`<div class="box"><b>${esc(CAHIER[sid].t)}</b>
+    ${groupesExos(sid).map(([k,lab])=>{const f=exosFaits(sid,k,c),ps=PAS[sid][k]||[];
+      const autres=ps.map((e,j)=>/^Exercice \d+$/.test(e.k)?"":chip(sid,k,"p"+j,exosTexte([e]),f.includes("p"+j))).join("");
+      return `<div class="exgrp"><span class="niv ${GCL[k]||{A:"c-R",B:"c-E",C:"c-D"}[k]}">${esc(lab)}</span>${autres?`<div>${autres}</div>`:""}
+        <div class="expages">${pages.map(g=>`<span class="expage"><small>p. ${g.p}</small>${g.ns.map(n=>chip(sid,k,String(n),String(n),f.includes(String(n)))).join("")}</span>`).join("")}</div></div>`}).join("")}</div>`).join("")}
+    <p class="hint">Coche les exercices faits par chaque groupe (ceux prévus sont cochés d'avance) : le contenu de séance École Directe donne leurs numéros.</p></details>`;
 }
 /* Les cours dans l'ordre ; les cours passés (Fait, Pas tout fini, Annulé) seulement sur demande */
 function renderCreneaux(c){
@@ -1309,12 +1338,63 @@ function ctLigne(b){
   if(/^Bilan/.test(b.t))return "";
   return b.t.replace(/\s*\(à projeter\)/g,"").replace(/[,.] bilan\s*$/i,"");
 }
-function contenuHtml(pieces){
-  const out=[];let last="";
+/* Exercices du cahier faits par groupe (exosFaits, choisis dans le classeur) :
+   remplace « Cahier par groupes… » / « Exercices différenciés… » dans le contenu École Directe (23/11/2026). */
+const estBlocCahier=(sid,b)=>!!(CAHIER[sid]&&PAS[sid]&&(b.y==="p"||/^(cahier|suite du cahier)/i.test(b.t)));
+function groupesExos(sid){
+  const x=CAHIER[sid];
+  return x.pt?[["R",G.R],["E",G.E],["D",G.D]]:[["A","A (essentiels)"],["B","B (entraînement)"],["C","C (défi)"]];
+}
+function exoCourt(e){
+  if(/^Exercice \d+/.test(e.k))return {n:e.k.replace(/^Exercice /,""),p:e.p};
+  const t=e.k.replace(/^Ma fiche/,"fiche");return {t:t.charAt(0).toLowerCase()+t.slice(1)+(e.p?" p. "+e.p:"")};
+}
+function exosTexte(l){
+  /* « ex. 12 et 13 p. 86, fiche « Construire un angle » » : exercices consécutifs de la même page regroupés */
+  const out=[];let i=0;
+  while(i<l.length){
+    const a=exoCourt(l[i]);
+    if(a.t){out.push(a.t);i++;continue}
+    const ns=[a.n];let j=i+1;
+    while(j<l.length){const b=exoCourt(l[j]);if(b.t||b.p!==a.p)break;ns.push(b.n);j++}
+    out.push("ex. "+(ns.length>1?ns.slice(0,-1).join(", ")+" et "+ns[ns.length-1]:ns[0])+" p. "+a.p);i=j;
+  }
+  return out.join(", ");
+}
+/* Cahier d'activités (Mission Indigo 6e, chap. 9) : exercices 1 à 35, page de chaque exercice */
+const CAHIER_NB=35;
+const pageEx=n=>n<=5?84:n<=11?85:n<=17?86:n<=23?87:n<=26?88:n<=30?89:n<=34?90:91;
+/* Exercices faits d'un groupe, choisis dans tout le cahier (c.exFaits[sid][k] = ["12","13","p2",…] ;
+   "p2" = 3e étape prévue qui n'est pas un exercice numéroté, ex. une fiche) ; par défaut : ceux prévus (PAS). */
+function exosFaits(sid,k,c){
+  const st=((c&&c.exFaits)||{})[sid];
+  if(st&&Array.isArray(st[k]))return st[k];
+  return (PAS[sid][k]||[]).map((e,j)=>/^Exercice \d+$/.test(e.k)?e.k.replace(/^Exercice /,""):"p"+j);
+}
+function exosListe(sid,k,c){
+  const f=exosFaits(sid,k,c),ps=PAS[sid][k]||[];
+  const ex=f.filter(v=>/^\d+$/.test(v)).map(Number).sort((a,b)=>a-b).map(n=>({k:"Exercice "+n,p:pageEx(n)}));
+  const autres=f.filter(v=>/^p\d+$/.test(v)).map(v=>ps[+v.slice(1)]).filter(Boolean);
+  return [...ex,...autres];
+}
+function exosLignes(sid,c){
+  const s=SEANCES.find(q=>q.id===sid);
+  const l=groupesExos(sid).map(([k,lab])=>{const faits=exosListe(sid,k,c);return faits.length?`<p>• ${esc(lab)} : ${esc(exosTexte(faits))}</p>`:""}).filter(Boolean);
+  if(!l.length)return "";
+  const cor=(s.docs||[]).some(k=>/^cor[CP]\d/.test(k));
+  return `<p>- Exercices par groupe (${esc(CAHIER[sid].t)}) :</p>${l.join("")}${cor?"<p>- Corrigés dans le cloud de la classe</p>":""}`;
+}
+function contenuHtml(pieces,c){
+  const out=[];let last="";const exos=new Set();
   pieces.forEach(p=>{
-    const l=ctLigne(BLOCS[p.sid][p.i]);if(!l)return;
+    const b=BLOCS[p.sid][p.i];
+    const cahier=estBlocCahier(p.sid,b);
+    if(cahier&&exos.has(p.sid))return;
+    const ex=cahier?exosLignes(p.sid,c):"";
+    const l=ex||ctLigne(b);if(!l)return;
     const s=SEANCES.find(q=>q.id===p.sid),lab=labPiece(p.sid,p.i),tete=lab+(s.eval||(p.sid==="S6"&&p.i===0)?"":" : "+s.t);
     if(tete!==last){out.push(`<p><b>${esc(tete)}</b></p>`);last=tete}
+    if(ex){exos.add(p.sid);out.push(ex);return}
     out.push(`<p>- ${esc(l)}${p.suite?" (suite)":""}${p.coupe?" (début)":""}</p>`);
   });
   return out.join("");
@@ -1617,7 +1697,7 @@ function renderSeances(c){
           </div>
           ${ui.edit===s.id&&!ui.editC?editBox(s):`<div class="row"><button class="btn small" data-edit="${s.id}">✏️ Modifier les textes de cette séance</button></div>
           <div class="box"><h3>Déroulé (${fmtD(BLOCS[s.id].reduce((a,b)=>a+b.m,0))})</h3><ol class="deroule">${(()=>{let t=0;return BLOCS[s.id].map(b=>{const r=`<li class="y-${b.y}"><span class="tps">${t}–${t+b.m}</span><span>${esc(b.t)}</span></li>`;t+=b.m;return r}).join("")})()}</ol></div>
-          ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i}))),"ct-"+s.id,`data-copyct="${s.id}"`)}
+          ${contenuBox(contenuHtml(BLOCS[s.id].map((_,i)=>({sid:s.id,i})),cur()),"ct-"+s.id,`data-copyct="${s.id}"`)}
           ${s.dev?`<div class="box"><h3>Devoirs à donner en fin de séance</h3>
             <div class="devoir" id="dev-${s.id}">${devoirHtml(s)}</div>
             <div class="row"><button class="btn primary small" data-copy="${s.id}">Copier les devoirs</button></div>
@@ -1828,9 +1908,11 @@ document.addEventListener("click",ev=>{
   if(t.dataset.edbold){const e=$("#ed-d-"+t.dataset.edbold);if(e){e.focus();document.execCommand("bold")}return}
   if(t.dataset.edlien){const e=$("#ed-d-"+t.dataset.edlien);if(e){e.focus();document.execCommand("insertText",false,LIEN_TXT)}return}
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}
-  if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i}))),t,"ct-"+sid);return}
-  if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge)),t,"ctc-"+x.id);return}
+  if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i})),cur()),t,"ct-"+sid);return}
+  if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge),cur()),t,"ctc-"+x.id);return}
   if(t.dataset.omit){const c=cur();c.omit=c.omit||{};c.omit[t.dataset.omit]=true;invalider(c);persist();render();return}
+  if(t.dataset.plus){const c=cur(),id=t.dataset.plus,u=t.dataset.upto;const s=c.cren[id]=c.cren[id]||{st:"fait",reste:0};
+    if(u)s.upto=u;else delete s.upto;ui.openC=id;invalider(c);saveUi();persist();render();return}
   if(t.dataset.unomit){const c=cur();if(c.omit)delete c.omit[t.dataset.unomit];invalider(c);persist();render();return}
   if(t.dataset.copyc){const c=cur(),i=+t.dataset.copyc,P=plan(c);copierHtml(devoirsCreneau(c,P,i).html,t,"devc-"+P.cr[i].id);return}
   if(t.dataset.vue){ui.vue=t.dataset.vue;saveUi();render();return}
@@ -1872,6 +1954,8 @@ document.addEventListener("change",ev=>{
   if(t.dataset.done){const id=t.dataset.done;c.prog[id]=c.prog[id]||{};c.prog[id].done=t.checked;
     if(t.checked&&!c.prog[id].date)c.prog[id].date=new Date().toISOString().slice(0,10);
     const nx=nextSeance(c);ui.open=t.checked&&nx?nx.id:id;saveUi();persist();render();return}
+  if(t.dataset.exo){const [sid,k,v]=t.dataset.exo.split("|");c.exFaits=c.exFaits||{};const st=c.exFaits[sid]=c.exFaits[sid]||{};
+    const l=exosFaits(sid,k,c).filter(z=>z!==v);if(t.checked)l.push(v);st[k]=l;ui.exOpen=t.dataset.excid;ui.openC=t.dataset.excid;persist();render();return}
   if(t.dataset.reste){c.cren[t.dataset.reste]={st:"partiel",reste:+t.value};ui.openC=t.dataset.reste;saveUi();persist();render();return}
   if(t.dataset.hj!==undefined){c.edt.hebdo[+t.dataset.hj].j=+t.value;persist();render();return}
   if(t.dataset.hd!==undefined){c.edt.hebdo[+t.dataset.hd].d=+t.value;persist();render();return}
@@ -1889,6 +1973,7 @@ document.addEventListener("input",ev=>{
   tot.textContent="Total : "+fmtD(n)+(n!==90?" (prévu : 1h30)":"")+".";
 });
 document.addEventListener("toggle",ev=>{
+  if(ev.target instanceof HTMLDetailsElement&&ev.target.dataset.exc){ui.exOpen=ev.target.open?ev.target.dataset.exc:null;return}
   const d=ev.target;if(!(d instanceof HTMLDetailsElement)||!(d.dataset.sid||d.dataset.cid))return;
   if(d.open&&d.dataset.sid){ui.open=d.dataset.sid;saveUi()}
   if(d.open&&d.dataset.cid){ui.openC=d.dataset.cid;saveUi()}
