@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><defs><radialGradient id="s" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="640" height="360" fill="#140f0b"/>
+<g transform="translate(450 180)">
+<circle r="160" fill="#3a2e24" stroke="#1c150f" stroke-width="6"/>
+<path d="M0 0 L140 0 A140 140 0 0 0 70 -121 Z" fill="#d2342b"/>
+<path d="M0 0 L70 -121 A140 140 0 0 0 -48 -132 Z" fill="#e8ac1c"/>
+<path d="M0 0 L-48 -132 A140 140 0 0 0 -140 0 Z" fill="#a9cbe8"/>
+<path d="M0 0 L-140 0 A140 140 0 0 0 -70 121 Z" fill="#23a35d"/>
+<path d="M0 0 L-70 121 A140 140 0 0 0 48 132 Z" fill="#262a31"/>
+<path d="M0 0 L48 132 A140 140 0 0 0 140 0 Z" fill="#2a66d9"/>
+<circle r="140" fill="url(#s)"/>
+<g stroke="#120c07" stroke-width="10" stroke-linecap="round"><line x1="-140" y1="0" x2="140" y2="0"/><line x1="-70" y1="121" x2="70" y2="-121"/><line x1="0" y1="0" x2="-48" y2="-132"/><line x1="0" y1="0" x2="48" y2="132"/></g>
+<circle r="12" fill="#f2c14e" stroke="#120c07" stroke-width="4"/>
+<text x="-8" y="86" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="30" font-weight="900" fill="#8b93a1">?</text>
+<text x="82" y="-40" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="24" font-weight="900" fill="#fff" stroke="#000" stroke-width="1">60°</text>
+</g>
+<text x="36" y="160" font-family="Palatino Linotype,Georgia,serif" font-size="56" font-weight="700" fill="#f2c14e">Le</text>
+<text x="36" y="222" font-family="Palatino Linotype,Georgia,serif" font-size="56" font-weight="700" fill="#f2c14e">Vitrail</text>
+<g transform="translate(40 250)" fill="none" stroke="#f6eedf" stroke-width="3" stroke-linecap="round"><path d="M0 22 L44 0 M0 0 L44 22"/><path d="M60 26 L110 26 M85 26 L100 4"/><path d="M130 30 L130 0 M130 30 L170 30 M130 20 L140 20 L140 30"/></g>
+</svg>
