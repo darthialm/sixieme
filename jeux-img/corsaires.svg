@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><defs><pattern id="w" width="20" height="12" patternUnits="userSpaceOnUse"><path d="M0 7 Q5 3 10 7 T20 7" fill="none" stroke="#2b5d8a" stroke-opacity=".3"/></pattern></defs>
+<rect width="640" height="360" fill="#ead7a7"/><rect width="640" height="360" fill="url(#w)"/>
+<g transform="translate(420 190)">
+<path d="M0 0 L120 0 A120 120 0 0 0 60 -104 Z" fill="#b3261e" fill-opacity=".25" stroke="#b3261e" stroke-width="4" stroke-dasharray="10 8"/>
+<g stroke="#3b2a1a" stroke-width="4" stroke-linecap="round"><line x1="0" y1="0" x2="120" y2="0"/><line x1="0" y1="0" x2="60" y2="-104"/><line x1="0" y1="0" x2="-100" y2="-60"/><line x1="0" y1="0" x2="-70" y2="95"/><line x1="0" y1="0" x2="80" y2="90"/></g>
+<g fill="#3b2a1a"><circle cx="120" cy="0" r="6"/><circle cx="60" cy="-104" r="6"/><circle cx="-100" cy="-60" r="6"/><circle cx="-70" cy="95" r="6"/><circle cx="80" cy="90" r="6"/></g>
+<path d="M-24 4 Q-20 -20 3 -18 Q26 -14 22 8 Q10 24 -9 20 Q-26 17 -24 4 Z" fill="#d9b46a" stroke="#6b5236" stroke-width="2.5"/>
+<text x="60" y="-36" font-size="44" text-anchor="middle">🔥</text>
+<g font-family="Georgia,serif" font-weight="700" font-size="28" fill="#3b2a1a"><text x="138" y="10">A</text><text x="66" y="-114">B</text><text x="0" y="48" fill="#b3261e" text-anchor="middle">O</text></g>
+</g>
+<text x="34" y="96" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="58" fill="#3b2a1a">Les</text>
+<text x="34" y="160" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="58" fill="#3b2a1a">Corsaires</text>
+<g transform="translate(40 210)"><rect width="190" height="74" rx="10" fill="#f6ebcd" stroke="#b3261e" stroke-width="3"/>
+<path d="M60 18 L95 6 L130 18" fill="none" stroke="#3b2a1a" stroke-width="4"/>
+<g font-family="Georgia,serif" font-weight="700" font-size="40" fill="#3b2a1a" text-anchor="middle"><text x="50" y="60">A</text><text x="95" y="60" fill="#b3261e">O</text><text x="140" y="60">B</text></g></g>
+<text x="40" y="320" font-family="Segoe UI,sans-serif" font-size="26" font-weight="900" fill="#b3261e">💥 Feu !</text>
+</svg>
