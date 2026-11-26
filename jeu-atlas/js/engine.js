@@ -199,7 +199,9 @@
   /* ---------------------------------------------------------------- Progression */
   Atlas.hasPage = (id) => !!(Atlas.profile() && Atlas.profile().regions[id] && Atlas.profile().regions[id].gardien);
   Atlas.pages = () => ORDER.filter((id) => Atlas.hasPage(id)).length;
-  Atlas.allUnlocked = /[?&]tout\b/.test(location.search);
+  // Mode professeur : ?tout dans l'adresse, ou Espace professeur du site déverrouillé sur cet appareil (même clé que script.js)
+  Atlas.profMode = (() => { try { return localStorage.getItem('revisions6e-prof') === 'prof:ok'; } catch (e) { return false; } })();
+  Atlas.allUnlocked = /[?&]tout\b/.test(location.search) || Atlas.profMode;
   Atlas.isUnlocked = function (id) {
     if (id === 'village') return true;
     if (Atlas.allUnlocked) return true;
@@ -851,8 +853,14 @@
     scr.append(
       h('div', { class: 'title-box' },
         h('div', { class: 'title-logo' }, sprite('pi', 72), h('div', {}, h('h1', {}, "L'Atlas perdu"), h('p', { class: 'subtitle' }, 'Une aventure mathématique · 6e'))),
+        Atlas.allUnlocked ? h('p', { class: 'prof-banner' }, '👩‍🏫 Mode professeur : toutes les régions et tous les gardiens sont ouverts.') : null,
         list,
         h('div', { class: 'title-btns' },
+          Atlas.allUnlocked ? h('button', { class: 'btn btn-go', onclick: () => {
+            let p = DB.profiles.find((q) => q.prof);
+            if (!p) { p = blankProfile('Prof', HEROES[0]); p.prof = true; p.introSeen = true; DB.profiles.push(p); }
+            start(p.id);
+          } }, '👩‍🏫 Entrer en prof') : null,
           h('button', { class: 'btn btn-go', onclick: () => newProfile() }, '✨ Nouveau joueur'),
           h('button', { class: 'btn', onclick: () => importProfile() }, '🔑 J\'ai un code'))));
     UI.root.append(scr);

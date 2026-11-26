@@ -179,3 +179,4 @@ svg.puz text { font-family: var(--font); }
   .panel-head h2 { font-size: 18px; }
   .hud-region { display: none; }
 }
+.prof-banner { background: #e7f5ff; border: 2px solid #1c7ed6; color: #0b4f8a; border-radius: 10px; padding: 8px 12px; font-weight: 700; margin: 0 0 12px; }
