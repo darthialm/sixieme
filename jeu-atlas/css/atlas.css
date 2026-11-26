@@ -1,0 +1,181 @@
+/* L'Atlas perdu — interface (dialogues, panneaux, énigmes) */
+:root {
+  --ink: #2b1d0e;
+  --paper: #fbf3e0;
+  --paper2: #f3e4c0;
+  --edge: #8b5a2b;
+  --edge-dark: #4a2f14;
+  --gold: #f5a623;
+  --good: #2f9e44;
+  --bad: #e03131;
+  --blue: #1c7ed6;
+  --night: #14101e;
+  --font: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); font-family: var(--font); color: var(--ink); }
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; image-rendering: pixelated; }
+#ui { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#ui > * { pointer-events: auto; }
+.spr { display: inline-block; image-rendering: pixelated; background-repeat: no-repeat; flex: none; }
+.muted { color: #7a6650; }
+[hidden] { display: none !important; }
+
+/* ---------- Boutons ---------- */
+.btn {
+  font: 700 16px var(--font); color: var(--ink); cursor: pointer;
+  background: linear-gradient(#fff8e8, #f0dcb0); border: 2px solid var(--edge-dark); border-radius: 10px;
+  padding: 8px 14px; box-shadow: 0 3px 0 var(--edge-dark); transition: transform .08s;
+  touch-action: manipulation;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge-dark); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn-go { background: linear-gradient(#8ce99a, #40c057); color: #0b3d16; border-color: #1b5e20; box-shadow: 0 3px 0 #1b5e20; }
+.btn-hud { padding: 6px 10px; font-size: 15px; }
+.btn-close { padding: 4px 10px; margin-left: 8px; }
+.btn-del { padding: 6px 10px; background: #ffe3e3; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 8px 10px; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud-left, .hud-right { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.hud-region { background: rgba(20,16,30,.75); color: #fff; padding: 6px 12px; border-radius: 10px; font-weight: 700; font-size: 15px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(20,16,30,.75); color: #fff; padding: 6px 10px; border-radius: 10px; font-size: 15px; }
+.coin { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3bf, #fcc419 45%, #e67700); border: 1px solid #a05a00; vertical-align: -2px; }
+
+/* ---------- Dialogue ---------- */
+.dialog {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(760px, calc(100% - 24px));
+  display: flex; gap: 12px; align-items: flex-start; background: var(--paper); border: 3px solid var(--edge-dark);
+  border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 0 rgba(0,0,0,.35), inset 0 0 0 3px var(--paper2);
+  cursor: pointer; animation: pop .18s ease-out; z-index: 30;
+}
+.dialog-portrait { background: var(--paper2); border: 2px solid var(--edge); border-radius: 10px; padding: 4px; }
+.dialog-body { flex: 1; min-width: 0; }
+.dialog-name { font-weight: 800; color: var(--edge); font-size: 15px; margin-bottom: 2px; }
+.dialog-text { font-size: 19px; line-height: 1.4; }
+.dialog-next { text-align: right; color: var(--edge); font-size: 14px; animation: blink 1s infinite; }
+.dialog-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+@keyframes blink { 50% { opacity: .2; } }
+@keyframes pop { from { transform: translateX(-50%) scale(.95); opacity: 0; } }
+
+/* ---------- Toast ---------- */
+.toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #2b1d0e; color: #fff; padding: 10px 18px;
+  border-radius: 12px; font-weight: 700; font-size: 17px; z-index: 60; transition: opacity .4s, transform .4s; box-shadow: 0 4px 0 rgba(0,0,0,.3); max-width: 90vw; text-align: center; }
+.toast.good { background: var(--good); }
+.toast.bad { background: var(--bad); }
+.toast.out { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+
+/* ---------- Panneaux ---------- */
+.panel-wrap { position: fixed; inset: 0; background: rgba(10,8,20,.6); display: flex; align-items: center; justify-content: center; padding: 10px; z-index: 20; }
+.panel {
+  background: var(--paper); border: 3px solid var(--edge-dark); border-radius: 16px; width: min(980px, 100%); max-height: 100%;
+  display: flex; flex-direction: column; box-shadow: 0 8px 0 rgba(0,0,0,.35), inset 0 0 0 4px var(--paper2); animation: pop2 .2s ease-out;
+}
+@keyframes pop2 { from { transform: scale(.96); opacity: 0; } }
+.panel.shake { animation: shake .4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 2px dashed var(--edge); }
+.panel-head h2 { margin: 0; flex: 1; font-size: 21px; }
+.panel-body { padding: 12px 16px 16px; overflow: auto; }
+.panel-body h3 { margin: 14px 0 6px; }
+
+.hearts { display: flex; gap: 2px; font-size: 24px; }
+.heart { color: #e03131; text-shadow: 0 2px 0 #7a1010; transition: transform .2s; }
+.heart.empty { color: #d6c7a8; text-shadow: none; transform: scale(.85); }
+
+.consigne { font-size: 18px; line-height: 1.45; margin: 0 0 10px; }
+.consigne b { color: #7c2d12; }
+.enigme-content { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.pi-bubble { display: flex; gap: 10px; align-items: center; background: #fff; border: 2px solid var(--edge); border-radius: 12px; padding: 8px 12px; margin-top: 10px; }
+.pi-bubble .pi-text { font-size: 17px; line-height: 1.4; }
+.pi-bubble.bad { background: #fff0f0; border-color: var(--bad); }
+.pi-bubble.good { background: #ebfbee; border-color: var(--good); }
+.pi-bubble.small .pi-text { font-size: 16px; }
+.win-bar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; font-weight: 800; font-size: 18px; }
+
+/* Leçon */
+.lesson-stage { display: flex; justify-content: center; align-items: center; min-height: 200px; margin: 10px 0; }
+.lesson-stage svg { width: min(640px, 100%); height: auto; max-height: 52vh; }
+.lesson-nav { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.lesson-count { margin-right: auto; color: var(--edge); font-weight: 700; }
+
+/* Réponse */
+.answer-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 18px; }
+.answer-input { font: 700 20px var(--font); padding: 8px 10px; border: 2px solid var(--edge); border-radius: 10px; background: #fff; color: var(--ink); text-align: center; }
+.unit { font-weight: 700; }
+
+/* SVG des énigmes : style commun */
+svg.puz { width: min(820px, 100%); height: auto; max-height: 62vh; background: #fffdf6; border: 2px solid var(--edge); border-radius: 12px; touch-action: none; user-select: none; -webkit-user-select: none; }
+svg.puz text { font-family: var(--font); }
+.puz-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.puz-tools .btn.on { background: linear-gradient(#a5d8ff, #4dabf7); border-color: #1864ab; box-shadow: 0 3px 0 #1864ab; }
+
+/* Calcul mental */
+.mental-q { text-align: center; }
+.mental-calc { font-size: 34px; font-weight: 800; margin: 10px 0 14px; }
+.mental-prog { text-align: center; color: var(--edge); font-weight: 700; }
+.mental-end { font-size: 24px; font-weight: 800; }
+
+/* Atlas */
+.atlas-map { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 62vh; margin: 0 auto;
+  background: radial-gradient(ellipse at 30% 55%, #d8f5a2 0, #b2dd84 30%, transparent 55%), linear-gradient(135deg, #f8e7c0, #ead29d);
+  border: 3px solid var(--edge); border-radius: 14px; overflow: hidden; }
+.atlas-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.atlas-lines .road { stroke: #a0703c; stroke-width: .6; stroke-dasharray: 1.4 1; vector-effect: non-scaling-stroke; }
+.atlas-lines .road { stroke-width: 3; }
+.atlas-lines .road.gate { stroke: #6b3d12; }
+.atlas-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 1px;
+  background: none; border: none; cursor: pointer; font-family: var(--font); color: var(--ink); max-width: 120px; }
+.atlas-num { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 17px;
+  background: #fff; border: 3px solid var(--edge-dark); box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.atlas-node.visited .atlas-num { background: #ffe8a3; }
+.atlas-node.page .atlas-num { background: #8ce99a; }
+.atlas-node.fog { opacity: .45; filter: grayscale(1); }
+.atlas-node.here .atlas-num { outline: 3px solid var(--blue); outline-offset: 2px; }
+.atlas-name { font-size: 12px; font-weight: 700; text-align: center; background: rgba(255,250,235,.85); padding: 1px 4px; border-radius: 6px; line-height: 1.15; }
+.atlas-stars { font-size: 12px; color: #e67700; letter-spacing: 1px; }
+.atlas-here { position: absolute; top: -18px; font-size: 18px; }
+.atlas-gate { position: absolute; transform: translate(-50%, -50%); font-size: 22px; }
+.atlas-help { text-align: center; color: var(--edge); margin: 8px 0 0; }
+
+/* Sacoche et menu */
+.bag-tools { display: flex; flex-wrap: wrap; gap: 10px; }
+.bag-tool { display: flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--edge); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
+.bag-icon { font-size: 26px; display: inline-flex; }
+.bag-icon svg { width: 30px; height: 30px; }
+.bag-lessons, .menu-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.save-code { font: 800 22px ui-monospace, Consolas, monospace; letter-spacing: 2px; background: #fff; border: 2px dashed var(--edge); padding: 10px; border-radius: 10px; text-align: center; word-break: break-all; margin-bottom: 12px; }
+
+/* Écran titre */
+.title-screen { position: fixed; inset: 0; display: grid; place-items: center; padding: 12px; z-index: 15;
+  background: radial-gradient(circle at 50% 30%, #3b2f5c, #14101e 70%); }
+.title-box { background: var(--paper); border: 3px solid var(--edge-dark); border-radius: 18px; padding: 20px; width: min(520px, 100%);
+  box-shadow: 0 8px 0 rgba(0,0,0,.4), inset 0 0 0 4px var(--paper2); max-height: 100%; overflow: auto; }
+.title-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.title-logo h1 { margin: 0; font-size: 32px; color: #5b3410; }
+.subtitle { margin: 2px 0 0; color: var(--edge); font-weight: 700; }
+.profile-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.profile-row { display: flex; gap: 6px; }
+.profile-btn { flex: 1; display: flex; align-items: center; gap: 10px; font: 700 18px var(--font); color: var(--ink); background: #fff; border: 2px solid var(--edge);
+  border-radius: 12px; padding: 6px 10px; cursor: pointer; text-align: left; }
+.profile-name { flex: 1; }
+.profile-info { color: var(--edge); font-size: 15px; }
+.title-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero-pick { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.hero-btn { background: #fff; border: 3px solid #d9c49a; border-radius: 12px; padding: 6px; cursor: pointer; }
+.hero-btn.on { border-color: var(--good); box-shadow: 0 0 0 3px #b2f2bb; }
+
+/* Confettis */
+.confetti { position: fixed; inset: 0; pointer-events: none !important; z-index: 70; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+@media (max-width: 600px) {
+  .dialog-text { font-size: 17px; }
+  .consigne { font-size: 16px; }
+  .panel-head h2 { font-size: 18px; }
+  .hud-region { display: none; }
+}
