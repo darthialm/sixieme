@@ -70,5 +70,11 @@ son sujet, détail par question, exercices de remédiation). Les étiquettes QR 
 - `jeux-commun/moteur.js` et `moteur.css` (questions, pavés, écran coupé gauche/droite, `Moteur.match` pour les duels au
   tour par tour) et le dossier `jeu-trigone/` sont **identiques dans les deux sites** : toute modification se recopie
   dans l'autre site (Trigone choisit sa version avec `<body data-niveau="6|5">`).
+- Exception : **L'Atlas perdu** (`jeu-atlas/`, grand jeu d'aventure, une région par chapitre) est **solo seulement**.
+  Sa conception est dans `../jeu-aventure-6e/BIBLE.md` et `../jeu-aventure-6e/GUIDE-REGIONS.md`.
 - Un nouveau jeu doit avoir un mode solo et un mode duel, et une vraie mécanique où les décisions du joueur sont des
   décisions mathématiques (pas un quiz habillé, pas seulement une course).
+- **Suivi des élèves** (`../suivi/GUIDE.md`) : la page du jeu charge `../suivi.js` ; chaque décision jugée est envoyée
+  avec `Moteur.trace({ jeu, ch, comp, ok, rep, att, err })` en solo et `ctx.trace(k, {…})` en duel (`Suivi.jeu` pour un
+  jeu sans le moteur). Une progression gardée dans le navigateur : ajouter sa clé à `CLES` dans `suivi/suivi.js`,
+  puis recopier `suivi.js` dans les deux sites.

@@ -529,6 +529,19 @@
     const clearT = () => { timers.forEach(clearTimeout); timers = []; };
     function setup(p) {
       const afterName = () => (cfg.niveaux ? 'niv' : 'wait');
+      /* suivi des élèves : chaque joueur peut taper le code de sa carte ; ses réponses vont alors sur son compte */
+      if (p.step === 'nom' && window.Suivi && !p.sansCode) {
+        askName(p.el, `${cfg.titre} · ${cfg.niveauScolaire || ''}`, p.k, (c) => {
+          c = c.replace(/[^A-Z0-9]/g, '');
+          if (!c) { p.sansCode = true; setup(p); return; }
+          p.el.querySelector('.m-ask').textContent = 'Vérification…';
+          Suivi.joueur(c).then((j) => {
+            p.joueur = j; p.prenom = j.me.prenom; p.nom = j.me.prenom; p.classe = j.me.classe;
+            p.step = afterName(); setup(p); check();
+          }).catch((e) => { const a = p.el.querySelector('.m-ask'); if (a) a.textContent = e.message + ' Retape ton code, ou joue sans code.'; });
+        }, Snd, { ask: 'Tape le code de ta carte', skip: 'Sans code', digits: true, raw: true });
+        return;
+      }
       if (p.step === 'nom') { askName(p.el, `${cfg.titre} · ${cfg.niveauScolaire || ''}`, p.k, (n) => { p.prenom = n; p.nom = n || `Joueur ${p.k + 1}`; p.step = n ? 'classe' : afterName(); setup(p); check(); }, Snd); return; }
       if (p.step === 'classe') {
         // la classe sert à ranger le résultat dans Grist ; la liste vient de jeux-classes.js (propre à chaque site)
@@ -569,12 +582,20 @@
     const ctx = {
       P, get mode() { return mode; }, sound: Snd, later,
       turn(k) { sp.arrow(k); },
+      /** une décision du joueur k (ou p), jugée par le jeu : envoyée sur son compte s'il a tapé son code */
+      trace(k, ev) {
+        const p = typeof k === 'number' ? P[k] : k;
+        if (!p || !p.joueur || !window.Suivi) return;
+        try { Suivi.logPour(p.joueur, Object.assign({ src: 'duel' }, ev, { extra: Object.assign({ jeu: cfg.jeu, mode, niveau: p.niveau, adversaire: P[1 - p.k].prenom || '' }, ev.extra || {}) })); } catch (e) { /* rien */ }
+      },
       end(r) {
         ended = true; clearT(); phase = 'end'; sp.arrow(null);
         if (Snd) Snd.win();
         if (r.winner !== null && r.winner !== undefined) U.confetti(70, undefined, P[r.winner].el);
         saveDuel({ jeu: cfg.jeu, mode, joueurs: P.map((p) => ({ prenom: p.prenom, classe: p.classe, niveau: p.niveau, gagne: p.k === r.winner, ...(r.stats ? r.stats[p.k] : {}) })) });
         const draw0 = r.winner === null || r.winner === undefined, t = Date.now();
+        P.forEach((p) => ctx.trace(p, { ch: cfg.ch || null, comp: `${cfg.jeu}:partie`, ok: draw0 ? null : p.k === r.winner,
+          extra: { resultat: draw0 ? 'égalité' : p.k === r.winner ? 'gagné' : 'perdu', score: r.score ? r.score[p.k] : null, ...(r.stats ? r.stats[p.k] : {}) } }));
         const modeNom = mode && cfg.modes ? (cfg.modes.find((m) => m.id === mode) || {}).nom : '';
         const lvNom = (p) => (p.niveau && cfg.niveaux ? (cfg.niveaux.find((n) => n.id === p.niveau) || {}).nom : '');
         const rows = P.filter((p) => p.prenom).map((p) => {
@@ -599,11 +620,20 @@
     };
     U.tap(sp.root.querySelector('.m-quit'), () => {
       if (phase === 'play' && !confirm('Arrêter le duel ?')) return;
-      ended = true; clearT(); sp.close(); if (cfg.quitter) cfg.quitter();
+      ended = true; clearT(); sp.close();
+      if (window.Suivi) P.forEach((p) => { if (p.joueur) { Suivi.finJoueur(p.joueur); p.joueur = null; } });
+      if (cfg.quitter) cfg.quitter();
     });
     P.forEach(setup);
     return ctx;
   }
 
-  window.Moteur = { U, question, duel, makeSound, isRight, pad, split, match, askName, saveDuel, sendRows, flushEnvois: flush, enAttente: () => queue().length };
+  /** une décision du joueur en partie SOLO, jugée par le jeu : envoyée sur le compte de l'élève connecté.
+      ev = { jeu, ch, comp, ok, rep, att, err, aide, ms, extra } (comp : « jeu:sorte de décision ») */
+  function trace(ev) {
+    if (!window.Suivi || !Suivi.connecte() || !ev) return;
+    try { Suivi.log(Object.assign({ src: 'jeu' }, ev, { extra: Object.assign({ jeu: ev.jeu }, ev.extra || {}) })); } catch (e) { /* rien */ }
+  }
+
+  window.Moteur = { U, question, duel, makeSound, isRight, pad, split, match, askName, saveDuel, sendRows, flushEnvois: flush, enAttente: () => queue().length, trace };
 })();

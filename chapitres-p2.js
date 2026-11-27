@@ -809,22 +809,22 @@ function genAngConstruire() {
   const nO = pick(['O', 'A', 'K', 'S']), nx = pick(['x', 'u']), ny = nx === 'x' ? 'y' : 'v';
   const beta = rand(-12, 12), b = dirDeg(beta);
   const O = { x: m > 90 ? 8.2 : 4.5, y: 8 }, X = G.add(O, G.mul(b, 6.8));
-  const good = (d) => Math.abs(angDeg(b, d) - m) <= 1.5;
+  const good = (d) => Math.abs(angDeg(b, d) - m) <= 2;
   return {
-    hints: [`Relis les 4 étapes « Construire un angle » dans ${ficheLink('angles')}.`, `Outil Rapporteur : fais-le glisser (la croix sur ${nO}), tourne-le avec la poignée ↻ (la ligne du 0 sur [${nO}${nx})), clique sur le 0 qui est sur [${nO}${nx}), puis clique au bord à ${m}° sur la graduation orange. Enfin, outil Demi-droite : de ${nO} vers la marque.`, 'Clique sur « 🎬 Voir un exemple ».'],
+    hints: [`Relis les 4 étapes « Construire un angle » dans ${ficheLink('angles')}.`, `Rapporteur : fais-le glisser (la croix sur ${nO}), tourne-le avec la poignée ↻ (la ligne du 0 sur [${nO}${nx})), clique sur le 0 qui est sur [${nO}${nx}), puis glisse le doigt (ou la souris) le long du bord : lâche quand tu lis ${m}° sur la graduation orange. Enfin, Règle : de ${nO} jusqu'à la marque.`, 'Clique sur « 🎬 Voir un exemple ».'],
     anim: () => sceneAngle(O, b, m, nO, nx, ny),
     example: () => sceneAngle({ x: 0, y: 0 }, { x: 1, y: 0 }, m === 65 ? 140 : 65, 'A', 'u', 'v'),
     remediate(r) {
       const ds = raysFrom(r._board, O); if (!ds.length || ds.some(good)) return null;
       if (ds.some((d) => Math.abs(angDeg(b, d) - (180 - m)) <= 1.5)) return `Ton angle mesure ${180 - m}° : tu as suivi la mauvaise graduation. Suis celle qui part de <b>0</b> sur [${nO}${nx}).`;
       const a = Math.round(angDeg(b, ds[ds.length - 1]));
-      return `Ta demi-droite fait un angle de ${a}° avec [${nO}${nx}), au lieu de ${m}°. Utilise le Rapporteur pour placer une marque précise.`;
+      return `Ton trait fait un angle de ${a}° avec [${nO}${nx}), au lieu de ${m}°. Avec le Rapporteur, lâche sur le bord quand tu lis ${m}° sur la graduation orange, puis relie ${nO} à la marque.`;
     },
     q: `<p class="statement">Construis un angle ${angN(nx + nO + ny)} de <b>${m}°</b> à partir de la demi-droite [${nO}${nx}).</p><div class="board"></div>`,
-    mount(r) { r._board = createBoard(r.querySelector('.board'), { prot: true, tool: 'prot', names: [], given: { points: [{ name: nO, ...O }, { name: nx, ...X, mark: { dash: b } }], segs: [[nO, nx]] } }); },
+    mount(r) { r._board = createBoard(r.querySelector('.board'), { tools: ['prot', 'seg'], tool: 'prot', names: [], given: { points: [{ name: nO, ...O }, { name: nx, ...X, mark: { dash: b } }], segs: [[nO, nx]] } }); },
     check(r) {
       const ds = raysFrom(r._board, O);
-      if (!ds.length) return r._board.drawnCount() ? { retry: true, msg: `Il manque le deuxième côté : trace la demi-droite d'origine ${nO} qui passe par ta marque (outil Demi-droite).` } : null;
+      if (!ds.length) return r._board.drawnCount() ? { retry: true, msg: `Il manque le deuxième côté : avec la Règle, trace le trait qui part de ${nO} et passe par ta marque.` } : null;
       const ok = ds.some(good);
       return { ok, msg: ok ? `Ton angle mesure bien ${m}°.` : `Il fallait une demi-droite d'origine ${nO} qui fait un angle de <b>${m}°</b> avec [${nO}${nx}). Centre du rapporteur sur ${nO}, 0° sur [${nO}${nx}), marque à ${m}° sur la graduation qui part de 0, puis on relie.` };
     },

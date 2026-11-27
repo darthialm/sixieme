@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#8fd3ff">
   <title>Le Pont des Fractions</title>
-  <script type="module" crossorigin src="./jeu.js?v=202611141441"></script>
-  <link rel="stylesheet" crossorigin href="./jeu.css?v=202611141441">
+  <script type="module" crossorigin src="./jeu.js?v=202611251509"></script>
+  <link rel="stylesheet" crossorigin href="./jeu.css?v=202611251509">
 </head>
 <body>
   <div id="root"></div>
+  <!-- Suivi des élèves : le fichier du site (../suivi.js), avant le jeu qui lit sa progression -->
+  <script src="../suivi.js?v=2026-11-26.1"></script>
+  <script>if (window.Suivi) Suivi.init();</script>
 </body>
 </html>

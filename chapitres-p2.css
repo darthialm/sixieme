@@ -43,8 +43,8 @@ body[data-ch="triangles"] { --accent: #4d7a12; --accent-soft: #e9f3dc; }
 .ex-fb .p2-pose { background: var(--surface); }
 
 /* Angles : arcs de marquage et rapporteur */
-.fig .f-arcm { stroke: var(--accent); stroke-width: 1.8; fill: none; }
-.fig .f-arc-red { stroke: #d6336c; }
+.fig .f-arcm, .mp-svg .f-arcm { stroke: var(--accent); stroke-width: 1.8; fill: none; }
+.fig .f-arc-red, .mp-svg .f-arc-red { stroke: #d6336c; }
 .fig .f-arc-blue { stroke: #1c7ed6; }
 .fig .f-arc-green { stroke: #2b8a3e; }
 .fig .p2-prot-out { font-size: calc(var(--k, 1) * .2px); fill: #3451d1; text-anchor: middle; dominant-baseline: middle; font-family: "Atkinson Hyperlegible", sans-serif; font-weight: 700; }

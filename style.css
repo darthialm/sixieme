@@ -398,6 +398,7 @@ table.voc td:first-child { white-space: nowrap; font-weight: 700; }
 /* mode d'emploi de l'instrument : étapes numérotées, l'étape en cours en gras, les étapes faites cochées */
 .geo-help { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 12px 6px; font-size: .95rem; }
 .geo-ht { display: block; margin-bottom: 2px; }
+.geo-ht:empty, .geo-names:empty { display: none; }
 .geo-steps { margin: 0; padding-left: 1.5em; }
 .geo-steps li { margin: 2px 0; color: var(--muted); }
 .geo-steps li.now { color: inherit; font-weight: 700; }
@@ -1017,7 +1018,7 @@ body.pdf-snap .ctl-sheet { box-shadow: none !important; outline: 0 !important; }
 @media (max-width: 720px) { .top-links { position: absolute; top: 10px; right: 12px; } .top { position: sticky; } }
 
 /* ============ Salle de jeux et jeu intégré (Le Pont des Fractions) ============ */
-#games-hub { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+#games-hub, .games-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
 .game-card {
   display: flex; flex-direction: column; text-decoration: none; color: var(--ink); overflow: hidden;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: transform .15s;

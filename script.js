@@ -452,7 +452,7 @@ function createBoard(host, opts = {}) {
     return n;
   }
   function renderNames() {
-    if (!taskNames.length) { elNames.innerHTML = '<span>Les points sont nommés automatiquement.</span>'; return; }
+    if (!taskNames.length) { elNames.innerHTML = ''; return; }
     if (!st.next || used(st.next)) st.next = taskNames.find((x) => !used(x)) || null;
     elNames.innerHTML = `<span>Prochain point :</span>${taskNames.map((n) => `<button type="button" class="chip${st.next === n ? ' on' : ''}" data-n="${n}"${used(n) ? ' disabled' : ''}>${n}</button>`).join('')}${st.next ? '' : '<span>(lettres suivantes automatiques)</span>'}`;
   }
@@ -538,8 +538,9 @@ function createBoard(host, opts = {}) {
   function help() {
     msg('');
     const prot = st.tool === 'prot', h = prot ? { t: '◠ Rapporteur', s: PROT_STEPS } : HELP[st.tool], now = prot ? protNow() : st.step;
-    elHt.textContent = h.t;
-    elSteps.innerHTML = h.s.map((t, i) => `<li class="${i < now ? 'ok' : i === now ? 'now' : ''}">${t}</li>`).join('') + (h.tip ? `<li class="tip">${h.tip}</li>` : '');
+    // seulement la consigne de l'étape en cours (toute la liste était illisible, surtout sur téléphone)
+    elHt.textContent = '';
+    elSteps.innerHTML = `<li class="now">${h.s[Math.min(now, h.s.length - 1)]}</li>`;
   }
   function commit(ids) { st.hist.push(ids); st.adj = null; }
   function cancel() {
@@ -577,22 +578,50 @@ function createBoard(host, opts = {}) {
     });
     return out;
   }
+  // outil pour relier le sommet à la marque : la demi-droite si elle est proposée, sinon la règle
+  const LINK = tools.some((t) => t.id === 'hray') ? '↗ Demi-droite' : '📏 Règle';
   const PROT_STEPS = [
-    'Fais <b>glisser</b> le rapporteur : sa croix ✛ (le centre) sur le <b>sommet</b> de l\'angle.',
-    'Tourne-le avec la poignée <b>↻</b> : la ligne du 0 bien posée <b>sur le côté de départ</b>.',
-    'Un rapporteur a <b>deux 0</b> (deux graduations). Clique sur le 0 qui est <b>sur ton côté de départ</b> : sa graduation devient orange.',
-    'Compte sur la graduation <b>orange</b> (0, 10, 20…) jusqu\'à la mesure, et clique <b>au bord</b> du rapporteur : ça fait une marque.',
-    'Prends l\'outil <b>↗ Demi-droite</b> : relie le sommet à ta marque.',
+    'Fais glisser le rapporteur : sa croix ✛ sur le <b>sommet</b>.',
+    'Tourne-le avec <b>↻</b> : la ligne du 0 sur le <b>côté de départ</b>.',
+    'Touche le <b>0</b> qui est sur le côté de départ.',
+    'Glisse <b>le long du bord</b> et lâche sur la bonne mesure.',
+    `Prends <b>${LINK}</b> : relie le sommet à ta marque.`,
   ];
+  /** graduation visée au point p (en degrés depuis le 0 extérieur), aimantée sur les multiples de 5 de la
+      graduation choisie (à 2° près, comme l'œil sur les grands traits) ; null si p n'est pas au bord */
+  function protAim(P, p) {
+    const k = prAngleOf(P, p), r = G.dist(p, P.c);
+    if (k === null || r < P.R - 1.7 || r > P.R + 0.9) return null;
+    let kk = Math.round(k);
+    const rd = prRead(P, kk), r5 = Math.round(rd / 5) * 5;
+    if (Math.abs(rd - r5) <= 2) kk = P.z === 'in' ? 180 - r5 : r5;
+    return kk;
+  }
   function protNow() {
     const P = protState();
     if (!P.on) return 0; if (!P.side) return 1; if (!P.z) return 2;
     return st.adj && st.adj.kind === 'ang' ? 4 : 3;
   }
-  function renderProt() { gProt.innerHTML = st.tool === 'prot' ? prSVG(protState(), { pick: !!(st.P.side && !st.P.z) }) : ''; }
+  function renderProt() {
+    if (st.tool !== 'prot') { gProt.innerHTML = ''; return; }
+    const P = protState();
+    let s = prSVG(P, { pick: !!(P.side && !P.z) });
+    // le rapporteur est bien placé : la mesure visée s'affiche sous la souris, avant de cliquer
+    // (souris : au survol ; doigt : pendant qu'il glisse le long du bord, voir down.aim)
+    if (P.on && P.side && P.z && st.cur && (!down || down.aim)) {
+      const kk = protAim(P, st.cur);
+      if (kk !== null) {
+        // au doigt, l'étiquette est plus loin du bord pour ne pas être cachée sous le doigt
+        const m = prPt(P, kk, P.R + 0.15), t = prPt(P, kk, P.R + (down && down.touch ? 1.4 : 0.75));
+        s += `<line x1="${P.c.x.toFixed(3)}" y1="${P.c.y.toFixed(3)}" x2="${m.x.toFixed(3)}" y2="${m.y.toFixed(3)}" class="pv-dash"/><circle cx="${m.x.toFixed(3)}" cy="${m.y.toFixed(3)}" r="0.11" class="snap"/><text x="${t.x.toFixed(3)}" y="${t.y.toFixed(3)}" class="pv-txt">${prRead(P, kk)}°</text>`;
+        elRead.textContent = `Mesure lue : ${prRead(P, kk)}°`;
+      }
+    }
+    gProt.innerHTML = s;
+  }
   function protTap(p) {
     const P = protState(), z = prPickZero(P, p);
-    if (z === 'ok') { help(); msg(`Bravo : c'est le bon 0. Compte sur la graduation ${P.z === 'out' ? 'extérieure' : 'intérieure'} (en orange) : 0, 10, 20, 30…`); renderProt(); return; }
+    if (z === 'ok') { help(); msg('Bravo : c\'est le bon 0.'); renderProt(); return; }
     if (z === 'bad') {
       msg(P.side ? 'Non : ce 0 est au bout opposé, il ne touche pas ton côté de départ. Choisis le 0 qui est posé sur le côté.' : 'D\'abord : le centre sur le sommet, puis la ligne du 0 sur un côté.', true); return;
     }
@@ -601,11 +630,11 @@ function createBoard(host, opts = {}) {
     if (k === null || r < P.R - 1.7) { msg('Pour faire une marque, clique au bord du rapporteur, en face de la bonne graduation.', true); return; }
     if (!P.on || !P.side) { msg('Place d\'abord le rapporteur : la croix sur le sommet, la ligne du 0 sur le côté de départ.', true); return; }
     if (!P.z) { msg('Avant de faire ta marque, clique sur le 0 qui est sur ton côté de départ.', true); return; }
-    const kk = Math.round(k), m = prPt(P, kk, P.R + 0.15);
+    const kk = protAim(P, p) ?? Math.round(k), m = prPt(P, kk, P.R + 0.15);
     const q = { id: st.uid++, x: m.x, y: m.y, name: '', tick: true };
     st.points.push(q); commit([q.id]);
     st.adj = { kind: 'ang', q, k: kk, P: { ...P, c: { ...P.c } } };
-    help(); msg(`Marque faite à ${prRead(P, kk)}°. Prends l'outil ↗ Demi-droite : du sommet jusqu'à la marque.`);
+    help(); msg(`Marque faite à ${prRead(P, kk)}°.`);
     render();
   }
 
@@ -777,7 +806,15 @@ function createBoard(host, opts = {}) {
     try { svg.setPointerCapture(e.pointerId); } catch (_) { /* rien */ }
     const p = toCm(e); st.cur = p;
     if (st.tool === 'pan') { down = { p, pan: true }; svg.classList.add('grabbing'); return; }
-    if (st.tool === 'prot') { down = { p, prot: true, g: prGrab(protState(), p) }; if (down.g) svg.classList.add('grabbing'); return; }
+    if (st.tool === 'prot') {
+      // rapporteur posé et 0 choisi : appuyer près du bord sert à VISER (glisser le doigt le long du bord, lâcher sur
+      // la mesure), pas à déplacer le rapporteur ; on le déplace en l'attrapant plus près du centre
+      const P = protState();
+      if (P.on && P.side && P.z && G.dist(p, P.c) >= P.R - 1.2 && protAim(P, p) !== null) {
+        down = { p, aim: true, touch: e.pointerType !== 'mouse' }; renderProt(); return;
+      }
+      down = { p, prot: true, g: prGrab(P, p) }; if (down.g) svg.classList.add('grabbing'); return;
+    }
     down = { p, started: st.step === 0 };
     if (st.step === 0) handle(p);
   });
@@ -789,6 +826,7 @@ function createBoard(host, opts = {}) {
       st.objs.forEach((o) => { if (o.lblAt) o.lblAt = G.add(o.lblAt, { x: dx, y: dy }); });
       down.p = st.cur; render(); return;
     }
+    if (down && down.aim) { renderProt(); return; }
     if (down && down.prot) {
       if (!down.g) return;
       const P = protState(); prMoveTo(P, down.g, st.cur);
@@ -798,10 +836,12 @@ function createBoard(host, opts = {}) {
       renderProt(); if (down.moved) help(); return;
     }
     preview();
+    if (st.tool === 'prot') renderProt();
   });
   svg.addEventListener('pointerup', (e) => {
     if (!down) return;
     if (down.pan) { down = null; svg.classList.remove('grabbing'); return; }
+    if (down.aim) { down = null; protTap(toCm(e)); return; }
     if (down.prot) { svg.classList.remove('grabbing'); const tap = !down.moved && G.dist(toCm(e), down.p) < 0.15; down = null; if (tap) protTap(toCm(e)); return; }
     const p = toCm(e); st.cur = p;
     const moved = G.dist(p, down.p) > 0.35;
@@ -2701,7 +2741,7 @@ function renderDec2Fiche() {
 /* =========================================================
    LECTURE À VOIX HAUTE
    ========================================================= */
-const CAN_SPEAK = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+const CAN_SPEAK = false; // lecture à voix haute (🔊 Écouter) désactivée
 const FRAC_NAMES = { 2: ['demi', 'demis'], 3: ['tiers', 'tiers'], 4: ['quart', 'quarts'], 10: ['dixième', 'dixièmes'], 100: ['centième', 'centièmes'], 1000: ['millième', 'millièmes'] };
 function fracWords(a, b) {
   const A = a.replace(/\s/g, ''), B = b.replace(/\s/g, '');
@@ -2833,6 +2873,7 @@ function saveStat(key, good, helped) {
 const NEED = 2;
 function updateWeak(key, good, helped) {
   const w = stats._weak || (stats._weak = {});
+  (stats._wt || (stats._wt = {}))[key] = Date.now();   // heure : sert à fusionner « Mes erreurs » entre appareils (suivi.js)
   let out = null;
   if (!good) { out = key in w ? 'still' : 'added'; w[key] = 0; }
   else if (key in w) {
@@ -2871,7 +2912,17 @@ const weakNote = {
 function makeExercise(root, gen, opts = {}) {
   const limit = opts.limit || 0, noHelp = !!opts.exam;
   let cur = null, answered = false, count = 0, good = 0, history = [], used = 0, animSeen = false, tries = 0, helpedCount = 0;
+  let t0 = 0, rep1 = null, remed = null;   // pour le suivi : début de la question, 1re réponse et erreur classique reconnue
   if (opts.makeGen) gen = opts.makeGen();
+  const src = opts.src || (opts.exam ? 'blanc' : opts.weakCh ? 'remed' : 'exo');
+  function suivi(k, ok, rep, msg) {
+    if (!window.Suivi || !Suivi.connecte()) return;
+    try {
+      Suivi.log({ src, ch: (GENS[k] && GENS[k].ch) || opts.ch || null, comp: k || null, ok, essai: tries + 1, aide: used + (animSeen ? 1 : 0),
+        ms: t0 ? Date.now() - t0 : null, rep: rep1 || rep, att: ok ? null : Suivi.texte(msg), err: remed,
+        extra: { q: (Suivi.texte(cur && cur.q) || '').slice(0, 300), rep2: rep1 ? rep : undefined, hard: cur && cur.hard ? 1 : undefined } });
+    } catch (e) { /* le suivi ne doit jamais gêner l'exercice */ }
+  }
 
   root.innerHTML = `
     <div class="ex-bar"><span class="ex-count"></span>${CAN_SPEAK ? '<button type="button" class="mini ex-say" title="Écouter l\'énoncé">🔊 Écouter</button>' : ''}<span class="ex-score"></span></div>
@@ -2913,6 +2964,7 @@ function makeExercise(root, gen, opts = {}) {
     stopSpeaking();
     cur = gen();
     answered = false; used = 0; animSeen = false; tries = 0;
+    t0 = Date.now(); rep1 = null; remed = null;
     root.classList.remove('done');
     delete qEl.dataset.sel; delete qEl.dataset.order;
     qEl.innerHTML = cur.q;
@@ -2955,6 +3007,7 @@ function makeExercise(root, gen, opts = {}) {
       const m = m0 && /virgule/i.test(m0) ? m0 : cm || m0;
       if (m) {
         tries = 1;
+        if (window.Suivi) { rep1 = Suivi.reponse(qEl); remed = (Suivi.texte(m) || '').slice(0, 60); }
         fb.className = 'ex-fb remed';
         fb.innerHTML = `<strong>🤔 Regarde bien…</strong> ${m}<p class="small">Corrige ta réponse, puis clique à nouveau sur « Vérifier ». C'est ton deuxième essai.</p>`;
         return;
@@ -2971,6 +3024,7 @@ function makeExercise(root, gen, opts = {}) {
     if (k && !noHelp) saveStat(k, res.ok, h);
     const w = k ? updateWeak(k, res.ok, h) : null;
     if (w && GENS[k]) refreshWeakBadge(GENS[k].ch);
+    suivi(k, res.ok, window.Suivi ? Suivi.reponse(qEl) : null, res.msg);
     if (limit) history.push({ label: label(), ok: res.ok, helped: res.ok && h });
     if (opts.onResult) opts.onResult(k, res.ok, w, label());
     root.classList.add('done');
@@ -3021,6 +3075,7 @@ function makeExercise(root, gen, opts = {}) {
     if (limit && !answered && !cur.empty) {
       count++; history.push({ label: label() + ' (passée)', ok: false });
       const k = cur.key || opts.key; if (k) { updateWeak(k, false, false); if (GENS[k]) refreshWeakBadge(GENS[k].ch); }
+      suivi(k, false, '(passée)', null);
     }
     if (limit && count >= limit) { summary(); return; }
     render(true);
@@ -3075,15 +3130,25 @@ function renderGamesHub() {
   const pages = [...document.querySelectorAll('.page[data-game][data-game-name]')]
     .map((p) => ({ p, c: CHAPTERS.find((x) => x.id === p.dataset.ch) })).filter((x) => x.p.dataset.ch === '_' || (x.c && !x.c.locked))
     .sort((a, b) => !a.c - !b.c); // jeux des chapitres d'abord, puis les autres
-  document.getElementById('games-hub').innerHTML = pages.map(({ p, c }) => `<a class="game-card" href="${c ? `#/${c.id}/${p.dataset.p}` : `#/jeux/${p.dataset.p}`}">
+  document.getElementById('games-hub').innerHTML = pages.map(gameCard).join('') || '<p class="muted">Aucun jeu n’est ouvert pour l’instant.</p>';
+}
+/** Carte d'un jeu : miniature, nom, chapitre lié (pas de description) */
+function gameCard({ p, c }) {
+  return `<a class="game-card" href="${c ? `#/${c.id}/${p.dataset.p}` : `#/jeux/${p.dataset.p}`}">
       <div class="game-thumb">${p.dataset.gameImg ? `<img src="${p.dataset.gameImg}" alt="" loading="lazy">` : '🎮'}</div>
       <div class="game-body"><h2>${p.dataset.gameName}</h2>
-      <p>${p.dataset.gameDesc || ''}</p>
-      <span class="stat">Jouer →</span></div></a>`).join('') || '<p class="muted">Aucun jeu n’est ouvert pour l’instant.</p>';
+      ${c ? `<p>Chapitre ${c.num} · ${c.title}</p>` : ''}
+      <span class="stat">Jouer →</span></div></a>`;
+}
+/** Page « 🎮 Jeux » d'un chapitre qui a plusieurs jeux : une carte par jeu */
+function renderChapterGames(ch, page) {
+  const c = CHAPTERS.find((x) => x.id === ch);
+  page.querySelector('.games-list').innerHTML = [...document.querySelectorAll(`.page[data-ch="${ch}"][data-game]`)].map((p) => gameCard({ p, c })).join('');
 }
 function renderChapterHome(ch) {
   const host = document.querySelector(`.page[data-ch="${ch}"][data-p="accueil"] .ch-cards`);
-  const pages = [...document.querySelectorAll(`.page[data-ch="${ch}"]`)].filter((p) => p.dataset.p !== 'accueil');
+  const hasList = !!document.querySelector(`.page[data-ch="${ch}"][data-game-list]`);
+  const pages = [...document.querySelectorAll(`.page[data-ch="${ch}"]`)].filter((p) => p.dataset.p !== 'accueil' && !(hasList && p.dataset.game));
   host.innerHTML = pages.map((p) => {
     const keys = [...p.querySelectorAll('.exercise[data-gen]')].map((e) => e.dataset.gen);
     const desc = p.querySelector('.lead')?.textContent.trim().split('. ')[0] || '';
@@ -3093,7 +3158,7 @@ function renderChapterHome(ch) {
       const n = weakKeys(ch).length;
       cls += n ? ' tile-weak' : '';
       body = n ? `<div class="stat"><b>📌 ${n} point${n > 1 ? 's' : ''} à retravailler</b></div>${weakListHTML(ch)}` : '<div class="stat">Aucun point faible pour l\'instant 🎉</div>';
-    } else if (p.dataset.game) {
+    } else if (p.dataset.game || p.dataset.gameList) {
       body = '<div class="stat">Pour t’entraîner en t’amusant →</div>';
     } else if (p.dataset.exam) {
       const c = stats[ch + ':controle'];
@@ -3104,7 +3169,7 @@ function renderChapterHome(ch) {
       const pct = total ? Math.round((ok / total) * 100) : 0;
       body = `<div class="bar"><span style="width:${pct}%"></span></div><div class="stat">${total ? `${ok} / ${total} réussies${hint ? ` (dont ${hint} avec indice)` : ''}` : 'Pas encore commencé'}</div>`;
     }
-    return `<a class="${cls}" href="#/${ch}/${p.dataset.p}"><h3>${p.dataset.title}</h3><p>${desc.length > 90 ? desc.slice(0, 88) + '…' : desc}${desc.endsWith('.') || desc.endsWith('!') ? '' : '.'}</p>${body}</a>`;
+    return `<a class="${cls}" href="#/${ch}/${p.dataset.p}"><h3>${p.dataset.title}</h3>${desc ? `<p>${desc.length > 90 ? desc.slice(0, 88) + '…' : desc}${desc.endsWith('.') || desc.endsWith('!') ? '' : '.'}</p>` : ''}${body}</a>`;
   }).join('');
 }
 
@@ -3257,7 +3322,7 @@ function routeDevoir(spec) {
     rec.tries = (rec.tries || 0) + 1; persist();
     start.hidden = true; ex.hidden = false;
     makeExercise(ex, null, {
-      limit: n, ch: chs[0],
+      limit: n, ch: chs[0], src: 'devoir',
       restartLabel: 'Recommencer le devoir',
       onRestart() { rec.tries++; persist(); },
       summary({ good, limit, helpedCount }) {
@@ -4030,7 +4095,7 @@ function routeAuto() {
   };
   describe();
   autoCtl = makeExercise(ex, null, {
-    limit: plan.length,
+    limit: plan.length, src: 'auto',
     restartLabel: 'Encore 5 questions',
     onResult(k, ok, w, lab) { if (w === 'fixed') fixed.push(lab); },
     onRestart() { plan = autoPlan(); fixed = []; describe(); },
@@ -4090,9 +4155,12 @@ function route() {
   const chap = CHAPTERS.find((c) => c.id === ch);
   if (chap) {
     const nWeak = weakKeys(ch).length;
-    const all = [...document.querySelectorAll(`.page[data-ch="${ch}"]`)];
-    const nav = [...all.filter((x) => x.dataset.game), ...all.filter((x) => !x.dataset.game)].map((x) =>
-      `<a href="#/${ch}/${x.dataset.p}"${x === page ? ' aria-current="page"' : ''}${x.dataset.exam ? ' class="nav-exam"' : x.dataset.game ? ' class="nav-game"' : ''}>${x.dataset.title}${x.dataset.p === 'erreurs' && nWeak ? ` <span class="count">${nWeak}</span>` : ''}</a>`).join('');
+    let all = [...document.querySelectorAll(`.page[data-ch="${ch}"]`)];
+    const list = all.find((x) => x.dataset.gameList); // plusieurs jeux : un seul onglet « 🎮 Jeux »
+    if (list) all = all.filter((x) => !x.dataset.game);
+    const isGame = (x) => x.dataset.game || x.dataset.gameList;
+    const nav = [...all.filter(isGame), ...all.filter((x) => !isGame(x))].map((x) =>
+      `<a href="#/${ch}/${x.dataset.p}"${x === page || (x === list && page.dataset.game) ? ' aria-current="page"' : ''}${x.dataset.exam ? ' class="nav-exam"' : isGame(x) ? ' class="nav-game"' : ''}>${x.dataset.title}${x.dataset.p === 'erreurs' && nWeak ? ` <span class="count">${nWeak}</span>` : ''}</a>`).join('');
     setChrome(ch, page, { pill: `Chapitre ${chap.num} · ${chap.title}`, nav });
     document.querySelector('#nav [aria-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
     document.title = `${chap.title} — Révisions 6e`;
@@ -4102,6 +4170,7 @@ function route() {
   }
   if (!ch) { renderChapters(); renderAutoCard(); }
   else if (p === 'accueil') renderChapterHome(ch);
+  else if (page.dataset.gameList) renderChapterGames(ch, page);
   else if (p === 'erreurs') WEAK_CTL[ch]?.renew();
   else if (page.dataset.exam) examGate(ch, page);
   window.scrollTo(0, 0);
@@ -5460,7 +5529,8 @@ function setupControles() {
     }
     host.innerHTML = `<div class="table-wrap"><table class="voc res-tab ctl-res"><thead><tr><th>Élève</th><th>Code</th>${c.k.map((k, i) => `<th title="${esc(ctlLabel(k))}">C${i + 1}</th>`).join('')}<th>Remarque</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${esc(r.name)}</b>${r.ver === 'a' ? ' <span class="small muted">(am.)</span>' : ''}</td><td>${ctlCode(c.id, r.n)}</td>${r.lv.map((l, ci) => `<td class="${r.doubt[ci] ? 'doubt' : ''}"><select data-n="${r.n}" data-ci="${ci}" class="lv-${l}"><option value="">—</option>${LEVELS.map((x) => `<option${x === l ? ' selected' : ''}>${x}</option>`).join('')}</select>${r.bits[ci] ? `<span class="small muted"> ${r.bits[ci]}</span>` : ''}</td>`).join('')}<td class="small">${esc(r.note || '')}</td></tr>`).join('')}</tbody></table></div>
       <p class="small muted">Cases orangées : Claude a un doute, vérifie la copie. Tu peux changer chaque niveau.</p>
-      <p><button type="button" class="btn primary" id="ctl-publish"${done.length ? '' : ' disabled'}>🌐 Mettre ${done.length} résultat${done.length > 1 ? 's' : ''} en ligne</button> <button type="button" class="btn" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button></p>
+      <p><button type="button" class="btn primary" id="ctl-publish"${done.length ? '' : ' disabled'}>🌐 Mettre ${done.length} résultat${done.length > 1 ? 's' : ''} en ligne</button> <button type="button" class="btn" id="ctl-print-lbl"${done.length ? '' : ' disabled'}>🏷️ Imprimer ${done.length} étiquette${done.length > 1 ? 's' : ''}</button> <button type="button" class="btn" id="ctl-copy">Copier le tableau</button>${window.Suivi ? ` <button type="button" class="btn" id="ctl-suivi"${done.length ? '' : ' disabled'} title="Range les résultats question par question sur le compte de chaque élève (suivi des élèves)">📊 Envoyer au suivi</button>` : ''}</p>
+      <p id="ctl-suivi-st"></p>
       <p class="small muted" id="ctl-publish-st">En ligne : l'élève scanne le QR de sa copie, ou tape son code sur <b>${esc(siteURL())}#/m</b> (sans prénom : seulement le code, les niveaux et le détail ✓/✗). Plus besoin d'étiquettes. Seuls les élèves dont toutes les compétences ont un niveau sont publiés.</p>`;
     $('ctl-publish')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget, st = $('ctl-publish-st'); b.disabled = true; st.className = 'small'; st.textContent = '⏳ Publication…';
@@ -5472,6 +5542,11 @@ function setupControles() {
     });
     host.querySelectorAll('select').forEach((s) => s.addEventListener('change', () => { const k = c.id + s.dataset.n; edits[k] = edits[k] || {}; edits[k][s.dataset.ci] = s.value; drawTable(); }));
     $('ctl-print-lbl')?.addEventListener('click', () => printLabels(c, done, Number($('ctl-skip').value), profDest()));
+    // suivi des élèves : chaque question, juste ou fausse, sur le compte de l'élève (les prénoms restent sur le serveur du suivi)
+    $('ctl-suivi')?.addEventListener('click', () => Suivi.envoyerControle($('ctl-suivi-st'), {
+      niveau: '6', id: c.id, titre: c.t, date: c.d, classe: c.c || '', keys: c.k, chs: c.k.map((k) => (GENS[k] && GENS[k].ch) || null),
+      copies: done.map((r) => ({ n: r.n, name: r.name, lv: r.lv, bits: r.bits, lien: retourURL(c, r.n, r.lv, r.bits, profDest()) })),
+    }));
     $('ctl-copy').addEventListener('click', async (ev) => {
       const tsv = [['Élève', 'Code', ...c.k.map((k, i) => `C${i + 1} ${ctlLabel(k)}`)].join('\t'), ...rows.map((r) => [r.name, ctlCode(c.id, r.n), ...r.lv].join('\t'))].join('\n');
       try { await navigator.clipboard.writeText(tsv); ev.target.textContent = '✔ Copié'; } catch (_) { ev.target.textContent = 'Copie impossible'; }

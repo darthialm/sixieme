@@ -199,6 +199,10 @@
     }
     return shuffle(items.map((v, i) => ({ id: i, v })));
   }
+  /** suivi des élèves */
+  const TR = (ev) => Object.assign({ jeu: 'trigone', ch: 'triangles' }, ev);
+  const suiviBarre = (asked, c, ok) => TR({ comp: 'trigone:barrer', ok, rep: asked.map((a) => `${a.q.q} ${a.ans ? 'OUI' : 'NON'}`).join(' ; ').slice(0, 200), err: ok ? null : 'plan barré à tort', att: ok ? null : (whyKeep(asked, c) || '').replace(/<[^>]+>/g, '') });
+  const suiviAssemble = (kind, vals, j) => TR({ comp: 'trigone:' + (kind === 'angles' ? 'somme-angles' : 'inegalite'), ok: j.ok, rep: vals.map((v) => (kind === 'angles' ? v + '°' : num(v))).join(' · '), err: j.ok ? null : j.flat ? 'aplati' : kind === 'angles' ? 'somme différente de 180°' : 'trop court', att: j.ok ? null : j.why.replace(/<[^>]+>/g, '') });
   function judge(kind, vals) {
     if (kind === 'angles') {
       const s = vals.reduce((x, y) => x + y, 0);
@@ -422,6 +426,7 @@
     if (M.accuse) { accuse(i); return; }
     if (M.out.has(i)) return;
     if (!M.asked.length) { M.msg = '<div class="explain warn">Pose d’abord une question !</div>'; mystDraw(); return; }
+    window.Moteur.trace(suiviBarre(M.asked, M.cards[i], !consistent(M.asked, M.cards[i])));
     if (consistent(M.asked, M.cards[i])) {
       M.err++; Snd.bad(); M.refused = i;
       M.msg = `<div class="explain bad">✗ Plan ${i + 1} : ${whyKeep(M.asked, M.cards[i])}</div>`;
@@ -437,6 +442,7 @@
     const ok = i === M.secret, nq = M.asked.length, Z = G.Z;
     const base = !ok ? 0 : Z.expert ? (nq <= 4 ? 3 : nq <= 5 ? 2 : 1) : nq <= 5 ? 3 : nq <= 7 ? 2 : 1;
     const stars = ok ? Math.max(1, base - (M.err >= 3 ? 2 : M.err >= 1 ? 1 : 0)) : 0;
+    window.Moteur.trace(TR({ comp: 'trigone:mystere', ok, extra: { questions: nq, barresATort: M.err, etoiles: stars } }));
     G.stars[G.r] = stars; G.r++;
     if (ok) { Snd.win(); U.confetti(20 + stars * 15, ['#ffffff', '#ffd166', '#7fd3ff', '#ff8fa3']); } else Snd.lose();
     const sec = M.cards[M.secret];
@@ -483,6 +489,7 @@
     const B = G.b, Z = G.Z;
     if (B.done || B.sel.length !== 3) return;
     const vals = B.sel.map((id) => B.items.find((x) => x.id === id).v), j = judge(Z.kind, vals);
+    window.Moteur.trace(suiviAssemble(Z.kind, vals, j));
     B.fig = asmFig(Z.kind, vals, false);
     if (!j.ok) {
       B.crash++; Snd.crash(); B.sel = [];
@@ -530,7 +537,7 @@
     { id: 'angles', nom: 'Course aux triangles : angles', desc: 'Des angles qui font 180°' },
   ];
   function duel() {
-    window.Moteur.match({ jeu: `trigone-${NIV}e`, titre: 'Trigone', niveauScolaire: NOM_NIV, theme: 'trigone', icone: '📐', sound: Snd, modes: MODES, quitter: home,
+    window.Moteur.match({ jeu: `trigone-${NIV}e`, ch: 'triangles', titre: 'Trigone', niveauScolaire: NOM_NIV, theme: 'trigone', icone: '📐', sound: Snd, modes: MODES, quitter: home,
       start: (ctx) => (ctx.mode === 'myst' ? duelMyst(ctx) : duelBuild(ctx)) });
   }
   function duelMyst(ctx) {
@@ -568,6 +575,7 @@
       if (D.turn !== k) return;
       if (D.accuse[k]) {
         const ok = i === secret[1 - k], w = ok ? k : 1 - k;
+        ctx.trace(k, TR({ comp: 'trigone:mystere', ok, extra: { questions: D.asked[k].length, barresATort: D.err[k] } }));
         const sec = (j) => `<p class="m-dim">Le triangle de ${nm(j)} était le plan ${secret[j] + 1} : ${cardFacts(cards[secret[j]])}</p>`;
         ctx.end({ winner: w, text: ctx.P.map((p) => `<p class="m-kick">${ok ? `${nm(k)} a trouvé le plan ${i + 1} !` : `${nm(k)} a accusé le plan ${i + 1}… raté !`}</p>${sec(1 - p.k)}${sec(p.k)}<p class="m-dim">Plans barrés à tort : ${D.err[p.k]}.</p>`),
           score: ctx.P.map((p) => `${D.asked[p.k].length} question${D.asked[p.k].length > 1 ? 's' : ''}`),
@@ -575,6 +583,7 @@
         return;
       }
       if (D.phase !== 'flip' || D.out[k].has(i)) return;
+      ctx.trace(k, suiviBarre(D.asked[k], cards[i], !consistent(D.asked[k], cards[i])));
       if (consistent(D.asked[k], cards[i])) { D.err[k]++; Snd.bad(); D.msg[k] = `<span class="ko">✗ Plan ${i + 1} : ${whyKeep(D.asked[k], cards[i])}</span>`; render(); return; }
       D.out[k].add(i); Snd.flip(); D.msg[k] = ''; render();
     }
@@ -612,6 +621,7 @@
     function build(k) {
       if (D.turn !== k || D.sel[k].length !== 3) return;
       const items = D.sel[k].map((id) => D.hand[k].find((x) => x.id === id)), vals = items.map((x) => x.v), j = judge(kind, vals);
+      ctx.trace(k, suiviAssemble(kind, vals, j));
       D.hand[k] = D.hand[k].filter((x) => !D.sel[k].includes(x.id)); D.sel[k] = []; D.fig[k] = asmFig(kind, vals, true);
       if (j.ok) { D.built[k].push(vals); Snd.build(); D.log = `🔨 ${nm(k)} construit un triangle : ${j.why}`; }
       else { D.lost[k] += 3; Snd.crash(); D.log = `💥 ${nm(k)} : ${j.why} Les 3 pièces sont perdues.`; }

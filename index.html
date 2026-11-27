@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
   <meta name="site-version" content="2026-11-18.1">
-  <link rel="stylesheet" href="style.css?v=2026-11-18.3">
-  <link rel="stylesheet" href="chapitres-p2.css?v=2026-11-18.1">
+  <link rel="stylesheet" href="style.css?v=2026-11-27.1">
+  <link rel="stylesheet" href="chapitres-p2.css?v=2026-11-24.1">
 </head>
 <body>
 
@@ -19,6 +19,7 @@
   <a href="#/" class="chap-pill" id="chap-pill" hidden></a>
   <nav id="nav" aria-label="Sections du chapitre"></nav>
   <span class="top-links">
+    <span id="suivi-btn"></span>
     <a href="#/jeux" class="prof-link games-link" title="Tous les jeux du site">🎮 Jeux</a>
     <a href="#/prof" class="prof-link" title="Espace professeur (protégé par un code)">🔒 Espace prof</a>
   </span>
@@ -1153,9 +1154,14 @@
     <div class="exercise" data-gen="a-biss"></div>
   </section>
 
-  <section class="page" data-ch="angles" data-p="jeux" data-title="🎮 Jeux" data-game="1" data-game-name="Estimangle" data-game-img="jeux-img/estimangle.jpg" data-game-desc="Trouve la mesure exacte d'un angle, sans rapporteur.">
+  <section class="page" data-ch="angles" data-p="jeux" data-title="🎮 Jeux" data-game-list="1">
     <h1>Jeux — Les angles</h1>
-    <p class="lead">Estimangle : trouve la mesure exacte d'un angle, sans rapporteur.</p>
+    <div class="chapters games-list"></div>
+  </section>
+
+  <section class="page" data-ch="angles" data-p="estimangle" data-title="🎮 Estimangle" data-game="1" data-game-name="Estimangle" data-game-img="jeux-img/estimangle.jpg" data-game-desc="Trouve la mesure exacte d'un angle, sans rapporteur.">
+    <h1>Estimangle — les angles</h1>
+    <p class="lead">Trouve la mesure exacte d'un angle, sans rapporteur.</p>
     <div class="game" data-game="estimangle"></div>
   </section>
 
@@ -1172,15 +1178,15 @@
     <p class="small muted">7 rosaces, 3 figures chacune ; 3 étoiles sans aucune fêlure (mesure fausse ou mauvaise propriété) ni indice. Chaque vitre allumée s'écrit comme une rédaction. ⚔️ Mode Duel : deux élèves sur la même tablette (bouton ⟳ pour les placer face à face), chacun son tour allume une vitre et gagne ses degrés ; allumer une vitre en débloque d'autres… pour l'adversaire aussi. Pour le duel, ouvre plutôt le jeu dans un nouvel onglet, en plein écran.</p>
   </section>
 
-  <section class="page" data-ch="angles" data-p="corsaires" data-title="🎮 Les Corsaires" data-game="1" data-game-name="Les Corsaires" data-game-img="jeux-img/corsaires.svg" data-game-desc="Des bateaux ennemis cachés dans les angles autour des îles : pour tirer, écris le nom de l'angle visé, le sommet au milieu.">
-    <h1>Les Corsaires — nommer un angle</h1>
+  <section class="page" data-ch="angles" data-p="corsaires" data-title="🎮 La Bataille navale" data-game="1" data-game-name="La Bataille navale" data-game-img="jeux-img/corsaires.svg?v=2" data-game-desc="Des bateaux ennemis cachés dans les angles autour des îles : pour tirer, écris le nom de l'angle visé, le sommet au milieu.">
+    <h1>La Bataille navale — nommer un angle</h1>
     <p class="lead">Une carte au trésor : des îles (les sommets) et des demi-droites vers des bouées. Des bateaux ennemis se cachent dans les angles. Pour tirer, écris le nom de l'angle visé en touchant trois lettres : un point, l'île au milieu, un point. Un nom faux, et le boulet est perdu !</p>
-    <div class="game-frame" data-frame="jeu-corsaires/index.html?v=2026-11-24.2">
+    <div class="game-frame" data-frame="jeu-corsaires/index.html?v=2026-11-27.1">
       <div class="game-frame-bar">
         <button type="button" class="btn game-full">⛶ Plein écran</button>
-        <a class="btn" href="jeu-corsaires/index.html?v=2026-11-24.2" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet ↗</a>
+        <a class="btn" href="jeu-corsaires/index.html?v=2026-11-27.1" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet ↗</a>
       </div>
-      <iframe title="Les Corsaires" allow="fullscreen" allowfullscreen></iframe>
+      <iframe title="La Bataille navale" allow="fullscreen" allowfullscreen></iframe>
     </div>
     <p class="small muted">5 cartes ; il faut couler la flotte avant d'avoir vidé sa réserve de boulets ; 3 étoiles sans aucun nom faux. ⚔️ Mode Duel : deux élèves sur la même tablette (bouton ⟳ pour les placer face à face). Chacun cache d'abord sa flotte sur sa moitié sans que l'autre voie, puis chacun son tour tire sur celle de l'adversaire en nommant l'angle visé ; le premier qui coule tout gagne. Pour le duel, ouvre plutôt le jeu dans un nouvel onglet, en plein écran.</p>
   </section>
@@ -1374,11 +1380,14 @@
 </footer>
 
 <script src="qrcode.js?v=2026-11-16.3"></script>
-<script src="script.js?v=2026-11-18.3"></script>
+<!-- Suivi des élèves (compte avec code personnel) : avant script.js, qui lit la progression -->
+<script src="suivi.js?v=2026-11-26.1"></script>
+<script>Suivi.init({ niveau: '6', keys: ['revisions6e-v1'], merge: { 'revisions6e-v1': Suivi.fusionRevisions } }); Suivi.bouton(document.getElementById('suivi-btn'));</script>
+<script src="script.js?v=2026-11-27.1"></script>
 <script>document.write('<script src="ouverture.js?t=' + Date.now() + '"><\/script>');</script>
 <script src="chapitres-p2.js?v=2026-11-18.1"></script>
 <script src="questions-difficiles.js?v=2026-11-16.3"></script>
 <script src="poser.js?v=2026-11-16.3"></script>
-<script src="jeux.js?v=2026-11-16.3"></script>
+<script src="jeux.js?v=2026-11-25.2"></script>
 </body>
 </html>

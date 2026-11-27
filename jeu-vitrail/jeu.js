@@ -439,11 +439,18 @@
     if (r.kind === 'prop') return `💔 ${v}° est la bonne mesure, mais ce n’est pas <b>cette propriété</b> qui la donne ici. Regarde les vitres voisines.`;
     return '💔 Pas encore. Touche <b>💡 Indice</b> si tu es bloqué.';
   }
+  /** suivi des élèves : la propriété choisie et la mesure tapée pour une vitre */
+  function suiviVitre(F, known, i, v, tool, r, aide) {
+    const nom = (t) => (TOOLS.find((x) => x.id === t) || {}).nom || t, way = r.ok ? r.cons : wayFor(F, i, known, null);
+    return { jeu: 'vitrail', ch: 'angles', comp: 'vitrail:' + tool, ok: r.ok, rep: `${nom(tool)} · ${v}°`,
+      att: r.ok ? null : `${F.cases[i].v}°${way ? ' · ' + nom(way.t) : ''}`, err: r.ok ? null : { calc: 'bonne propriété, mauvais calcul', prop: 'bonne mesure, mauvaise propriété', both: 'propriété et mesure' }[r.kind], aide };
+  }
   function submit(v) {
     const F = G.F, i = G.sel;
     if (i === null) return;
     if (!G.tool) { const tr = app.querySelector('.tray'); tr.classList.remove('need'); void tr.offsetWidth; tr.classList.add('need'); return; }
     const known = knownSet(), r = judge(F, known, i, v, G.tool);
+    window.Moteur.trace(Object.assign(suiviVitre(F, known, i, v, G.tool, r, G.hl), { extra: { essai: (G.wrong.get(i) || 0) + 1 } }));
     if (!r.ok) {
       G.err++; Snd.crack(); G.bad = i;
       const w = (G.wrong.get(i) || 0) + 1; G.wrong.set(i, w);
@@ -467,6 +474,7 @@
     const F = G.F;
     if (F.given.size + G.lit.size < F.cases.length) return;
     const pen = G.err + G.hints / 2, stars = pen === 0 ? 3 : pen <= 2 ? 2 : 1;
+    window.Moteur.trace({ jeu: 'vitrail', ch: 'angles', comp: 'vitrail:rosace', ok: stars === 3, aide: G.hints, extra: { etoiles: stars, feleures: G.err, rosace: G.r + 1 } });
     G.stars[G.r] = stars; G.r++;
     Snd.win(); U.confetti(stars * 20, ['#e0453a', '#2f6fd6', '#f2b632', '#3aa66b', '#9b4fd1', '#fff3c4']);
     app.querySelector('.rose').classList.add('glow');
@@ -496,7 +504,7 @@
     { id: '3', nom: 'Grande rose', desc: 'Tout le chapitre', o: { lines: 2, bis: true, extra: 3, comp: 1, minFind: 6, minSteps: 3, maxRays: 10 } },
   ];
   function duel() {
-    window.Moteur.match({ jeu: 'vitrail-6e', titre: 'Le Vitrail', niveauScolaire: 'sixième', theme: 'vitrail', icone: '🌹', sound: Snd, modes: MODES, quitter: home,
+    window.Moteur.match({ jeu: 'vitrail-6e', ch: 'angles', titre: 'Le Vitrail', niveauScolaire: 'sixième', theme: 'vitrail', icone: '🌹', sound: Snd, modes: MODES, quitter: home,
       start: (ctx) => duelPlay(ctx) });
   }
   function duelPlay(ctx) {
@@ -527,6 +535,7 @@
       const i = D.sel[k];
       if (!D.tool[k]) { const tr = ctx.P[k].el.querySelector('.tray'); tr.classList.remove('need'); void tr.offsetWidth; tr.classList.add('need'); return; }
       const known = new Set([...F.given, ...D.lit.keys()]), r = judge(F, known, i, v, D.tool[k]);
+      ctx.trace(k, suiviVitre(F, known, i, v, D.tool[k], r, 0));
       D.sel[k] = null; D.tool[k] = null;
       if (r.ok) {
         const deg = F.cases[i].v;

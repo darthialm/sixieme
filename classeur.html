@@ -120,7 +120,9 @@ ul.aimp li.sous{font-weight:700;margin-top:4px}
 ul.aimp li.evalli{display:block;line-height:1.9}
 ol.deroule li .omit{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;font:inherit;font-size:.75rem;padding:2px 8px;cursor:pointer;white-space:nowrap}
 ol.deroule li .omit:hover{color:var(--danger);border-color:var(--danger)}
-.retires{font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 0}
+ol.deroule li .rep{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1;min-width:0}
+ol.deroule li .rep s{color:var(--muted)}
+ol.deroule li .rep input{flex:1;min-width:12em;font:inherit;font-size:.9rem;padding:3px 8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit}
 .docs .dsec{flex-basis:100%;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-top:4px}
 ul.aimp .qte{font-weight:700;color:var(--accent)}
 details.passes,details.proj,details.aide,details.plus{border:1px dashed var(--line);border-radius:12px;padding:6px 10px}
@@ -321,6 +323,8 @@ const DOCS={
  ficheMes:D("Fiche d'exercices · Mesurer un angle","docs/Fiche_Mesurer_un_angle.pdf","à imprimer, 2 parcours par page"),
  ficheCons:D("Fiche d'exercices · Construire un angle","docs/Fiche_Construire_un_angle.pdf","à imprimer, 2 parcours par page"),
  ficheTri:D("Fiche d'exercices · Construire un triangle","docs/Fiche_Construire_un_triangle.pdf","à imprimer, 2 parcours par page"),
+ ficheReco:D("Fiche d'exercices · Reconnaître des angles","docs/Fiche_Reconnaitre_des_angles.pdf","à imprimer, 2 exemplaires A5 par feuille"),
+ ficheRecoC:D("Corrigé · Reconnaître des angles","docs/Fiche_Reconnaitre_des_angles_corrige.pdf","corrigé de la fiche"),
  corC14:D("Corrigés cahier S14","docs/Corrige_cahier_S14.pdf","libre-service"),corC15:D("Corrigés cahier S15","docs/Corrige_cahier_S15.pdf","libre-service"),
 };
 const DOC_GROUPS=[
@@ -328,7 +332,7 @@ const DOC_GROUPS=[
  ["Activités",["actO","actOc","orion","ourse","ourseC","multcur"]],
  ["Écrans à projeter",["projO"]],
  ["Différenciation",["billets","billetsC","corP1","corP2","corP3","corP4","corP5","corP6"]],
- ["Fiches d'exercices (Je reprends / Je m'entraîne)",["ficheMes","ficheCons","ficheTri"]],
+ ["Fiches d'exercices (Je reprends / Je m'entraîne)",["ficheReco","ficheRecoC","ficheMes","ficheCons","ficheTri"]],
  ["Corrigés du cahier (libre-service)",["corC7","corC8","corC9","corC14","corC15"]],
  ["Évaluations",["evalO","evalOc","evalA","evalAc","evalT","evalTc"]],
 ];
@@ -369,7 +373,7 @@ const SEANCES=[
   dev:"<p><b>Revoir la partie 2 du cours : mesurer un angle.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Mesurer un angle ».</p><p><b>Apporter : rapporteur, règle, crayons de couleur et calculatrice.</b></p>"},
  {id:"S9",chap:"Angles",k:"Angles · séance 5",t:"Construire un angle",cours:"Partie 3 (construction dans le cahier)",docs:["coursA","coursAp","orion","ficheCons","billets","billetsC","corC9"],act:"Constellation d'Orion",billet:7,
   dev:"<p><b>Apprendre la partie 3 : construire un angle.</b></p><p><b>Finir la constellation d'Orion.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Construire sur le cahier un angle de 75° et un angle de 140°.</p><p><b>Apporter : rapporteur et règle.</b></p>"},
- {id:"S10",chap:"Angles",k:"Angles · séance 6",t:"Relations entre deux angles",cours:"Partie 4 et sa méthode",docs:["coursA","coursAp","billets","billetsC"],act:"",billet:4,
+ {id:"S10",chap:"Angles",k:"Angles · séance 6",t:"Relations entre deux angles",cours:"Partie 4 et sa méthode",docs:["coursA","coursAp","ficheReco","ficheRecoC","billets","billetsC"],act:"",billet:4,
   dev:"<p><b>Apprendre la partie 4 : le tableau des relations entre angles et la propriété.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul la méthode « Reconnaître et utiliser les relations entre deux angles ».</p><p><b>Apporter : rapporteur, règle et ciseaux.</b></p>"},
  {id:"S11",chap:"Angles",k:"Angles · séance 7",t:"La bissectrice",cours:"Partie 5, fin du cours",docs:["coursA","coursAp","corP4","ourse","ourseC"],act:"Pliage, La Grande Ourse",parcours:4,
   dev:"<p><b>Réviser tout le chapitre pour l'évaluation : définitions, propriétés et méthodes.</b></p><p><b>Exercices en ligne : "+LIEN+"</b></p><p>Refaire seul toutes les méthodes du cours.</p><p><b>Apporter : rapporteur, règle et équerre.</b></p>"},
@@ -585,7 +589,7 @@ function simuler(cr,us,dur,etat){
       if(u.y!=="e"&&left>rem)break;
       if(stop<0&&u.i===0&&u.y==="r"&&u.m===10&&pieces.length&&k+1<us.length){const n=us[k+1];if(n.sid===u.sid&&n.y!=="e"&&(dur[k+1]>rem-left||(n.y==="p"&&billets.includes(PARC_DE[n.sid]))))break}
       const take=Math.min(left,rem);
-      pieces.push({sid:u.sid,i:u.i,t0:t,m:take,y:u.y,suite:used>0,coupe:take<left});
+      pieces.push({sid:u.sid,i:u.i,t0:t,m:take,y:u.y,suite:used>0,coupe:take<left,...(u.rep!=null?{rep:u.rep}:{})});
       t+=take;rem-=take;used+=take;
       if(u.y==="b")billets.push(BILLET_DE[u.sid]);
       if(used>=dur[k]){k++;used=0}
@@ -641,16 +645,21 @@ function labPiece(sid,i){
   if(s.eval)return s.chap+" · "+(BLOCS[sid][i]&&BLOCS[sid][i].y==="v"?"évaluation":sid==="S12"?"révisions":"remédiation");
   return s.chap+" · séance "+numChap(s);
 }
-/* Étapes retirées (« pas fait ») des séances données, avec un bouton pour les remettre */
-function retiresHtml(c,sids){
-  const om=Object.keys(c.omit||{}).filter(k=>sids.includes(k.split(":")[0]));
-  return om.length?`<p class="retires">Retiré (pas fait) : ${om.map(k=>{const [sid,i]=k.split(":");const b=BLOCS[sid]&&BLOCS[sid][+i];return b?`<span>${esc(b.t)} <button class="btn small" data-unomit="${k}">Remettre</button></span>`:""}).join(" ")}</p>`:"";
+const omitBtn=p=>p.marge?"":`<button class="omit" data-omit="${p.sid}:${p.i}" title="Pas fait : l'étape garde sa place, tu écris ce que tu as fait à la place">✗ pas fait</button>`;
+/* Étape « pas fait » : barrée, avec une case pour écrire ce qui a été fait à la place, et « Remettre » */
+function repLi(p,t){
+  const k=p.sid+":"+p.i,b=BLOCS[p.sid][p.i];
+  return `<li class="y-rep" title="${esc(b.t)}"><span class="tps">${t}</span><span class="rep"><s>${esc(court(b.t))}</s>
+    <input type="text" data-rep="${k}" value="${esc(p.rep)}" placeholder="À la place, j'ai fait… (facultatif)" aria-label="Ce qui a été fait à la place"></span>
+    <button class="omit" data-unomit="${k}" title="Remettre l'étape prévue">↺ Remettre</button></li>`;
 }
-const omitBtn=p=>p.marge?"":`<button class="omit" data-omit="${p.sid}:${p.i}" title="Pas fait : retirer cette étape du déroulé et du contenu de séance">✗ pas fait</button>`;
 function lastUnitIndex(us){const r={};us.forEach((u,k)=>r[u.sid]=k);return r}
 // plan complet d'une classe : créneaux passés figés (statut), créneaux à venir planifiés
 function planClasse(c){
-  const cr=creneaux(c.edt),om=c.omit||{},us=unites().filter(u=>!om[u.sid+":"+u.i]),st=c.cren||{};
+  /* « Pas fait » (24/11/2026) : l'étape garde sa place et son temps (rien d'autre ne remonte à la place),
+     le professeur écrit ce qui a été fait à la place (c.omit["S9:2"] = texte, true = ancien format, sans texte) */
+  const cr=creneaux(c.edt),om=c.omit||{},st=c.cren||{};
+  const us=unites().map(u=>{const v=om[u.sid+":"+u.i];return v===undefined?u:{...u,y:"x",min:u.m,rep:typeof v==="string"?v:""}});
   let L=-1;cr.forEach((x,i)=>{if(st[x.id]&&st[x.id].st)L=i});
   const out=[];let cur={k:0,used:0},last=null;
   const capOf=x=>{const s=st[x.id]||{};if(s.st==="annule")return 0;if(s.st==="partiel")return Math.max(0,x.d-(+s.reste||0));return x.d};
@@ -696,7 +705,7 @@ function creneauDonne(P){
     let i=end<0?-1:premierPossible(end);
     if(REVISE[s.id]){
       // « réviser pour l'évaluation » : au plus tard au dernier créneau qui le permet avant l'évaluation
-      const ev=P.cr.findIndex(z=>z.pieces.some(p=>!p.marge&&BLOCS[p.sid][p.i].y==="v"&&idx(p.sid)>idx(s.id)));
+      const ev=P.cr.findIndex(z=>z.pieces.some(p=>!p.marge&&p.rep==null&&BLOCS[p.sid][p.i].y==="v"&&idx(p.sid)>idx(s.id)));
       if(ev>0&&(i<0||i>ev-1)){i=-1;for(let j=ev-1;j>=0;j--)if(devoirPossible(P,j)){i=j;break}}
     }
     g[s.id]=i;
@@ -750,7 +759,7 @@ function prochainCreneau(P){
 }
 /* Évaluations du créneau (blocs « v ») : les sujets sont générés dans l'Espace professeur (contrôles),
    on rappelle lesquels existent déjà sur cet appareil (même site, même mémoire). */
-function evalsCreneau(x){return [...new Set(x.pieces.filter(p=>!p.marge&&BLOCS[p.sid][p.i].y==="v").map(p=>BLOCS[p.sid][p.i].t.replace(/^Évaluation\s*/,"")))]}
+function evalsCreneau(x){return [...new Set(x.pieces.filter(p=>!p.marge&&p.rep==null&&BLOCS[p.sid][p.i].y==="v").map(p=>BLOCS[p.sid][p.i].t.replace(/^Évaluation\s*/,"")))]}
 function ctlsPour(chap,date){
   let l=[];try{l=JSON.parse(localStorage.getItem("revisions6e-controles")||"[]")}catch(e){l=[]}
   const n=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -821,7 +830,7 @@ function statutSeg(x){
 }
 /* Un cours (créneau) : l'essentiel en clair, le reste dans « Détail » et « École Directe » */
 function carteCreneau(c,P,i,nx){
-  const x=P.cr[i],pcs=x.pieces.filter(p=>!p.marge),sids=[...new Set(pcs.map(p=>p.sid))];
+  const x=P.cr[i],tous=x.pieces.filter(p=>!p.marge),pcs=tous.filter(p=>p.rep==null),sids=[...new Set(tous.map(p=>p.sid))];
   const de=t=>pcs.filter(p=>BLOCS[p.sid][p.i].y===t).map(p=>p.sid);
   const billets=de("b"),parcs=de("p"),evals=evalsCreneau(x);
   const parcN=parcs.map(sid=>POINTS.find(q=>q.p===sid).n);
@@ -836,9 +845,10 @@ function carteCreneau(c,P,i,nx){
     :`<ol class="deroule court">${x.pieces.map(p=>{
       const t=`${p.t0}–${p.t0+p.m}`;
       if(p.marge)return `<li><span class="tps">${t}</span><span>Temps libre : cahier ou rattrapage</span></li>`;
+      if(p.rep!=null)return repLi(p,t);
       const b=BLOCS[p.sid][p.i];
       return `<li class="y-${b.y}" title="${esc(b.t)}"><span class="tps">${t}</span><span>${esc(court(b.t))}${p.suite?" (suite)":""}${p.coupe?" (à finir au cours suivant)":""}${CAHIER[p.sid]&&(b.y==="p"||/^Cahier/i.test(b.t))?` <button class="btn small" data-projcahier="${p.sid}">📽 Projeter</button>`:""}</span>${omitBtn(p)}</li>`}).join("")}
-      ${x.st==="partiel"&&x.reste?`<li><span class="tps">${x.d-x.reste}–${x.d}</span><span class="hint">Non fait : reporté au cours suivant</span></li>`:""}</ol>${retiresHtml(c,sids)}`;
+      ${x.st==="partiel"&&x.reste?`<li><span class="tps">${x.d-x.reste}–${x.d}</span><span class="hint">Non fait : reporté au cours suivant</span></li>`:""}</ol>`;
   const docs=sids.length?`<div class="docs">${docsBox(sids,[],avantSids(P,i))}${parcN.map(n=>`<button class="btn small" data-goparc="${n}">Parcours du point ${n} avec les prénoms</button>`).join("")}</div>`:"";
   const dv=devoirsCreneau(c,P,i);
   const detail=sids.length?`<details class="plus"><summary>Détail</summary><div class="sbody" style="padding:8px 0 0">
@@ -854,7 +864,7 @@ function carteCreneau(c,P,i,nx){
       ${parcN.length?`<div class="docs"><span class="dsec">Parcours vierges (sans prénom)</span>${parcN.map(parcVierges).join("")}</div>`:""}
     </div></details>`:"";
   const ed=sids.length?`<details class="plus"><summary>École Directe : contenu${dv.html?" et devoirs":""}</summary>
-      ${contenuBox(contenuHtml(pcs,c),"ctc-"+x.id,`data-copyctc="${i}"`)}
+      ${contenuBox(contenuHtml(tous,c),"ctc-"+x.id,`data-copyctc="${i}"`)}
       ${dv.html?`<div class="box"><h3>Devoirs à donner en fin de cours</h3><div class="devoir" id="devc-${x.id}">${dv.html}</div>
         <div class="row"><button class="btn primary small" data-copyc="${i}">Copier les devoirs</button></div>
         ${dv.ended.filter(sid=>SEANCES.find(s=>s.id===sid).dev.includes(LIEN)).map(sid=>lienBox(SEANCES.find(s=>s.id===sid),"lienc-"+x.id)).join("")}</div>`:""}
@@ -874,7 +884,7 @@ function faitAussiHtml(c,P,i){
   const x=P.cr[i];if(x.st!=="fait")return "";
   const upto=(c.cren[x.id]||{}).upto;
   const n=P.cr.slice(i+1).find(z=>z.cap>0&&z.pieces.some(p=>!p.marge));
-  const p=n&&n.pieces.find(q=>!q.marge);
+  const p=n&&n.pieces.find(q=>!q.marge&&q.rep==null);
   const add=p?`<button class="btn small" data-plus="${x.id}" data-upto="${p.sid}:${p.i}" title="Activité prévue au cours suivant, faite aussi dans ce cours">＋ Fait aussi : ${esc(court(BLOCS[p.sid][p.i].t))}</button>`:"";
   const undo=upto?`<button class="btn small" data-plus="${x.id}" data-upto="">↺ Annuler « fait aussi »</button>`:"";
   return add||undo?`<div class="row">${add}${undo}</div>`:"";
@@ -1387,6 +1397,7 @@ function exosLignes(sid,c){
 function contenuHtml(pieces,c){
   const out=[];let last="";const exos=new Set();
   pieces.forEach(p=>{
+    if(p.rep!=null){if(p.rep.trim()){out.push(`<p>- ${esc(p.rep.trim())}</p>`);last=""}return} // « pas fait » : ce qui a été fait à la place
     const b=BLOCS[p.sid][p.i];
     const cahier=estBlocCahier(p.sid,b);
     if(cahier&&exos.has(p.sid))return;
@@ -1910,7 +1921,8 @@ document.addEventListener("click",ev=>{
   if(t.dataset.copy){copierDevoirs(t.dataset.copy,t);return}
   if(t.dataset.copyct){const sid=t.dataset.copyct;copierHtml(contenuHtml(BLOCS[sid].map((_,i)=>({sid,i})),cur()),t,"ct-"+sid);return}
   if(t.dataset.copyctc){const P=plan(cur()),x=P.cr[+t.dataset.copyctc];copierHtml(contenuHtml(x.pieces.filter(p=>!p.marge),cur()),t,"ctc-"+x.id);return}
-  if(t.dataset.omit){const c=cur();c.omit=c.omit||{};c.omit[t.dataset.omit]=true;invalider(c);persist();render();return}
+  if(t.dataset.omit){const c=cur(),k=t.dataset.omit;c.omit=c.omit||{};c.omit[k]="";invalider(c);persist();render();
+    const f=document.querySelector(`input[data-rep="${k}"]`);if(f)f.focus();return}
   if(t.dataset.plus){const c=cur(),id=t.dataset.plus,u=t.dataset.upto;const s=c.cren[id]=c.cren[id]||{st:"fait",reste:0};
     if(u)s.upto=u;else delete s.upto;ui.openC=id;invalider(c);saveUi();persist();render();return}
   if(t.dataset.unomit){const c=cur();if(c.omit)delete c.omit[t.dataset.unomit];invalider(c);persist();render();return}
@@ -1956,6 +1968,7 @@ document.addEventListener("change",ev=>{
     const nx=nextSeance(c);ui.open=t.checked&&nx?nx.id:id;saveUi();persist();render();return}
   if(t.dataset.exo){const [sid,k,v]=t.dataset.exo.split("|");c.exFaits=c.exFaits||{};const st=c.exFaits[sid]=c.exFaits[sid]||{};
     const l=exosFaits(sid,k,c).filter(z=>z!==v);if(t.checked)l.push(v);st[k]=l;ui.exOpen=t.dataset.excid;ui.openC=t.dataset.excid;persist();render();return}
+  if(t.dataset.rep){c.omit=c.omit||{};c.omit[t.dataset.rep]=t.value;invalider(c);persist();render();return}
   if(t.dataset.reste){c.cren[t.dataset.reste]={st:"partiel",reste:+t.value};ui.openC=t.dataset.reste;saveUi();persist();render();return}
   if(t.dataset.hj!==undefined){c.edt.hebdo[+t.dataset.hj].j=+t.value;persist();render();return}
   if(t.dataset.hd!==undefined){c.edt.hebdo[+t.dataset.hd].d=+t.value;persist();render();return}

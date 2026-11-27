@@ -1,3 +1,36 @@
+MISE À JOUR 2026-11-25.1 : fiche « Reconnaître des angles », plus de « 🔊 Écouter »
+
+SUR TON CLOUD (dossier docs) : Fiche_Reconnaitre_des_angles.pdf et Fiche_Reconnaitre_des_angles_corrige.pdf
+  (dans pour-le-cloud/Cahier_Angles)
+À DÉPOSER : script.js (la lecture à voix haute « 🔊 Écouter » est déjà coupée ici, mais pas encore sur le site en ligne)
+
+- Fiche « Reconnaître des angles » (deux exemplaires A5 par feuille A4, à couper) : adjacents ? (pièges : angles qui
+  se chevauchent, opposés, sommets différents), adjacents / complémentaires / supplémentaires (pièges : angles séparés,
+  adjacents seulement), opposés par le sommet ? (pièges : adjacents, côtés pas dans le prolongement, deux sommets).
+  Pas d'alternes-internes. Sources HTML dans « Claude outputs ». Elle n'est pas encore dans documents.bin ni dans le
+  classeur de 6e.
+
+=========================================================
+
+MISE À JOUR 2026-11-24.1 : « Construire un angle » simplifié, « pas fait » du classeur
+
+À DÉPOSER : script.js, chapitres-p2.js, style.css, classeur.html
+
+- Toutes les planches de construction : au-dessus de la feuille, seulement la consigne de l'étape en cours (une
+  ligne) au lieu de toute la liste des étapes ; plus de ligne « Les points sont nommés automatiquement ».
+
+- Exercice en ligne « Construire un angle » : seulement deux outils, Rapporteur et Règle. Une fois le rapporteur posé
+  (centre, ligne du 0, bon 0 choisi), on vise au bord : à la souris, la mesure s'affiche au survol et on clique ;
+  sur tablette ou téléphone, on glisse le doigt le long du bord (la mesure s'affiche, au-dessus du doigt et dans la
+  barre d'état) et on lâche sur la bonne mesure. Glisser près du bord ne déplace plus le rapporteur (on l'attrape
+  plus près du centre). La mesure s'aimante sur les graduations de 5 en 5 (à 2° près), − et + pour corriger.
+  La règle s'accroche à la marque. Tolérance : 2°.
+- Classeur, « ✗ pas fait » sur une étape d'un cours : l'étape reste à sa place, barrée, avec son temps (la suite ne
+  remonte plus à la place). Une case permet d'écrire ce qui a été fait à la place ; ce texte passe dans le contenu
+  de séance École Directe. « ↺ Remettre » annule.
+
+Après le dépôt : recharger le site et le classeur avec Ctrl + F5.
+
 MISE À JOUR 2026-11-23.1 : classeur, exercices faits dans le cahier et « Fait aussi »
 
 À DÉPOSER : classeur.html

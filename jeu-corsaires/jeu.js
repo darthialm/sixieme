@@ -199,7 +199,7 @@
     const total = MISSIONS.reduce((s, z) => s + (S.d.stars[z.id] || 0), 0);
     const nextI = MISSIONS.findIndex((z, i) => unlocked(i) && !S.d.stars[z.id]);
     app.innerHTML = `<div class="screen home">
-      <header class="brand"><span class="skull-b" aria-hidden="true">☠</span><div><h1>Les Corsaires</h1><p class="sub">Nomme l’angle… et feu !</p></div><span class="lvl">sixième · ★ ${total}/${MISSIONS.length * 3}</span></header>
+      <header class="brand"><span class="skull-b" aria-hidden="true">☠</span><div><h1>La Bataille navale</h1><p class="sub">Nomme l’angle… et feu !</p></div><span class="lvl">sixième · ★ ${total}/${MISSIONS.length * 3}</span></header>
       <div class="charts">${MISSIONS.map((z, i) => { const lock = !unlocked(i), st = S.d.stars[z.id] || 0; return `<button type="button" class="chart${z.boss ? ' boss' : ''}${lock ? ' locked' : ''}${i === nextI ? ' next' : ''}" data-z="${i}" ${lock ? 'disabled' : ''}>
         <span class="xmark" aria-hidden="true">${lock ? '🔒' : '✕'}</span><span class="nm">${i + 1}. ${z.name}</span><span class="rl">${z.tag}</span><span class="st">${starStr(st)}</span></button>`; }).join('')}</div>
       <button type="button" class="duel-btn" data-act="duel"><span aria-hidden="true">⚔️</span> <b>Duel</b><small>chacun cache sa flotte, puis on se tire dessus chacun son tour</small></button>
@@ -281,12 +281,16 @@
     U.tap(app.querySelector('[data-act="clr"]'), () => { if (G.over) return; G.taps = []; G.msg = ''; G.wide = null; draw(); });
     G.boom = null;
   }
+  /** suivi des élèves : le nom d'angle écrit (la décision mathématique ; toucher un bateau, c'est la chance) */
+  const ERR_NOM = { mid: 'sommet pas au milieu', side: 'point d’une autre île', same: 'deux points sur la même demi-droite', wide: 'angle trop large' };
+  const suiviNom = (taps, r) => ({ jeu: 'corsaires', ch: 'angles', comp: 'corsaires:nommer', ok: r.ok, rep: taps.join(''), err: r.ok ? null : ERR_NOM[r.code] || r.code });
   function tapPt(L) {
     if (G.over) return;
     if (G.taps.length === 3) { G.taps = []; G.wide = null; }
     G.taps.push(L); Snd.pt(G.taps.length - 1); G.msg = '';
     if (G.taps.length === 3) {
       const r = readName(G.sea, G.taps), nm = ang(G.taps.join(''));
+      window.Moteur.trace(suiviNom(G.taps, r));
       if (!r.ok) {
         // nom faux ou angle trop large : le boulet est perdu
         G.ammo--; G.bad++; Snd.bad(); G.wide = r.code === 'wide' ? r : null;
@@ -316,6 +320,7 @@
   function win() {
     const M = G.M; G.over = true;
     const stars = G.bad === 0 && G.ammo >= 2 ? 3 : G.bad <= 1 ? 2 : 1, old = S.d.stars[M.id] || 0;
+    window.Moteur.trace({ jeu: 'corsaires', ch: 'angles', comp: 'corsaires:carte', ok: stars === 3, extra: { carte: M.id, etoiles: stars, nomsFaux: G.bad, boulets: G.ammo } });
     S.d.stars[M.id] = Math.max(old, stars); S.save();
     Snd.win(); U.confetti(stars * 25, ['#b3261e', '#f2c14e', '#2b5d8a', '#3b2a1a']);
     const next = MISSIONS[MISSIONS.indexOf(M) + 1];
@@ -325,6 +330,7 @@
   }
   function lose() {
     G.over = true; Snd.lose();
+    window.Moteur.trace({ jeu: 'corsaires', ch: 'angles', comp: 'corsaires:carte', ok: false, extra: { carte: G.M && G.M.id, perdu: 1, nomsFaux: G.bad } });
     G.msg = `<div class="explain bad big">Plus de boulets… la flotte ennemie s’échappe ! <small>(les bateaux restants sont dessinés)</small></div>
       <div class="row"><button type="button" class="btn ghost" data-act="home">← Cartes</button><button type="button" class="btn go" data-act="again">↻ Réessayer</button></div>`;
     endBind(null);
@@ -345,7 +351,7 @@
     { id: '3', nom: 'L’archipel', desc: '3 îles · ▰▰▰ ▰▰ ▰', sea: { islands: 3, rays: [4, 5], double: 1 }, fleet: [3, 2, 1] },
   ];
   function duel() {
-    window.Moteur.match({ jeu: 'corsaires-6e', titre: 'Les Corsaires', niveauScolaire: 'sixième', theme: 'corsaires', icone: '☠', sound: Snd, modes: MODES, quitter: home,
+    window.Moteur.match({ jeu: 'corsaires-6e', ch: 'angles', titre: 'La Bataille navale', niveauScolaire: 'sixième', theme: 'corsaires', icone: '☠', sound: Snd, modes: MODES, quitter: home,
       start: (ctx) => duelPlay(ctx) });
   }
   function duelPlay(ctx) {
@@ -418,6 +424,7 @@
       t.push(L); Snd.pt(t.length - 1); D.msg[k] = '';
       if (t.length === 3) {
         const r = readName(sea, t), name = ang(t.join(''));
+        ctx.trace(k, suiviNom(t, r));
         if (!r.ok) {
           D.bad[k]++; D.fired[k]++; Snd.bad(); D.wide[k] = r.code === 'wide' ? r : null;
           D.msg[k] = `<span class="bad">✗ ${name} : boulet perdu ! ${r.why}</span>`;

@@ -147,7 +147,7 @@ Réussir un point faible sans indice compte pour le corriger (2 réussites d'aff
 - **🤔 Remédiation selon l'erreur** : au premier essai, si la réponse correspond à une erreur classique, un message ciblé l'explique et l'élève a un second essai. Exemples : dizaines / dixièmes confondus, rangs comptés depuis la gauche, chiffre des dizaines donné à la place du nombre de dizaines, tranches faites depuis la gauche, rang vide oublié, zéro « du milieu » barré, virgule prise pour une barre de fraction, graduation comptée comme une unité, 14,52 > 14,6, ordre croissant / décroissant inversé, troncature au lieu d'arrondi, [AB] = 5 cm, origine d'une demi-droite inversée, point équidistant mais pas sur le segment, corde prise pour un diamètre, diamètre pris comme rayon, écartement de compas trop petit ou changé, droites « parallèles » qui se coupent hors du cadre, croix ajoutée sur une intersection…
 - **🎬 Animations** : équerre, règle et compas dessinés étape par étape (perpendiculaire, parallèle avec règle et équerre, médiatrice, demi-droite, milieu, cercle). Avant de répondre, « Voir un exemple » montre la méthode sur **d'autres** données ; après, « Voir la construction » montre la correction.
 - **📌 Mes erreurs** : chaque type de question raté est ajouté à la page « Mes erreurs » du chapitre. Un point faible disparaît après 2 réussites d'affilée sans indice.
-- **🔊 Écouter** : lecture à voix haute des énoncés, indices, corrections et fiches (« appartient à », « la demi-droite d'origine A passant par B », « est parallèle à », fractions décimales lues « trente-sept dixièmes »…).
+- ~~🔊 Écouter~~ : lecture à voix haute désactivée (CAN_SPEAK = false dans script.js).
 
 ## La planche de construction
 

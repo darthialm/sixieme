@@ -123,6 +123,10 @@
       });
     }
     function verdict(r) {
+      if (window.Suivi && Suivi.connecte()) try {
+        Suivi.log({ src: 'jeu', ch: G.ch, comp: `${G.jeu}:${st.mode}`, ok: !!r.perfect, rep: r.rep || null, att: r.perfect ? null : r.att || null,
+          extra: { jeu: G.jeu, niveau: st.level, ecart: Math.round(r.gap * 10) / 10, manche: st.round } });
+      } catch (e) { /* le suivi ne doit jamais gêner le jeu */ }
       if (r.perfect) st.good++;
       st.gaps.push(r.gap); st.res.push(!!r.perfect);
       hud();
@@ -245,7 +249,7 @@
   const cls = (ok, gap, near) => (ok ? 'ok' : gap <= near ? 'near' : 'ko');
 
   const ESTIMANGLE = {
-    logo: ['ESTIM', 'ANGLE'], bestKey: 'revisions6e-estimangle-1deg',
+    logo: ['ESTIM', 'ANGLE'], bestKey: 'revisions6e-estimangle-1deg', jeu: 'estimangle', ch: 'angles',
     levels: { facile: 'Facile', expert: 'Expert' },
     modes: {
       estimer: { icon: '🎯', name: 'Estimer', goal: 'Trouve la mesure exacte de l\'angle, à l\'œil.', mini: miniAngle(50, false) },
@@ -281,7 +285,7 @@
       const gap = Math.abs(g - m), ok = gap === 0;
       svg.innerHTML = base + (ok ? '' : seg(V, at(V, a0 + s * Math.min(g, 359), L), 'eg-guess')) + arc(V, Math.min(a0, a1), Math.max(a0, a1), 0.9, 'eg-arc')
         + dot(V) + label(V, (a0 + a1) / 2, 1.75, `${m}°`, 'eg-lab');
-      ctx.finish({ gap, perfect: ok, cls: cls(ok, gap, 2), head: gapHead(gap, ok), html: `<p>L'angle mesure <b>${m}°</b>, tu as dit <b>${g}°</b>${ok ? '.' : g < m ? ' : trop petit.' : ' : trop grand.'}</p>` });
+      ctx.finish({ gap, perfect: ok, rep: g + '°', att: m + '°', cls: cls(ok, gap, 2), head: gapHead(gap, ok), html: `<p>L'angle mesure <b>${m}°</b>, tu as dit <b>${g}°</b>${ok ? '.' : g < m ? ' : trop petit.' : ' : trop grand.'}</p>` });
     }
   }
   function angleLancer(ctx) {
@@ -304,7 +308,7 @@
       const lo = Math.min(0, s * a), hi = Math.max(0, s * a);
       svg.innerHTML = ray(V, a0, L, 'eg-ray') + ray(V, a0 + s * a, L, 'eg-ray eg-move') + (ok ? '' : seg(V, at(V, a0 + s * t, L), 'eg-guess eg-want'))
         + arc(V, a0 + lo, a0 + hi, 0.9, 'eg-arc') + dot(V) + label(V, a0 + (s * a) / 2, 1.75, `${a}°`, 'eg-lab');
-      ctx.finish({ gap, perfect: ok, cls: cls(ok, gap, 2), head: gapHead(gap, ok), html: `<p>Il fallait <b>${t}°</b>, ton angle mesure <b>${a}°</b>${ok ? '.' : a < t ? ' : trop petit.' : ' : trop grand.'}</p>
+      ctx.finish({ gap, perfect: ok, rep: a + '°', att: t + '°', cls: cls(ok, gap, 2), head: gapHead(gap, ok), html: `<p>Il fallait <b>${t}°</b>, ton angle mesure <b>${a}°</b>${ok ? '.' : a < t ? ' : trop petit.' : ' : trop grand.'}</p>
         ${ok ? '' : '<p class="eg-hint">En pointillés : la bonne demi-droite.</p>'}` });
     });
   }
@@ -319,7 +323,7 @@
     return `<svg viewBox="-2.4 -2.3 4.8 4.4" aria-hidden="true">${line(O, a, 3, 'eg-ray')}${line(A, perp ? a + 90 : a, 3, moving ? 'eg-ray eg-move' : 'eg-ray eg-mine')}${dot(A)}</svg>`;
   };
   const DROITE = {
-    logo: ['DROITE ', 'PARFAITE'], bestKey: 'revisions6e-droite-parfaite',
+    logo: ['DROITE ', 'PARFAITE'], bestKey: 'revisions6e-droite-parfaite', jeu: 'droite-parfaite', ch: 'droites',
     levels: { facile: 'Facile', expert: 'Expert' },
     modes: {
       tracer: { icon: '✏️', name: 'Tracer', goal: 'Fais tourner la droite pour qu\'elle soit parfaitement parallèle ou perpendiculaire.', mini: miniLines(false, false) },
